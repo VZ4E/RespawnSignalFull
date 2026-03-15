@@ -339,4 +339,83 @@ router.get('/', authMiddleware, async (req, res) => {
   return res.json(data || []);
 });
 
+// POST /api/scan/manual-analyze — analyze a pasted link or transcript
+router.post('/manual-analyze', authMiddleware, async (req, res) => {
+  const { input } = req.body;
+  if (!input || !input.trim()) {
+    return res.status(400).json({ error: 'Input required' });
+  }
+
+  let transcript = input.trim();
+
+  // If it's a TikTok URL, try to fetch the video and transcript
+  if (transcript.includes('tiktok.com')) {
+    try {
+      const urlMatch = transcript.match(/\/video\/(\d+)/);
+      if (!urlMatch) {
+        return res.status(400).json({ error: 'Invalid TikTok URL format' });
+      }
+
+      const videoId = urlMatch[1];
+      // Try to fetch transcript via Transcript24
+      const tr = await fetch('https://api.transcript24.com/api/transcript', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.TRANSCRIPT24_TOKEN}`,
+        },
+        body: JSON.stringify({ url: transcript }),
+      });
+      const td = await tr.json();
+      if (td?.caption && Array.isArray(td.caption)) {
+        transcript = td.caption.map(c => c.text).join(' ');
+      }
+    } catch (err) {
+      console.error('Transcript24 failed for manual URL:', err.message);
+      // Fall through — use what we have or error below
+      if (!transcript || transcript.includes('tiktok.com')) {
+        return res.status(400).json({ error: 'Could not fetch transcript from URL. Paste the transcript text directly instead.' });
+      }
+    }
+  }
+
+  // Analyze with Perplexity
+  try {
+    const ppResp = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.PERPLEXITY_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar-pro',
+        messages: [{
+          role: 'user',
+          content: `Analyze this content for brand deals, sponsorships, affiliate links, and paid partnerships:\n\n"${transcript.slice(0, 2000)}"\n\nRespond ONLY with valid JSON (no markdown): {"deals": [{"brands": ["Brand"], "deal_type": "sponsorship|affiliate|discount", "confidence": "high|medium|low", "evidence": "quote"}]}. If no deals, return {"deals": []}.`
+        }],
+        temperature: 0.3,
+        max_tokens: 3000
+      })
+    });
+
+    if (!ppResp.ok) {
+      return res.json({ deals: [] });
+    }
+
+    const analysisData = await ppResp.json();
+    const content = analysisData.choices?.[0]?.message?.content || '';
+
+    let deals = [];
+    try {
+      const parsed = JSON.parse(content);
+      deals = parsed.deals || [];
+    } catch(_) {}
+
+    return res.json({ deals });
+  } catch(e) {
+    console.error('manual-analyze error:', e);
+    return res.status(500).json({ error: 'Failed to analyze' });
+  }
+});
+
 module.exports = router;
