@@ -134,29 +134,40 @@ router.post('/', authMiddleware, async (req, res) => {
   let deals = [];
   let analysisError = false;
   try {
+    // Cap each transcript at 800 chars to avoid truncating later videos
     const text = withTranscripts
-      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript}`)
+      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, 800)}`)
       .join('\n\n---\n\n');
 
     const prompt = `You are an expert at identifying brand deals, sponsorships, and paid partnerships in social media content.
 
-Analyze the following TikTok video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it — it is better to surface a potential deal than to miss one.
+Analyze the following TikTok video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
+
+TYPES TO DETECT (not limited to these):
+- Traditional sponsorships ("this video is sponsored by X")
+- Affiliate links and discount codes ("use code X for 10% off")
+- Product placement or gifted products
+- Gaming/app promotions (UEFN maps, Fortnite creative codes, mobile games, apps)
+- Brand ambassador mentions
+- Merchandise or music promotions paid by a label/brand
+- Any "link in bio" or "check out X" that sounds promotional
+- Creator fund content for specific platforms
 
 GROUPING RULES:
-- If brands are mentioned together in the SAME sentence as part of the SAME promotion (e.g. "partnered with Nike, Adidas and Puma"), group them as ONE entry with all names in the "brands" array.
-- If brands appear in DIFFERENT parts of the video or different sentences, list them as SEPARATE entries.
-- Default to separate entries when unsure — do not drop deals because of grouping uncertainty.
+- Same sentence + same promotion = group in ONE entry with all brand names
+- Different parts of video or different sentences = SEPARATE entries
+- Default to separate when unsure
 
 Return a JSON array where each object has:
-- "brands": string[] — one or more brand names
-- "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Unknown"
+- "brands": string[] — brand/game/app/creator names
+- "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Game Promotion"|"App Promotion"|"Unknown"
 - "confidence": "high"|"medium"|"low"
-- "evidence": the specific quote or phrase indicating the deal
+- "evidence": exact quote or phrase from transcript
 - "video_ref": e.g. "Video 1"
 
-Return ONLY a valid JSON array. No markdown, no explanation. Return [] only if there are genuinely zero brand mentions.
+Return ONLY a valid JSON array. No markdown, no explanation. Return [] only if there are genuinely zero promotional mentions.
 
-TRANSCRIPTS:\n${text.slice(0, 8000)}`;
+TRANSCRIPTS:\n${text}`;
 
     const ppResp = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',

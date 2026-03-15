@@ -591,7 +591,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
         </div>
         <div class="acct-row">
           <div><div class="acct-lbl">Plan</div><div class="acct-val"><span class="plan-chip" id="acct-plan">—</span></div></div>
-          <button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('max')">Upgrade to Max</button>
+          <div id="acct-upgrade-btn"></div>
         </div>
         <div class="acct-row">
           <div><div class="acct-lbl">Billing</div><div class="acct-val" style="font-size:13px;color:var(--text2)">Manage subscription</div></div>
@@ -870,9 +870,7 @@ function applyPlanLimits() {
   }
 
   // Account
-  document.getElementById('acct-email').textContent = currentUser.email || '—';
-  document.getElementById('acct-email-display').textContent = currentUser.email || '—';
-  document.getElementById('acct-plan').textContent = plan.toUpperCase();
+  refreshAccount();
 }
 
 // ── NAV ──
@@ -885,6 +883,7 @@ function navTo(id, el) {
   if (id === 'history') loadHistory();
   if (id === 'deals') loadHistory();
   if (id === 'credits') loadHistory();
+  if (id === 'account') refreshAccount();
 }
 
 // ── SCANNER ──
@@ -1228,6 +1227,29 @@ async function runImportList() {
   currentUser = me;
   updateCreditsUI();
   btn.disabled = false;
+}
+
+// ── ACCOUNT REFRESH ──
+async function refreshAccount() {
+  try {
+    const me = await api('/api/auth/me');
+    currentUser = me;
+  } catch(_) {}
+  if (!currentUser) return;
+  const plan = currentUser.plan || 'none';
+  document.getElementById('acct-email').textContent = currentUser.email || '—';
+  document.getElementById('acct-email-display').textContent = currentUser.email || '—';
+  document.getElementById('acct-plan').textContent = plan.toUpperCase();
+
+  // Show correct button based on plan
+  const upgradeEl = document.getElementById('acct-upgrade-btn');
+  if (plan === 'none') {
+    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('pro')">Choose a Plan</button>`;
+  } else if (plan === 'pro') {
+    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('max')">Upgrade to Max</button>`;
+  } else {
+    upgradeEl.innerHTML = `<span style="font-family:var(--mono);font-size:11px;color:var(--green)">✓ Active</span>`;
+  }
 }
 
 // ── ACCOUNT ACTIONS ──
