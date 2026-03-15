@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
-  plan TEXT NOT NULL DEFAULT 'pro',
+  plan TEXT NOT NULL DEFAULT 'none',
   credits_remaining INTEGER NOT NULL DEFAULT 300,
   credits_reset_at TIMESTAMPTZ,
   stripe_customer_id TEXT,

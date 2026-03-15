@@ -933,7 +933,16 @@ async function startScan() {
       </div>`;
     }
 
-    renderDeals(deals, listHtml);
+    // Show warnings if transcription or analysis had issues
+    let warnings = '';
+    if (data.transcriptFailures > 0) {
+      warnings += `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:9px">⚠ ${data.transcriptFailures} video${data.transcriptFailures>1?'s':''} could not be transcribed — results may be incomplete.</div>`;
+    }
+    if (data.analysisError) {
+      warnings += `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:9px">✗ AI analysis failed — could not extract deals from transcripts.</div>`;
+    }
+
+    renderDeals(deals, listHtml + warnings);
 
     // Add to local history cache
     scanHistory.unshift({ id: Date.now(), label: username, deals, meta: { range: scanRange, videoCount: videos.length, credits: creditsUsed }, timestamp: new Date().toISOString() });

@@ -117,10 +117,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       }
 
       case 'customer.subscription.deleted': {
-        // Downgrade to free/pro on cancellation
+        // Downgrade to none on cancellation — hits paywall
         const sub = event.data.object;
         await supabase.from('users')
-          .update({ plan: 'pro', stripe_subscription_id: null, credits_remaining: 300 })
+          .update({ plan: 'none', stripe_subscription_id: null, credits_remaining: 0 })
           .eq('stripe_customer_id', sub.customer);
         console.log(`Subscription cancelled for customer ${sub.customer}`);
         break;

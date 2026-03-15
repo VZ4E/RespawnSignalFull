@@ -6,8 +6,10 @@ const { authMiddleware } = require('../middleware/auth');
 
 // POST /api/scan
 router.post('/', authMiddleware, async (req, res) => {
-  const { username, range } = req.body;
-  if (!username) return res.status(400).json({ error: 'Username required' });
+  const rawUsername = req.body.username;
+  if (!rawUsername) return res.status(400).json({ error: 'Username required' });
+  const username = rawUsername.trim().replace(/^@/, '').toLowerCase();
+  const { range } = req.body;
 
   const { dbUser, planConfig } = req;
 
@@ -84,6 +86,7 @@ router.post('/', authMiddleware, async (req, res) => {
   // 2. Transcribe each video
   const withTranscripts = [];
   let totalCredits = 0;
+  let transcriptFailures = 0;
 
   for (let i = 0; i < videos.length; i++) {
     const v = videos[i];
@@ -91,6 +94,7 @@ router.post('/', authMiddleware, async (req, res) => {
     const title = v.title || v.desc || `Video ${i + 1}`;
 
     let transcript = '';
+    let transcribed = false;
     try {
       const tr = await fetch('https://api.transcript24.com/transcribe', {
         method: 'POST',
@@ -104,10 +108,14 @@ router.post('/', authMiddleware, async (req, res) => {
       if (td?.caption && Array.isArray(td.caption)) {
         transcript = td.caption.map(c => c.text).join(' ');
         totalCredits += td.taskCredits || 1;
+        transcribed = true;
       }
-    } catch (_) {}
+    } catch (err) {
+      console.error(`Transcript24 failed for video ${videoId}:`, err.message);
+    }
 
     if (!transcript) {
+      transcriptFailures++;
       transcript = v.title || v.desc || '';
       const tags = (v.text_extra || []).map(t => t.hashtag_name).filter(Boolean).join(' ');
       if (tags) transcript += ' ' + tags;
@@ -124,6 +132,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
   // 3. Analyze with Perplexity
   let deals = [];
+  let analysisError = false;
   try {
     const text = withTranscripts
       .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript}`)
@@ -166,7 +175,9 @@ TRANSCRIPTS:\n${text.slice(0, 8000)}`;
     const raw = ppData?.choices?.[0]?.message?.content || '[]';
     deals = JSON.parse(raw.replace(/```json|```/g, '').trim());
   } catch (e) {
+    console.error('Perplexity error:', e.message);
     deals = [];
+    analysisError = true;
   }
 
   // 4. Only deduct credits if we actually transcribed something
@@ -192,6 +203,8 @@ TRANSCRIPTS:\n${text.slice(0, 8000)}`;
     videos: withTranscripts,
     deals,
     creditsUsed: creditsToDeduct,
+    analysisError,
+    transcriptFailures,
   });
 });
 
