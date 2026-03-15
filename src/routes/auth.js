@@ -25,12 +25,28 @@ router.post('/login', async (req, res) => {
   return res.json({ user: data.user, session: data.session });
 });
 
+// POST /api/auth/exchange-code — PKCE code exchange
+router.post('/exchange-code', async (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'Code required' });
+  try {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json({
+      access_token: data.session?.access_token,
+      user: data.user,
+    });
+  } catch(err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/auth/google-url
 router.get('/google-url', async (req, res) => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.APP_URL || 'http://localhost:3000'}/auth/callback`,
+      redirectTo: `${process.env.APP_URL || 'http://localhost:3000'}/`,
     },
   });
   if (error) return res.status(500).json({ error: error.message });
