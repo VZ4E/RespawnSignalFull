@@ -598,6 +598,19 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
           <button class="btn-ghost" style="font-size:12px;padding:8px 16px" onclick="openBillingPortal()">Manage Billing</button>
         </div>
         <div class="acct-row">
+          <div><div class="acct-lbl">Password</div><div class="acct-val" style="font-size:13px;color:var(--text2)">Send a reset link to your email</div></div>
+          <button class="btn-ghost" style="font-size:12px;padding:8px 16px" onclick="sendResetFromAccount()">Reset Password</button>
+        </div>
+        <div class="acct-row">
+          <div><div class="acct-lbl">Email</div><div class="acct-val" style="font-size:13px;color:var(--text2)" id="acct-email-display">—</div></div>
+          <button class="btn-ghost" style="font-size:12px;padding:8px 16px" onclick="showChangeEmail()">Change Email</button>
+        </div>
+        <div id="change-email-form" style="display:none;padding:12px 0">
+          <input class="form-input" id="new-email-input" type="email" placeholder="New email address" style="margin-bottom:8px" />
+          <button class="auth-btn" style="padding:10px" onclick="submitEmailChange()">Update Email</button>
+          <div id="email-change-msg" style="font-size:12px;margin-top:8px;font-family:var(--mono)"></div>
+        </div>
+        <div class="acct-row">
           <div><div class="acct-lbl">Session</div><div class="acct-val" style="font-size:13px;color:var(--text2)">Sign out of your account</div></div>
           <button class="danger-btn" onclick="logout()">Log Out</button>
         </div>
@@ -858,6 +871,7 @@ function applyPlanLimits() {
 
   // Account
   document.getElementById('acct-email').textContent = currentUser.email || '—';
+  document.getElementById('acct-email-display').textContent = currentUser.email || '—';
   document.getElementById('acct-plan').textContent = plan.toUpperCase();
 }
 
@@ -1020,7 +1034,8 @@ function renderHistory() {
         </div>
         <div class="hi-right">
           <div class="hi-deals">${(e.deals||[]).length} deal${(e.deals||[]).length!==1?'s':''}</div>
-          ${preview?`<div style="font-size:11px;color:var(--text3);text-align:right">${preview}</div>`:''}
+          ${preview?`<div style="font-size:11px;color:var(--text3);text-align:right;margin-bottom:4px">${preview}</div>`:''}
+          <button onclick="event.stopPropagation();rescanCreator('${e.label}',${e.meta?.range||3})" style="background:var(--accent-dim);border:1px solid var(--accent-mid);color:var(--accent);font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:99px;cursor:pointer;font-weight:600">↺ Rescan</button>
         </div>
       </div>
       <div class="history-expand" id="he-${e.id}">${dealsHtml}</div>`;
@@ -1030,6 +1045,26 @@ function renderHistory() {
 function toggleExpand(id) {
   const el = document.getElementById('he-'+id);
   if (el) el.classList.toggle('open');
+}
+
+async function rescanCreator(username, range) {
+  // Delete old scan cache so fresh scan runs
+  const btn = event.target;
+  btn.textContent = '...';
+  btn.disabled = true;
+  try {
+    await api('/api/scan/delete-cache', 'POST', { username, range });
+  } catch(_) {}
+  // Navigate to scanner tab and pre-fill
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-scan').classList.add('active');
+  document.querySelector('.nav-item').classList.add('active');
+  document.getElementById('topbar-title').textContent = 'Scanner';
+  document.getElementById('username-input').value = username;
+  scanRange = range;
+  // Trigger scan
+  document.getElementById('scan-btn').click();
 }
 
 // ── ALL DEALS ──
@@ -1184,6 +1219,39 @@ async function runImportList() {
   currentUser = me;
   updateCreditsUI();
   btn.disabled = false;
+}
+
+// ── ACCOUNT ACTIONS ──
+async function sendResetFromAccount() {
+  if (!currentUser?.email) return;
+  try {
+    await _sb().auth.resetPasswordForEmail(currentUser.email, {
+      redirectTo: window.location.origin + '/reset-password.html'
+    });
+    alert('✓ Reset link sent to ' + currentUser.email);
+  } catch(e) {
+    alert('Failed: ' + e.message);
+  }
+}
+
+function showChangeEmail() {
+  const form = document.getElementById('change-email-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function submitEmailChange() {
+  const newEmail = document.getElementById('new-email-input').value.trim();
+  const msg = document.getElementById('email-change-msg');
+  if (!newEmail) { msg.style.color = 'var(--red)'; msg.textContent = 'Enter a new email.'; return; }
+  try {
+    const { error } = await _sb().auth.updateUser({ email: newEmail });
+    if (error) throw error;
+    msg.style.color = 'var(--green)';
+    msg.textContent = '✓ Confirmation sent to ' + newEmail + '. Check your inbox.';
+  } catch(e) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = e.message || 'Failed to update email.';
+  }
 }
 
 // ── STRIPE ──

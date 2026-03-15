@@ -195,6 +195,19 @@ TRANSCRIPTS:\n${text.slice(0, 8000)}`;
   });
 });
 
+// POST /api/scan/delete-cache — force fresh scan by removing cached entry
+router.post('/delete-cache', authMiddleware, async (req, res) => {
+  const { username, range } = req.body;
+  if (!username) return res.status(400).json({ error: 'Username required' });
+  await supabase
+    .from('scans')
+    .delete()
+    .eq('user_id', req.dbUser.id)
+    .eq('username', username)
+    .eq('range', parseInt(range) || 3);
+  return res.json({ success: true });
+});
+
 // GET /api/scans
 router.get('/', authMiddleware, async (req, res) => {
   const { dbUser, planConfig } = req;
