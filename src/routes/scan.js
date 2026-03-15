@@ -11,9 +11,14 @@ router.post('/', authMiddleware, async (req, res) => {
 
   const { dbUser, planConfig } = req;
 
+  // Block if no plan
+  if (!dbUser.plan || dbUser.plan === 'none') {
+    return res.status(403).json({ error: 'No active plan. Please subscribe to start scanning.' });
+  }
+
   // Check credits
   if (dbUser.credits_remaining <= 0) {
-    return res.status(402).json({ error: 'No credits remaining. Please upgrade your plan.' });
+    return res.status(402).json({ error: 'No credits remaining. Your monthly credits have been used up.' });
   }
 
   // Enforce range limit by plan
