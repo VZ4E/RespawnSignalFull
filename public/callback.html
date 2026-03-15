@@ -13,7 +13,7 @@ body { margin:0; display:flex; align-items:center; justify-content:center; heigh
 <body>
 <div class="msg">
   <div class="spin"></div>
-  <div id="status">Completing sign in...</div>
+  <div id="status">Signing in...</div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
@@ -23,27 +23,47 @@ body { margin:0; display:flex; align-items:center; justify-content:center; heigh
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoa3Z0d3Z0bXZndGtxcW90dWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjEzODksImV4cCI6MjA4OTEzNzM4OX0.u7GA8thsQfpD1hdnQuocENuYaH79Y277AOm2Trg4Yz4'
   );
 
-  // Get code from URL
-  const code = new URLSearchParams(window.location.search).get('code');
-
-  if (!code) {
-    document.getElementById('status').textContent = 'No auth code found. Redirecting...';
-    setTimeout(() => window.location.href = '/', 1500);
-    return;
-  }
-
   try {
-    const { data, error } = await sb.auth.exchangeCodeForSession(code);
-    if (error) throw error;
+    // Try hash fragment first (implicit flow)
+    const hash = window.location.hash?.substring(1);
+    if (hash) {
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      if (accessToken) {
+        localStorage.setItem('rs_token', accessToken);
+        window.location.href = '/';
+        return;
+      }
+    }
 
-    const token = data?.session?.access_token;
-    if (!token) throw new Error('No token returned');
+    // Try query param (PKCE flow)
+    const search = new URLSearchParams(window.location.search);
+    const code = search.get('code');
+    if (code) {
+      const { data, error } = await sb.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+      if (data?.session?.access_token) {
+        localStorage.setItem('rs_token', data.session.access_token);
+        window.location.href = '/';
+        return;
+      }
+    }
 
-    localStorage.setItem('rs_token', token);
-    window.location.href = '/';
+    // Try getSession as fallback — Supabase JS may have set it automatically
+    const { data: sessionData } = await sb.auth.getSession();
+    if (sessionData?.session?.access_token) {
+      localStorage.setItem('rs_token', sessionData.session.access_token);
+      window.location.href = '/';
+      return;
+    }
+
+    // Nothing worked
+    document.getElementById('status').textContent = 'Sign in failed — no token received. Redirecting...';
+    setTimeout(() => window.location.href = '/', 2000);
+
   } catch(e) {
-    document.getElementById('status').textContent = 'Sign in failed: ' + e.message;
-    console.error(e);
+    console.error('Callback error:', e);
+    document.getElementById('status').textContent = 'Error: ' + e.message;
     setTimeout(() => window.location.href = '/', 3000);
   }
 })();
