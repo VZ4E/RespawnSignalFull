@@ -131,18 +131,21 @@ router.post('/', authMiddleware, async (req, res) => {
 
     const prompt = `You are an expert at identifying brand deals, sponsorships, and paid partnerships in social media content.
 
-Analyze the following TikTok video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships.
+Analyze the following TikTok video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it — it is better to surface a potential deal than to miss one.
 
-CRITICAL GROUPING RULE: If multiple brands appear together in the same sentence/context within the same video (e.g. "partnered with Nike, Adidas and Puma"), group them as ONE deal entry with all names in the "brands" array.
+GROUPING RULES:
+- If brands are mentioned together in the SAME sentence as part of the SAME promotion (e.g. "partnered with Nike, Adidas and Puma"), group them as ONE entry with all names in the "brands" array.
+- If brands appear in DIFFERENT parts of the video or different sentences, list them as SEPARATE entries.
+- Default to separate entries when unsure — do not drop deals because of grouping uncertainty.
 
 Return a JSON array where each object has:
-- "brands": string[] — brand names (group co-mentioned brands together)
+- "brands": string[] — one or more brand names
 - "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Unknown"
 - "confidence": "high"|"medium"|"low"
 - "evidence": the specific quote or phrase indicating the deal
 - "video_ref": e.g. "Video 1"
 
-Return ONLY a JSON array. No markdown. Return [] if nothing found.
+Return ONLY a valid JSON array. No markdown, no explanation. Return [] only if there are genuinely zero brand mentions.
 
 TRANSCRIPTS:\n${text.slice(0, 8000)}`;
 
@@ -156,7 +159,7 @@ TRANSCRIPTS:\n${text.slice(0, 8000)}`;
         model: 'sonar',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 2000,
-        temperature: 0.1,
+        temperature: 0.4,
       }),
     });
     const ppData = await ppResp.json();
