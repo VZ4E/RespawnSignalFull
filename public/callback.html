@@ -13,46 +13,40 @@ body { margin:0; display:flex; align-items:center; justify-content:center; heigh
 <body>
 <div class="msg">
   <div class="spin"></div>
-  Completing sign in...
+  <div id="status">Completing sign in...</div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-const SUPABASE_URL = 'https://ehkvtwvtmvgtkqqotujo.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoa3Z0d3Z0bXZndGtxcW90dWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjEzODksImV4cCI6MjA4OTEzNzM4OX0.u7GA8thsQfpD1hdnQuocENuYaH79Y277AOm2Trg4Yz4';
+(async () => {
+  const sb = supabase.createClient(
+    'https://ehkvtwvtmvgtkqqotujo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoa3Z0d3Z0bXZndGtxcW90dWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjEzODksImV4cCI6MjA4OTEzNzM4OX0.u7GA8thsQfpD1hdnQuocENuYaH79Y277AOm2Trg4Yz4'
+  );
 
-async function handleCallback() {
+  // Get code from URL
+  const code = new URLSearchParams(window.location.search).get('code');
+
+  if (!code) {
+    document.getElementById('status').textContent = 'No auth code found. Redirecting...';
+    setTimeout(() => window.location.href = '/', 1500);
+    return;
+  }
+
   try {
-    const { createClient } = supabase;
-    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // This handles the code exchange automatically
-    const { data, error } = await sb.auth.getSession();
-
+    const { data, error } = await sb.auth.exchangeCodeForSession(code);
     if (error) throw error;
 
-    if (data?.session?.access_token) {
-      localStorage.setItem('rs_token', data.session.access_token);
-      window.location.href = '/';
-    } else {
-      // Try exchanging the code manually from URL
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      if (code) {
-        const { data: exchanged, error: exErr } = await sb.auth.exchangeCodeForSession(code);
-        if (exErr) throw exErr;
-        if (exchanged?.session?.access_token) {
-          localStorage.setItem('rs_token', exchanged.session.access_token);
-        }
-      }
-      window.location.href = '/';
-    }
-  } catch(e) {
-    console.error('OAuth callback error:', e);
-    window.location.href = '/?auth_error=' + encodeURIComponent(e.message);
-  }
-}
+    const token = data?.session?.access_token;
+    if (!token) throw new Error('No token returned');
 
-handleCallback();
+    localStorage.setItem('rs_token', token);
+    window.location.href = '/';
+  } catch(e) {
+    document.getElementById('status').textContent = 'Sign in failed: ' + e.message;
+    console.error(e);
+    setTimeout(() => window.location.href = '/', 3000);
+  }
+})();
 </script>
 </body>
 </html>
