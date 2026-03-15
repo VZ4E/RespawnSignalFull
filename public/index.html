@@ -592,7 +592,20 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
+// ── SUPABASE CLIENT (for OAuth only) ──
+let _sbClient = null;
+function _sb() {
+  if (!_sbClient) {
+    _sbClient = supabase.createClient(
+      'https://ehkvtwvtmvgtkqqotujo.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoa3Z0d3Z0bXZndGtxcW90dWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjEzODksImV4cCI6MjA4OTEzNzM4OX0.u7GA8thsQfpD1hdnQuocENuYaH79Y277AOm2Trg4Yz4'
+    );
+  }
+  return _sbClient;
+}
+
 // ── STATE ──
 let token = null;
 let currentUser = null;
@@ -692,11 +705,16 @@ function switchAuthTab(tab) {
 
 async function signInWithGoogle() {
   try {
-    const resp = await fetch('/api/auth/google-url');
-    const { url } = await resp.json();
-    window.location.href = url;
+    const { data, error } = await _sb().auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/callback.html'
+      }
+    });
+    if (error) throw error;
+    // Supabase JS handles the redirect automatically
   } catch(e) {
-    document.getElementById('auth-error').textContent = 'Google sign-in unavailable. Try email instead.';
+    document.getElementById('auth-error').textContent = 'Google sign-in unavailable: ' + e.message;
   }
 }
 
