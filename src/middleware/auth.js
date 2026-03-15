@@ -1,6 +1,7 @@
 const { supabase } = require('../supabase');
 
 const PLAN_DEFAULTS = {
+  free: { credits: 10, maxRange: 3, automation: false, unlimitedHistory: false },
   pro: { credits: 300, maxRange: 14, automation: false, unlimitedHistory: false },
   max: { credits: 1000, maxRange: 30, automation: true, unlimitedHistory: true },
   enterprise: { credits: 9999, maxRange: 30, automation: true, unlimitedHistory: true },
@@ -38,7 +39,7 @@ async function authMiddleware(req, res, next) {
     if (!dbUser) {
       const { data: newUser, error: insertErr } = await supabase
         .from('users')
-        .insert({ email: user.email, plan: 'pro', credits_remaining: 300 })
+        .insert({ email: user.email, plan: 'free', credits_remaining: 10 })
         .select()
         .single();
       if (insertErr) console.error('User insert error:', insertErr.message);

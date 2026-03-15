@@ -613,8 +613,8 @@ let scanHistory = [];
 let scanRange = 3;
 let autoRange = 3;
 
-const PLAN_MAX_RANGE = { pro: 14, max: 30, enterprise: 30 };
-const PLAN_CREDITS = { pro: 300, max: 1000, enterprise: 9999 };
+const PLAN_MAX_RANGE = { free: 3, pro: 14, max: 30, enterprise: 30 };
+const PLAN_CREDITS = { free: 10, pro: 300, max: 1000, enterprise: 9999 };
 const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', credits:'Credits', account:'Account' };
 
 // ── INIT ──
@@ -776,7 +776,8 @@ async function logout() {
 // ── PLAN LIMITS ──
 function applyPlanLimits() {
   if (!currentUser) return;
-  const maxRange = PLAN_MAX_RANGE[currentUser.plan] || 14;
+  const plan = currentUser.plan || 'free';
+  const maxRange = PLAN_MAX_RANGE[plan] || 3;
   const r14 = document.getElementById('range-14');
   const r30 = document.getElementById('range-30');
   if (maxRange < 14) r14.disabled = true;
@@ -784,19 +785,32 @@ function applyPlanLimits() {
 
   // Automation
   const autoEl = document.getElementById('automation-content');
-  if (currentUser.plan === 'pro') {
+  if (plan === 'free' || plan === 'pro') {
     autoEl.innerHTML = `<div class="upgrade-prompt">
       <h3>Upgrade to Max</h3>
       <p>Bulk automation is available on the Max and Enterprise plans. Scan dozens of creators at once with a single queue.</p>
-      <button class="btn-primary" onclick="alert('Stripe billing coming soon!')">Upgrade to Max — $79/mo</button>
+      <button class="btn-primary" onclick="startCheckout('max')">Upgrade to Max — $79/mo</button>
     </div>`;
   } else {
     autoEl.innerHTML = automationHTML();
   }
 
+  // Show free tier banner on scanner if on free plan
+  if (plan === 'free') {
+    const scanHead = document.querySelector('#page-scan .sec-head');
+    if (scanHead && !document.getElementById('free-banner')) {
+      const banner = document.createElement('div');
+      banner.id = 'free-banner';
+      banner.style.cssText = 'background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+      banner.innerHTML = `<span style="font-size:13px;color:var(--amber)">⚡ Free plan — 10 trial credits, scan last 3 videos only.</span>
+        <button class="btn-primary" style="font-size:12px;padding:7px 14px;flex-shrink:0" onclick="startCheckout('pro')">Upgrade</button>`;
+      scanHead.after(banner);
+    }
+  }
+
   // Account
   document.getElementById('acct-email').textContent = currentUser.email || '—';
-  document.getElementById('acct-plan').textContent = (currentUser.plan || 'pro').toUpperCase();
+  document.getElementById('acct-plan').textContent = plan.toUpperCase();
 }
 
 // ── NAV ──
