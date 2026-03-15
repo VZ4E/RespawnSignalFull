@@ -203,7 +203,15 @@ TRANSCRIPTS:\n${text}`;
       .eq('id', dbUser.id);
   }
 
-  // 5. Save scan record
+  // 5. Save scan record with video list + transcripts for re-analysis
+  const videosList = withTranscripts.map(v => ({
+    title: v.title,
+    videoId: v.videoId,
+    desc: v.title,
+    transcript: v.transcript,
+    views: v.views,
+  }));
+  
   await supabase.from('scans').insert({
     user_id: dbUser.id,
     username,
@@ -211,6 +219,7 @@ TRANSCRIPTS:\n${text}`;
     video_count: videos.length,
     credits_used: creditsToDeduct,
     deals,
+    videos: videosList,
   });
 
   return res.json({
@@ -220,6 +229,76 @@ TRANSCRIPTS:\n${text}`;
     analysisError,
     transcriptFailures,
   });
+});
+
+// POST /api/scan/analyze-video — re-analyze a single video from past scan
+router.post('/analyze-video', authMiddleware, async (req, res) => {
+  const { username, videoIndex, range } = req.body;
+  if (!username || videoIndex === undefined) {
+    return res.status(400).json({ error: 'Username and videoIndex required' });
+  }
+
+  try {
+    // Fetch the scan record to get the video and transcript
+    const { data: scan } = await supabase
+      .from('scans')
+      .select('*')
+      .eq('user_id', req.dbUser.id)
+      .eq('username', username.toLowerCase().replace(/^@/, ''))
+      .eq('range', parseInt(range) || 3)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!scan) {
+      return res.status(404).json({ error: 'Scan not found' });
+    }
+
+    const videos = scan.videos || [];
+    if (!videos[videoIndex]) {
+      return res.status(404).json({ error: 'Video not found in scan' });
+    }
+
+    const video = videos[videoIndex];
+    const transcript = video.transcript || '';
+
+    if (!transcript) {
+      return res.json({ deals: [] });
+    }
+
+    // Re-run Perplexity analysis on this single video
+    const analysisResp = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.PERPLEXITY_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'sonar-pro',
+        messages: [{
+          role: 'user',
+          content: `Analyze this TikTok transcript for brand deals, sponsorships, affiliate links, and paid partnerships:\n\n"${transcript}"\n\nRespond ONLY with valid JSON (no markdown): {"deals": [{"brands": ["Brand"], "deal_type": "sponsorship|affiliate|discount", "confidence": "high|medium|low", "evidence": "quote"}]}. If no deals, return {"deals": []}.`
+        }],
+        temperature: 0.3,
+        max_tokens: 3000
+      })
+    });
+
+    if (!analysisResp.ok) {
+      return res.json({ deals: [] });
+    }
+
+    const analysisData = await analysisResp.json();
+    const content = analysisData.choices?.[0]?.message?.content || '';
+    
+    let deals = [];
+    try {
+      const parsed = JSON.parse(content);
+      deals = parsed.deals || [];
+    } catch(_) {}
+
+    return res.json({ deals });
+  } catch(e) {
+    console.error('analyze-video error:', e);
+    return res.status(500).json({ error: 'Failed to re-analyze video' });
+  }
 });
 
 // POST /api/scan/delete-cache — force fresh scan by removing cached entry

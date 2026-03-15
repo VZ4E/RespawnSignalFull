@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS scans (
   video_count INTEGER DEFAULT 0,
   credits_used INTEGER DEFAULT 0,
   deals JSONB DEFAULT '[]',
+  videos JSONB DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
