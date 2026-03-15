@@ -16,31 +16,43 @@ async function authMiddleware(req, res, next) {
 
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return res.status(401).json({ error: 'Invalid or expired token' });
+    if (error) {
+      console.error('getUser error:', error.message);
+      return res.status(401).json({ error: 'Invalid or expired token: ' + error.message });
+    }
+    if (!user) return res.status(401).json({ error: 'No user found for token' });
 
     req.user = user;
 
     // Fetch or create DB user row
-    let { data: dbUser } = await supabase
+    let { data: dbUser, error: dbErr } = await supabase
       .from('users')
       .select('*')
       .eq('email', user.email)
       .single();
 
+    if (dbErr && dbErr.code !== 'PGRST116') {
+      console.error('DB user fetch error:', dbErr.message);
+    }
+
     if (!dbUser) {
-      const { data: newUser } = await supabase
+      const { data: newUser, error: insertErr } = await supabase
         .from('users')
         .insert({ email: user.email, plan: 'pro', credits_remaining: 300 })
         .select()
         .single();
+      if (insertErr) console.error('User insert error:', insertErr.message);
       dbUser = newUser;
     }
+
+    if (!dbUser) return res.status(500).json({ error: 'Failed to load user profile' });
 
     req.dbUser = dbUser;
     req.planConfig = PLAN_DEFAULTS[dbUser.plan] || PLAN_DEFAULTS.pro;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Auth failed' });
+    console.error('Auth middleware exception:', err.message);
+    return res.status(401).json({ error: 'Auth failed: ' + err.message });
   }
 }
 
