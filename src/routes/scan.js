@@ -176,10 +176,13 @@ TRANSCRIPTS:\n${text}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'sonar',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 2000,
-        temperature: 0.4,
+        model: 'sonar-pro',
+        messages: [
+          { role: 'system', content: 'You are a brand deal detection engine. You only output valid JSON arrays. Never explain your reasoning. Never add markdown. Return [] if no deals found.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 3000,
+        temperature: 0.3,
       }),
     });
     const ppData = await ppResp.json();
