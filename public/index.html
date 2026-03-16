@@ -1062,6 +1062,18 @@ function toggleVideoGroup(videoId) {
   }
 }
 
+function toggleCampaignBrands(campaignId) {
+  const brandsDiv = document.getElementById(campaignId + '-brands');
+  const btn = event.target;
+  if (brandsDiv.style.display === 'none') {
+    brandsDiv.style.display = 'block';
+    btn.textContent = '▾';
+  } else {
+    brandsDiv.style.display = 'none';
+    btn.textContent = '▸';
+  }
+}
+
 async function toggleExplanation(dealId, deal) {
   const explainDiv = document.getElementById('explain-' + dealId);
   if (explainDiv.style.display !== 'none') {
@@ -1243,12 +1255,32 @@ async function rescanSingleVideo(username, videoIndex, range) {
 // ── ALL DEALS ──
 function renderDealsPage() {
   if (!scanHistory) return;
+  
+  // Group coordinated campaigns (same brands in same deal)
+  const campaignMap = {};
   const brandMap = {};
   let posts = 0;
+  
   scanHistory.forEach(e => {
     (e.deals||[]).forEach(d => {
       posts++;
-      (d.brands||(d.brand?[d.brand]:[])).forEach(b => {
+      const brands = (d.brands||(d.brand?[d.brand]:[])).filter(Boolean);
+      const campaignKey = brands.sort().join('|'); // Same brands = same campaign
+      
+      if (!campaignMap[campaignKey]) {
+        campaignMap[campaignKey] = {
+          brands,
+          count: 0,
+          creators: new Set(),
+          deal_type: d.deal_type,
+          confidence: d.confidence
+        };
+      }
+      campaignMap[campaignKey].count++;
+      campaignMap[campaignKey].creators.add(e.label);
+      
+      // Also track individual brands
+      brands.forEach(b => {
         if (!b) return;
         if (!brandMap[b]) brandMap[b] = { count:0, creators:new Set() };
         brandMap[b].count++;
@@ -1256,24 +1288,49 @@ function renderDealsPage() {
       });
     });
   });
+  
   document.getElementById('stat-brands').textContent = Object.keys(brandMap).length;
   document.getElementById('stat-scans').textContent = scanHistory.length;
   document.getElementById('stat-posts').textContent = posts;
   document.getElementById('nb-deals').textContent = Object.keys(brandMap).length;
-  const sorted = Object.entries(brandMap).sort((a,b) => b[1].count - a[1].count);
-  const el = document.getElementById('brand-master-list');
-  if (!sorted.length) { el.innerHTML = '<div class="empty-state">No deals yet</div>'; return; }
   
-  // Render brand summary first
+  // Sort campaigns by count (most frequent first)
+  const sortedCampaigns = Object.entries(campaignMap).sort((a,b) => b[1].count - a[1].count);
+  const el = document.getElementById('brand-master-list');
+  if (!sortedCampaigns.length) { el.innerHTML = '<div class="empty-state">No deals yet</div>'; return; }
+  
+  // Render brand summary with collapsible campaigns
   let html = '<div style="margin-bottom:24px">';
   html += '<div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:13px">Top Brands</div>';
-  html += sorted.map(([brand, info], i) => `
-    <div class="bml-item">
-      <div class="bml-rank">${String(i+1).padStart(2,'0')}</div>
-      <div class="bml-name">${brand}</div>
-      <div class="bml-creators">${[...info.creators].map(c=>'@'+c).join(', ')}</div>
-      <div class="bml-count">${info.count} post${info.count!==1?'s':''}</div>
-    </div>`).join('');
+  
+  html += sortedCampaigns.map(([campaignKey, info], i) => {
+    const mainBrand = info.brands[0];
+    const otherBrands = info.brands.slice(1);
+    const campaignId = 'camp-' + i;
+    const isMultiBrand = otherBrands.length > 0;
+    
+    let brandDisplay = mainBrand;
+    if (isMultiBrand) {
+      brandDisplay = `${mainBrand} & ${otherBrands.length} other${otherBrands.length !== 1 ? 's' : ''}`;
+    }
+    
+    return `
+      <div class="bml-item" style="position:relative">
+        <div class="bml-rank">${String(i+1).padStart(2,'0')}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <div class="bml-name">${brandDisplay}</div>
+            ${isMultiBrand ? `<button onclick="toggleCampaignBrands('${campaignId}')" style="background:transparent;border:none;color:var(--accent);font-size:10px;cursor:pointer;padding:0;font-family:var(--mono);font-weight:600">▸</button>` : ''}
+          </div>
+          <div id="${campaignId}-brands" style="display:none;padding:6px 0 0 0;border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
+            ${otherBrands.map(b => `<div style="font-size:11px;color:var(--text2);padding:3px 0;margin-left:16px">· ${b}</div>`).join('')}
+          </div>
+          <div class="bml-creators">${[...info.creators].map(c=>'@'+c).join(', ')}</div>
+        </div>
+        <div class="bml-count">${info.count} post${info.count!==1?'s':''}</div>
+      </div>`;
+  }).join('');
+  
   html += '</div>';
   
   // Now add all deals grouped by scan
