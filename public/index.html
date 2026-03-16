@@ -1467,8 +1467,10 @@ async function runManualAnalysis() {
   resultEl.style.display = 'none';
 
   try {
+    console.log('Manual analysis: sending input length', input.length);
     const data = await api('/api/scan/manual-analyze', 'POST', { input, saveToHistory: true });
     const deals = data.deals || [];
+    console.log('Manual analysis response received. Deals count:', deals.length);
 
     let html = '';
     if (deals.length === 0) {
@@ -1500,14 +1502,16 @@ async function runManualAnalysis() {
     }
 
     // Add to history first
-    scanHistory.unshift({ 
+    const historyEntry = { 
       id: Date.now(), 
       label: 'manual-analysis', 
       deals: deals, 
       videos: [{title:'Manual Input', videoId:'manual-'+Date.now(), desc:'Manual Analysis', transcript:input.substring(0,2000), views:0}],
       meta: { range: 1, videoCount: 1, credits: 0 }, 
       timestamp: new Date().toISOString() 
-    });
+    };
+    scanHistory.unshift(historyEntry);
+    console.log('Added to scanHistory. New count:', scanHistory.length, 'Entry:', historyEntry);
     updateBadges();
     
     btn.textContent = 'Analyze for Deals';
@@ -1517,9 +1521,17 @@ async function runManualAnalysis() {
     resultEl.style.display = 'none';
     document.getElementById('manual-input').value = '';
     
+    console.log('About to navigate to deals tab');
     // Switch to All Deals tab
     setTimeout(() => {
-      navTo('deals', document.querySelector('.nav-item[onclick*="deals"]'));
+      console.log('Navigating to deals');
+      const dealsNav = document.querySelector('.nav-item[onclick*="deals"]');
+      console.log('Found nav element:', dealsNav);
+      if (dealsNav) {
+        navTo('deals', dealsNav);
+      } else {
+        console.warn('Could not find deals nav item');
+      }
     }, 100);
   } catch(e) {
     contentEl.innerHTML = `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:8px;padding:12px;color:var(--red);font-size:12px">⚠ ${e.message || 'Analysis failed'}</div>`;

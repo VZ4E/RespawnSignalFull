@@ -476,7 +476,7 @@ ${transcript.slice(0, 3000)}`;
       return res.status(400).json({ error: 'Failed to parse AI response. Response was: ' + content.substring(0, 200) });
     }
 
-    // Optionally save to history
+    // Optionally save to history (in background to avoid blocking)
     if (saveToHistory && req.dbUser) {
       const videosList = [{
         title: 'Manual Input',
@@ -486,7 +486,8 @@ ${transcript.slice(0, 3000)}`;
         views: 0
       }];
       
-      await supabase.from('scans').insert({
+      // Background save — don't block response
+      supabase.from('scans').insert({
         user_id: req.dbUser.id,
         username: 'manual-analysis',
         range: 1,
@@ -494,6 +495,10 @@ ${transcript.slice(0, 3000)}`;
         credits_used: 0,
         deals,
         videos: videosList,
+      }).then(() => {
+        console.log('Manual analysis saved to history for user', req.dbUser.id);
+      }).catch(err => {
+        console.error('Failed to save manual analysis to history:', err.message);
       });
     }
 
