@@ -1303,9 +1303,11 @@ function renderDealsPage() {
   let html = '<div style="margin-bottom:24px">';
   html += '<div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:13px">Top Brands</div>';
   
+  const BRAND_BLOCKLIST = ['fortnite', 'roblox', 'minecraft']; // Platforms, not brand deals
+  
   html += sortedCampaigns.map(([campaignKey, info], i) => {
     const mainBrand = info.brands[0];
-    const otherBrands = info.brands.slice(1);
+    const otherBrands = info.brands.slice(1).filter(b => !BRAND_BLOCKLIST.includes(b.toLowerCase()));
     const campaignId = 'camp-' + i;
     const isMultiBrand = otherBrands.length > 0;
     
