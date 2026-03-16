@@ -187,9 +187,20 @@ TRANSCRIPTS:\n${text}`;
     });
     const ppData = await ppResp.json();
     const raw = ppData?.choices?.[0]?.message?.content || '[]';
-    deals = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    console.log('Perplexity raw response:', raw.substring(0, 300));
+    
+    try {
+      const cleaned = raw.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      deals = Array.isArray(parsed) ? parsed : (parsed.deals || []);
+      console.log('Parsed deals count:', deals.length);
+    } catch (parseErr) {
+      console.error('Perplexity JSON parse failed:', parseErr.message, 'Raw:', raw.substring(0, 200));
+      deals = [];
+      analysisError = true;
+    }
   } catch (e) {
-    console.error('Perplexity error:', e.message);
+    console.error('Perplexity API error:', e.message);
     deals = [];
     analysisError = true;
   }
@@ -282,21 +293,30 @@ router.post('/analyze-video', authMiddleware, async (req, res) => {
     });
 
     if (!analysisResp.ok) {
+      console.error('Perplexity API error:', analysisResp.status, analysisResp.statusText);
       return res.json({ deals: [] });
     }
 
     const analysisData = await analysisResp.json();
     const content = analysisData.choices?.[0]?.message?.content || '';
     
+    console.log('Perplexity raw response:', content.substring(0, 200));
+
     let deals = [];
     try {
-      const parsed = JSON.parse(content);
-      deals = parsed.deals || [];
-    } catch(_) {}
+      // Strip markdown if present
+      const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      deals = Array.isArray(parsed) ? parsed : (parsed.deals || []);
+      console.log('Parsed deals:', deals.length);
+    } catch(parseErr) {
+      console.error('JSON parse failed:', parseErr.message, 'Raw content:', content.substring(0, 300));
+      return res.json({ deals: [] }); // Return empty rather than error for re-analysis
+    }
 
     return res.json({ deals });
   } catch(e) {
-    console.error('analyze-video error:', e);
+    console.error('analyze-video error:', e.message);
     return res.status(500).json({ error: 'Failed to re-analyze video' });
   }
 });
@@ -435,22 +455,31 @@ ${transcript.slice(0, 3000)}`;
     });
 
     if (!ppResp.ok) {
+      console.error('Perplexity API error:', ppResp.status, ppResp.statusText);
       return res.json({ deals: [] });
     }
 
     const analysisData = await ppResp.json();
     const content = analysisData.choices?.[0]?.message?.content || '';
+    
+    console.log('Perplexity raw response:', content.substring(0, 200));
 
     let deals = [];
     try {
-      const parsed = JSON.parse(content);
-      deals = parsed.deals || [];
-    } catch(_) {}
+      // Strip markdown if present
+      const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      deals = Array.isArray(parsed) ? parsed : (parsed.deals || []);
+      console.log('Parsed deals:', deals.length);
+    } catch(parseErr) {
+      console.error('JSON parse failed:', parseErr.message, 'Raw content:', content.substring(0, 300));
+      return res.status(400).json({ error: 'Failed to parse AI response. Response was: ' + content.substring(0, 200) });
+    }
 
     return res.json({ deals });
   } catch(e) {
-    console.error('manual-analyze error:', e);
-    return res.status(500).json({ error: 'Failed to analyze' });
+    console.error('manual-analyze error:', e.message);
+    return res.status(500).json({ error: 'Failed to analyze: ' + e.message });
   }
 });
 
