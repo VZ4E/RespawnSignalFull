@@ -393,7 +393,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
   <div class="land-hero">
     <div class="hero-badge"><div class="hero-dot"></div>Now live at respawnmedia.co</div>
     <h1>Find Brand Deals.<br>Instantly.</h1>
-    <p>Scan any TikTok creator's recent videos, transcribe them with AI, and surface every brand sponsorship, affiliate link, and paid partnership — in seconds.</p>
+    <p>Scan any TikTok creator's recent videos and surface every brand sponsorship, affiliate link, and paid partnership — in seconds.</p>
     <button class="btn-primary" style="font-size:15px;padding:14px 32px" onclick="showAuth('signup')">Start Scanning Free</button>
   </div>
 
@@ -549,7 +549,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
           <button class="range-btn" id="range-14" onclick="setRange(14,this)">Last 14</button>
           <button class="range-btn" id="range-30" onclick="setRange(30,this)">Last 30</button>
         </div>
-        <p style="font-size:11px;color:var(--text3);margin-top:9px;font-family:var(--mono)">~1–2 transcript credits per video</p>
+        <p style="font-size:11px;color:var(--text3);margin-top:9px;font-family:var(--mono)">~1–2 credits per video</p>
       </div>
       <button class="scan-btn" id="scan-btn" onclick="startScan()">Scan for Brand Deals</button>
       <div id="scan-results"></div>
@@ -580,7 +580,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 
     <!-- CREDITS -->
     <div class="page" id="page-credits">
-      <div class="sec-head"><h1>Credits</h1><p>Transcript24 usage — billed at ~1 credit per minute of video.</p></div>
+      <div class="sec-head"><h1>Credits</h1><p>Analysis usage — billed at ~1 credit per minute of video.</p></div>
       <div class="cred-big-card">
         <div class="cbc-num" id="cbc-num">—</div>
         <div class="cbc-lbl">Credits Remaining</div>
@@ -943,13 +943,13 @@ async function startScan() {
       </div>`;
     }
 
-    // Show warnings if transcription or analysis had issues
+    // Show warnings if analysis had issues
     let warnings = '';
     if (data.transcriptFailures > 0) {
-      warnings += `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:9px">⚠ ${data.transcriptFailures} video${data.transcriptFailures>1?'s':''} could not be transcribed — results may be incomplete.</div>`;
+      warnings += `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:9px">⚠ ${data.transcriptFailures} video${data.transcriptFailures>1?'s':''} could not be analyzed — results may be incomplete.</div>`;
     }
     if (data.analysisError) {
-      warnings += `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:9px">✗ AI analysis failed — could not extract deals from transcripts.</div>`;
+      warnings += `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:9px">✗ Analysis failed — could not extract deals.</div>`;
     }
 
     renderDeals(deals, listHtml + warnings);
@@ -971,7 +971,7 @@ async function startScan() {
 function renderDeals(deals, prefix = '', groupByVideo = true) {
   const r = document.getElementById('scan-results');
   if (!deals || !deals.length) {
-    r.innerHTML = prefix + `<div class="no-results"><div style="font-size:28px;margin-bottom:9px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:3px">No brand deals detected</div><div>Content may be organic, or transcripts unavailable.</div></div>`;
+    r.innerHTML = prefix + `<div class="no-results"><div style="font-size:28px;margin-bottom:9px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:3px">No brand deals detected</div><div>Content may be organic or contains no flagged partnerships.</div></div>`;
     return;
   }
   const norm = deals.map(d => ({ ...d, brands: d.brands?.length ? d.brands : (d.brand ? [d.brand] : ['Unknown']) }));
@@ -1438,8 +1438,8 @@ function automationHTML() {
 
   <div class="card" style="margin-top:16px">
     <div class="card-label">Manual Link Analysis</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Paste a TikTok video link or transcript to analyze for brand deals.</p>
-    <textarea id="manual-input" rows="5" placeholder="https://www.tiktok.com/@username/video/123456&#10;&#10;or paste transcript text directly..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 14px;outline:none;margin-bottom:12px;transition:all 0.15s"></textarea>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Paste a TikTok video link or content text to analyze for brand deals.</p>
+    <textarea id="manual-input" rows="5" placeholder="https://www.tiktok.com/@username/video/123456&#10;&#10;or paste content text directly..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 14px;outline:none;margin-bottom:12px;transition:all 0.15s"></textarea>
     <button class="run-btn" id="manual-run-btn" onclick="runManualAnalysis()">Analyze for Deals</button>
   </div>
   
