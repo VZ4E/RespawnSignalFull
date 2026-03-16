@@ -586,6 +586,15 @@ Return ONLY a JSON object (no markdown, no explanation):
       
       if (saveErr) {
         console.error('❌ Failed to save manual analysis:', saveErr);
+        // If it's a schema issue, return 500 and still show deals but mention DB is broken
+        if (saveErr.code === 'PGRST204' || saveErr.message?.includes('schema cache')) {
+          console.error('Schema cache error — videos column likely missing from DB');
+          return res.status(500).json({ 
+            deals: consolidatedDeals, 
+            saveError: 'Database schema error: videos column missing. Please contact support.',
+            errorCode: 'SCHEMA_MISSING_VIDEOS'
+          });
+        }
         return res.status(400).json({ deals: consolidatedDeals, saveError: saveErr.message });
       } else {
         console.log('✅ Manual analysis saved to DB. Inserted rows:', data?.length);
