@@ -362,6 +362,17 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 
 .empty-state { text-align:center; padding:48px 20px; color:var(--text3); font-family:var(--mono); font-size:12px; border:1px dashed var(--border2); border-radius:12px; background:var(--surface); }
 
+.video-group { border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+.video-group-header { padding:12px 14px; background:var(--surface2); cursor:pointer; display:flex; align-items:center; gap:12px; font-weight:600; user-select:none; transition:all 0.15s; }
+.video-group-header:hover { background:rgba(59,130,246,0.1); }
+.toggle-icon { font-size:10px; width:12px; text-align:center; color:var(--text2); }
+.video-group-content { padding:14px; }
+
+.explain-btn { background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); border-radius:5px; color:var(--blue); font-size:12px; padding:5px 10px; cursor:pointer; transition:all 0.13s; font-family:inherit; }
+.explain-btn:hover { background:rgba(59,130,246,0.25); border-color:rgba(59,130,246,0.6); }
+
+.deal-explanation { color:var(--text); line-height:1.6; }
+
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:99px; }
@@ -957,7 +968,7 @@ async function startScan() {
   btn.disabled = false;
 }
 
-function renderDeals(deals, prefix = '') {
+function renderDeals(deals, prefix = '', groupByVideo = true) {
   const r = document.getElementById('scan-results');
   if (!deals || !deals.length) {
     r.innerHTML = prefix + `<div class="no-results"><div style="font-size:28px;margin-bottom:9px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:3px">No brand deals detected</div><div>Content may be organic, or transcripts unavailable.</div></div>`;
@@ -965,24 +976,113 @@ function renderDeals(deals, prefix = '') {
   }
   const norm = deals.map(d => ({ ...d, brands: d.brands?.length ? d.brands : (d.brand ? [d.brand] : ['Unknown']) }));
   const totalBrands = norm.reduce((a,d) => a + d.brands.length, 0);
-  const html = norm.map((d, i) => {
-    const cc = d.confidence === 'high' ? 'conf-high' : d.confidence === 'medium' ? 'conf-mid' : 'conf-low';
-    const grouped = d.brands.length > 1;
-    return `<div class="deal-card" style="animation-delay:${i*0.05}s">
-      <div class="deal-top">
-        <div style="flex:1">
-          ${grouped ? `<div class="deal-co-label">Co-Sponsored · ${d.brands.length} brands</div>` : ''}
-          <div class="brand-tags">${d.brands.map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
+  
+  let html = '';
+  
+  if (groupByVideo && norm.some(d => d.video_ref)) {
+    // Group by video_ref
+    const grouped = {};
+    norm.forEach(d => {
+      const ref = d.video_ref || 'Unknown Video';
+      if (!grouped[ref]) grouped[ref] = [];
+      grouped[ref].push(d);
+    });
+    
+    let idx = 0;
+    html = Object.entries(grouped).map(([video, videoDeal]) => {
+      const videoId = 'video-' + video.replace(/\s/g, '-');
+      return `
+        <div class="video-group" style="margin-bottom:13px">
+          <div class="video-group-header" onclick="toggleVideoGroup('${videoId}')">
+            <span style="flex:1">📁 ${video}</span>
+            <span style="color:var(--text2);font-size:12px">${videoDeal.length} deal${videoDeal.length!==1?'s':''}</span>
+            <span class="toggle-icon" id="toggle-${videoId}">▸</span>
+          </div>
+          <div class="video-group-content" id="${videoId}" style="display:none;padding-left:9px;border-left:2px solid rgba(59,130,246,0.3);margin-left:7px">
+            ${videoDeal.map((d, i) => {
+              const cc = d.confidence === 'high' ? 'conf-high' : d.confidence === 'medium' ? 'conf-mid' : 'conf-low';
+              const dealId = 'deal-' + (idx++);
+              return `<div class="deal-card" style="animation-delay:${i*0.05}s;margin-bottom:9px">
+                <div class="deal-top">
+                  <div style="flex:1">
+                    <div class="brand-tags">${d.brands.map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
+                  </div>
+                  <div class="conf-pill ${cc}">${d.confidence||'?'}</div>
+                </div>
+                <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
+                ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
+                <div style="margin-top:8px">
+                  <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+                  <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
+                    <span class="loading">Loading explanation...</span>
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }).join('');
+  } else {
+    // Flat list (no grouping)
+    html = norm.map((d, i) => {
+      const cc = d.confidence === 'high' ? 'conf-high' : d.confidence === 'medium' ? 'conf-mid' : 'conf-low';
+      const dealId = 'deal-' + i;
+      return `<div class="deal-card" style="animation-delay:${i*0.05}s">
+        <div class="deal-top">
+          <div style="flex:1">
+            <div class="brand-tags">${d.brands.map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
+          </div>
+          <div class="conf-pill ${cc}">${d.confidence||'?'}</div>
         </div>
-        <div class="conf-pill ${cc}">${d.confidence||'?'}</div>
-      </div>
-      <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}${d.video_ref ? ' · '+d.video_ref : ''}</div>
-      ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
-    </div>`;
-  }).join('');
+        <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
+        ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
+        <div style="margin-top:8px">
+          <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+          <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
+            <span class="loading">Loading explanation...</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   r.innerHTML = prefix +
     `<div class="results-hdr"><div class="results-title">Deals Found</div><div class="count-pill">${norm.length} post${norm.length!==1?'s':''} · ${totalBrands} brand${totalBrands!==1?'s':''}</div></div>` + html;
+}
+
+function toggleVideoGroup(videoId) {
+  const content = document.getElementById(videoId);
+  const toggle = document.getElementById('toggle-' + videoId);
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    toggle.textContent = '▾';
+  } else {
+    content.style.display = 'none';
+    toggle.textContent = '▸';
+  }
+}
+
+async function toggleExplanation(dealId, deal) {
+  const explainDiv = document.getElementById('explain-' + dealId);
+  if (explainDiv.style.display !== 'none') {
+    explainDiv.style.display = 'none';
+    return;
+  }
+  
+  explainDiv.style.display = 'block';
+  
+  // Check if already loaded
+  if (explainDiv.dataset.loaded === 'true') {
+    return;
+  }
+  
+  try {
+    const resp = await api('/api/scan/explain-deal', 'POST', { deal });
+    explainDiv.innerHTML = resp.explanation;
+    explainDiv.dataset.loaded = 'true';
+  } catch(e) {
+    explainDiv.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+  }
 }
 
 // ── HISTORY ──
@@ -1318,25 +1418,52 @@ async function runManualAnalysis() {
   resultEl.style.display = 'none';
 
   try {
-    const data = await api('/api/scan/manual-analyze', 'POST', { input });
+    const data = await api('/api/scan/manual-analyze', 'POST', { input, saveToHistory: true });
     const deals = data.deals || [];
 
-    const resultsHtml = deals.length
-      ? deals.map(d => {
-          const cc = d.confidence === 'high' ? 'conf-high' : d.confidence === 'medium' ? 'conf-mid' : 'conf-low';
-          return `<div class="deal-card">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+    let html = '';
+    if (deals.length === 0) {
+      html = '<div style="text-align:center;padding:20px;color:var(--text3);background:var(--surface2);border-radius:8px">✓ No brand deals detected in this content.</div>';
+    } else {
+      const dealCards = deals.map((d, i) => {
+        const cc = d.confidence === 'high' ? 'conf-high' : d.confidence === 'medium' ? 'conf-mid' : 'conf-low';
+        const dealId = 'manual-deal-' + i;
+        return `<div class="deal-card" style="margin-bottom:11px">
+          <div class="deal-top">
+            <div style="flex:1">
               <div class="brand-tags">${(d.brands || []).map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
-              <div class="conf-pill ${cc}">${d.confidence || '?'}</div>
             </div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:4px"><strong>${d.deal_type || 'Unknown'}</strong></div>
-            <div class="deal-evidence">"${d.evidence || '(no evidence)'}"</div>
-          </div>`;
-        }).join('')
-      : '<div style="text-align:center;padding:20px;color:var(--text3);background:var(--surface2);border-radius:8px">✓ No brand deals detected in this content.</div>';
+            <div class="conf-pill ${cc}">${d.confidence || '?'}</div>
+          </div>
+          <div class="deal-type-lbl">${d.deal_type || 'Sponsorship'}</div>
+          ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
+          <div style="margin-top:8px">
+            <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+            <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
+              <span class="loading">Loading explanation...</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+      
+      const totalBrands = deals.reduce((a, d) => a + (d.brands?.length || 0), 0);
+      html = `<div class="results-hdr"><div class="results-title">Deals Found</div><div class="count-pill">${deals.length} deal${deals.length!==1?'s':''} · ${totalBrands} brand${totalBrands!==1?'s':''}</div></div>` + dealCards;
+    }
 
-    contentEl.innerHTML = resultsHtml;
+    contentEl.innerHTML = html;
     resultEl.style.display = 'block';
+    
+    // Add to history
+    scanHistory.unshift({ 
+      id: Date.now(), 
+      label: 'manual-analysis', 
+      deals: deals, 
+      videos: [{title:'Manual Input', videoId:'manual-'+Date.now(), desc:'Manual Analysis', transcript:input.substring(0,2000), views:0}],
+      meta: { range: 1, videoCount: 1, credits: 0 }, 
+      timestamp: new Date().toISOString() 
+    });
+    updateBadges();
+    
     btn.textContent = 'Analyze for Deals';
   } catch(e) {
     contentEl.innerHTML = `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:8px;padding:12px;color:var(--red);font-size:12px">⚠ ${e.message || 'Analysis failed'}</div>`;

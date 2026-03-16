@@ -361,7 +361,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // POST /api/scan/manual-analyze — analyze a pasted link or transcript
 router.post('/manual-analyze', authMiddleware, async (req, res) => {
-  const { input } = req.body;
+  const { input, saveToHistory } = req.body;
   if (!input || !input.trim()) {
     return res.status(400).json({ error: 'Input required' });
   }
@@ -476,10 +476,78 @@ ${transcript.slice(0, 3000)}`;
       return res.status(400).json({ error: 'Failed to parse AI response. Response was: ' + content.substring(0, 200) });
     }
 
+    // Optionally save to history
+    if (saveToHistory && req.dbUser) {
+      const videosList = [{
+        title: 'Manual Input',
+        videoId: 'manual-' + Date.now(),
+        desc: 'Manual Link Analysis',
+        transcript: transcript.substring(0, 2000),
+        views: 0
+      }];
+      
+      await supabase.from('scans').insert({
+        user_id: req.dbUser.id,
+        username: 'manual-analysis',
+        range: 1,
+        video_count: 1,
+        credits_used: 0,
+        deals,
+        videos: videosList,
+      });
+    }
+
     return res.json({ deals });
   } catch(e) {
     console.error('manual-analyze error:', e.message);
     return res.status(500).json({ error: 'Failed to analyze: ' + e.message });
+  }
+});
+
+// POST /api/scan/explain-deal — generate AI explanation for a single deal
+router.post('/explain-deal', authMiddleware, async (req, res) => {
+  const { deal } = req.body;
+  if (!deal) {
+    return res.status(400).json({ error: 'Deal object required' });
+  }
+
+  try {
+    const brandsList = (deal.brands || []).join(', ');
+    const prompt = `You are a brand deal analyzer. Provide a SHORT (2-3 sentences) explanation of this brand deal:
+
+Brand(s): ${brandsList}
+Deal Type: ${deal.deal_type}
+Evidence: "${deal.evidence}"
+
+Explain: What is this deal? Which company is involved? What are they promoting? Be concise and direct.`;
+
+    const ppResp = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.PERPLEXITY_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar-pro',
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.5,
+        max_tokens: 150
+      })
+    });
+
+    if (!ppResp.ok) {
+      return res.status(500).json({ error: 'Failed to generate explanation' });
+    }
+
+    const ppData = await ppResp.json();
+    const explanation = ppData.choices?.[0]?.message?.content || 'Unable to generate explanation.';
+
+    return res.json({ explanation });
+  } catch(e) {
+    console.error('explain-deal error:', e.message);
+    return res.status(500).json({ error: 'Failed to explain deal' });
   }
 });
 
