@@ -398,9 +398,9 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
       // Fall through to analysis
     }
     
-    // If we still only have a URL (transcript fetch failed), ask user to paste
+    // If we still only have a URL (content fetch failed), ask user to paste
     if (transcript.includes('tiktok.com')) {
-      return res.status(400).json({ error: 'Could not fetch transcript from URL. Please paste the video transcript or description directly.' });
+      return res.status(400).json({ error: 'Could not fetch content from URL. Please paste the video description or text directly.' });
     }
   }
 

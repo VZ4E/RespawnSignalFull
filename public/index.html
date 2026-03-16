@@ -945,8 +945,8 @@ async function startScan() {
 
     // Show warnings if analysis had issues
     let warnings = '';
-    if (data.transcriptFailures > 0) {
-      warnings += `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:9px">⚠ ${data.transcriptFailures} video${data.transcriptFailures>1?'s':''} could not be analyzed — results may be incomplete.</div>`;
+    if (data.analysisFailures > 0) {
+      warnings += `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:9px">⚠ ${data.analysisFailures} video${data.analysisFailures>1?'s':''} could not be analyzed — results may be incomplete.</div>`;
     }
     if (data.analysisError) {
       warnings += `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:9px">✗ Analysis failed — could not extract deals.</div>`;
@@ -1162,7 +1162,7 @@ function renderHistory() {
       <div class="history-expand" id="he-${e.id}">
         <div style="margin-bottom:16px">
           <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Videos (${(e.meta?.videoCount||0)})</div>
-          ${!(e.videos?.length) ? '<div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text3);border-left:3px solid var(--border2)">📹 Video data not available for this scan. Run a fresh scan to see individual video re-analysis.</div>' : 
+          ${!(e.videos?.length) ? '<div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text3);border-left:3px solid var(--border2)">📹 Detailed analysis not available for this scan. Run a fresh scan to see individual video re-analysis.</div>' : 
             e.videos.map((v, vi) => `
               <div style="display:flex;flex-direction:column;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
