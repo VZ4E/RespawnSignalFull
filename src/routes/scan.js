@@ -551,7 +551,7 @@ Return ONLY a JSON object (no markdown, no explanation):
       }
     }
 
-    // Optionally save to history (in background to avoid blocking)
+    // Save to history before responding (so DB is ready when frontend refreshes)
     if (saveToHistory && req.dbUser) {
       const videosList = [{
         title: 'Manual Input',
@@ -561,8 +561,7 @@ Return ONLY a JSON object (no markdown, no explanation):
         views: 0
       }];
       
-      // Background save — don't block response
-      supabase.from('scans').insert({
+      const { error: saveErr } = await supabase.from('scans').insert({
         user_id: req.dbUser.id,
         username: 'manual-analysis',
         range: 1,
@@ -570,11 +569,13 @@ Return ONLY a JSON object (no markdown, no explanation):
         credits_used: 0,
         deals: consolidatedDeals,
         videos: videosList,
-      }).then(() => {
-        console.log('Manual analysis saved to history for user', req.dbUser.id);
-      }).catch(err => {
-        console.error('Failed to save manual analysis to history:', err.message);
       });
+      
+      if (saveErr) {
+        console.error('Failed to save manual analysis to history:', saveErr.message);
+      } else {
+        console.log('✓ Manual analysis saved to DB for user', req.dbUser.id);
+      }
     }
 
     return res.json({ deals: consolidatedDeals });

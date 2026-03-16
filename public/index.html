@@ -1527,11 +1527,8 @@ async function runManualAnalysis() {
     resultEl.style.display = 'none';
     document.getElementById('manual-input').value = '';
     
-    // Wait for backend to save to DB
-    console.log('Waiting 300ms for backend to save manual analysis to DB...');
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    console.log('About to navigate to deals tab');
+    // Backend now saves to DB before responding — safe to navigate immediately
+    console.log('Backend confirmed save. Navigating to deals tab.');
     // Switch to All Deals tab and render (DON'T reload from server yet)
     console.log('Navigating to deals');
     // Show All Deals page directly
