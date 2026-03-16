@@ -1436,7 +1436,14 @@ async function runImportList() {
     statusEl.textContent = 'Scanning...';
     try {
       const data = await api('/api/scan', 'POST', { username: u, range: autoRange });
-      scanHistory.unshift({ id: Date.now(), label: u, deals: data.deals, videos: data.videos, meta: { range: autoRange, videoCount: data.videos.length, credits: data.creditsUsed }, timestamp: new Date().toISOString() });
+      const newScan = { id: Date.now(), label: u, deals: data.deals, videos: data.videos, meta: { range: autoRange, videoCount: data.videos.length, credits: data.creditsUsed }, timestamp: new Date().toISOString() };
+      scanHistory.unshift(newScan);
+      
+      // Save to DB immediately (don't wait for it to complete)
+      api('/api/scans/save', 'POST', { scan: newScan }).catch(err => {
+        console.error('Failed to save scan to DB:', err);
+      });
+      
       itemEl.classList.remove('running'); itemEl.classList.add('done');
       iconEl.textContent = '✓'; statusEl.textContent = '';
       if (data.deals.length) {

@@ -631,4 +631,36 @@ Explain: What is this deal? Which company is involved? What are they promoting? 
   }
 });
 
+// POST /api/scans/save — explicitly save a completed scan to DB
+// Used by frontend to persist scan results immediately after completion
+router.post('/save', authMiddleware, async (req, res) => {
+  const { scan } = req.body;
+  if (!scan || !scan.label) {
+    return res.status(400).json({ error: 'Scan data required' });
+  }
+
+  try {
+    const { error } = await supabase.from('scans').insert({
+      user_id: req.dbUser.id,
+      username: scan.label,
+      range: scan.meta?.range || 1,
+      video_count: scan.meta?.videoCount || 0,
+      credits_used: scan.meta?.credits || 0,
+      deals: scan.deals || [],
+      videos: scan.videos || [],
+    });
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return res.status(400).json({ error: 'Failed to save scan' });
+    }
+
+    console.log('Scan saved for user', req.dbUser.id, 'username:', scan.label);
+    return res.json({ success: true });
+  } catch(e) {
+    console.error('Save scan error:', e.message);
+    return res.status(500).json({ error: 'Failed to save scan' });
+  }
+});
+
 module.exports = router;
