@@ -1438,14 +1438,9 @@ async function runImportList() {
       const data = await api('/api/scan', 'POST', { username: u, range: autoRange });
       const newScan = { id: Date.now(), label: u, deals: data.deals, videos: data.videos, meta: { range: autoRange, videoCount: data.videos.length, credits: data.creditsUsed }, timestamp: new Date().toISOString() };
       scanHistory.unshift(newScan);
-      console.log('Added to scanHistory, now calling /api/scans/save for @' + u);
-      
-      // Save to DB immediately (don't wait for it to complete)
-      api('/api/scans/save', 'POST', { scan: newScan }).then(result => {
-        console.log('Scan save response:', result);
-      }).catch(err => {
-        console.error('Failed to save scan to DB:', err);
-      });
+      // Wait for backend DB save to complete before allowing history refresh
+      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log('✓ Scan completed and saved by backend for @' + u, 'deals:', data.deals.length);
       
       itemEl.classList.remove('running'); itemEl.classList.add('done');
       iconEl.textContent = '✓'; statusEl.textContent = '';
@@ -1464,6 +1459,7 @@ async function runImportList() {
   currentUser = me;
   updateCreditsUI();
   btn.disabled = false;
+  console.log('✓ All scans completed. Local scanHistory now has', scanHistory.length, 'entries');
 }
 
 async function runManualAnalysis() {
