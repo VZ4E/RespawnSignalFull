@@ -352,35 +352,71 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
   if (transcript.includes('tiktok.com')) {
     try {
       const urlMatch = transcript.match(/\/video\/(\d+)/);
-      if (!urlMatch) {
-        return res.status(400).json({ error: 'Invalid TikTok URL format' });
-      }
-
-      const videoId = urlMatch[1];
-      // Try to fetch transcript via Transcript24
-      const tr = await fetch('https://api.transcript24.com/api/transcript', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.TRANSCRIPT24_TOKEN}`,
-        },
-        body: JSON.stringify({ url: transcript }),
-      });
-      const td = await tr.json();
-      if (td?.caption && Array.isArray(td.caption)) {
-        transcript = td.caption.map(c => c.text).join(' ');
+      if (urlMatch) {
+        const videoId = urlMatch[1];
+        // Try to fetch transcript via Transcript24
+        try {
+          const tr = await fetch('https://api.transcript24.com/transcribe', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${process.env.TRANSCRIPT24_TOKEN}`,
+            },
+            body: JSON.stringify({ url: transcript }),
+          });
+          const td = await tr.json();
+          if (td?.caption && Array.isArray(td.caption)) {
+            transcript = td.caption.map(c => c.text).join(' ');
+          }
+        } catch (txErr) {
+          console.error('Transcript24 failed for manual URL:', txErr.message);
+          // Fall through to analysis with URL text only
+        }
       }
     } catch (err) {
-      console.error('Transcript24 failed for manual URL:', err.message);
-      // Fall through — use what we have or error below
-      if (!transcript || transcript.includes('tiktok.com')) {
-        return res.status(400).json({ error: 'Could not fetch transcript from URL. Paste the transcript text directly instead.' });
-      }
+      console.error('URL parsing failed:', err.message);
+      // Fall through to analysis
+    }
+    
+    // If we still only have a URL (transcript fetch failed), ask user to paste
+    if (transcript.includes('tiktok.com')) {
+      return res.status(400).json({ error: 'Could not fetch transcript from URL. Please paste the video transcript or description directly.' });
     }
   }
 
-  // Analyze with Perplexity
+  // Analyze with Perplexity — use the full prompt like the main scanner
   try {
+    const prompt = `You are an expert at identifying brand deals, sponsorships, and paid partnerships in social media content.
+
+Analyze the following TikTok video transcript and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
+
+TYPES TO DETECT (not limited to these):
+- Traditional sponsorships ("this video is sponsored by X")
+- Affiliate links and discount codes ("use code X for 10% off")
+- Product placement or gifted products
+- Gaming/app promotions (UEFN maps, Fortnite creative codes, mobile games, apps)
+- Brand ambassador mentions
+- Merchandise or music promotions paid by a label/brand
+- Any "link in bio" or "check out X" that sounds promotional
+- Creator fund content for specific platforms
+
+GROUPING RULES:
+- Same sentence + same promotion = group in ONE entry with all brand names
+- Different parts of video or different sentences = SEPARATE entries
+- Default to separate when unsure
+
+Return a JSON array where each object has:
+- "brands": string[] — brand/game/app/creator names
+- "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Game Promotion"|"App Promotion"|"Unknown"
+- "confidence": "high"|"medium"|"low"
+- "evidence": exact quote or phrase from transcript
+- "video_ref": "Manual Input"
+
+Return ONLY a valid JSON array. No markdown, no explanation. Return [] only if there are genuinely zero promotional mentions.
+
+TRANSCRIPT:
+${transcript.slice(0, 3000)}`;
+
     const ppResp = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -389,10 +425,10 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
       },
       body: JSON.stringify({
         model: 'sonar-pro',
-        messages: [{
-          role: 'user',
-          content: `Analyze this content for brand deals, sponsorships, affiliate links, and paid partnerships:\n\n"${transcript.slice(0, 2000)}"\n\nRespond ONLY with valid JSON (no markdown): {"deals": [{"brands": ["Brand"], "deal_type": "sponsorship|affiliate|discount", "confidence": "high|medium|low", "evidence": "quote"}]}. If no deals, return {"deals": []}.`
-        }],
+        messages: [
+          { role: 'system', content: 'You are a brand deal detection engine. You only output valid JSON arrays. Never explain your reasoning. Never add markdown. Return [] if no deals found.' },
+          { role: 'user', content: prompt }
+        ],
         temperature: 0.3,
         max_tokens: 3000
       })
