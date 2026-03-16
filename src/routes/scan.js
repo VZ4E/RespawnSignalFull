@@ -552,7 +552,10 @@ Return ONLY a JSON object (no markdown, no explanation):
     }
 
     // Save to history before responding (so DB is ready when frontend refreshes)
+    console.log('Manual analysis complete. saveToHistory:', saveToHistory, 'req.dbUser:', !!req.dbUser);
+    
     if (saveToHistory && req.dbUser) {
+      console.log('Attempting to save manual analysis to DB for user:', req.dbUser.id);
       const videosList = [{
         title: 'Manual Input',
         videoId: 'manual-' + Date.now(),
@@ -561,7 +564,17 @@ Return ONLY a JSON object (no markdown, no explanation):
         views: 0
       }];
       
-      const { error: saveErr } = await supabase.from('scans').insert({
+      console.log('Insert payload:', {
+        user_id: req.dbUser.id,
+        username: 'manual-analysis',
+        range: 1,
+        video_count: 1,
+        credits_used: 0,
+        deals_count: consolidatedDeals.length,
+        videos_count: videosList.length,
+      });
+      
+      const { data, error: saveErr } = await supabase.from('scans').insert({
         user_id: req.dbUser.id,
         username: 'manual-analysis',
         range: 1,
@@ -569,13 +582,16 @@ Return ONLY a JSON object (no markdown, no explanation):
         credits_used: 0,
         deals: consolidatedDeals,
         videos: videosList,
-      });
+      }).select();
       
       if (saveErr) {
-        console.error('Failed to save manual analysis to history:', saveErr.message);
+        console.error('❌ Failed to save manual analysis:', saveErr);
+        return res.status(400).json({ deals: consolidatedDeals, saveError: saveErr.message });
       } else {
-        console.log('✓ Manual analysis saved to DB for user', req.dbUser.id);
+        console.log('✅ Manual analysis saved to DB. Inserted rows:', data?.length);
       }
+    } else {
+      console.log('Skipped save: saveToHistory=' + saveToHistory + ', dbUser=' + !!req.dbUser);
     }
 
     return res.json({ deals: consolidatedDeals });
