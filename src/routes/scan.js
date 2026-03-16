@@ -476,6 +476,81 @@ ${transcript.slice(0, 3000)}`;
       return res.status(400).json({ error: 'Failed to parse AI response. Response was: ' + content.substring(0, 200) });
     }
 
+    // Consolidate deals from same video into single campaign
+    // If multiple brands appear together, ask Perplexity what the overall deal type is
+    let consolidatedDeals = deals;
+    if (deals.length > 1) {
+      try {
+        const brandList = deals.flatMap(d => d.brands || []).join(', ');
+        const dealTypes = deals.map(d => d.deal_type).join(', ');
+        const evidence = deals.map(d => d.evidence).join('\n');
+        
+        const consolidatePrompt = `You are analyzing multiple brand mentions from the SAME video segment. The brands and their individual deal types are:
+
+Brands: ${brandList}
+Individual deal types detected: ${dealTypes}
+
+Evidence from transcript:
+${evidence}
+
+These brands all appear in the same video segment. What is the OVERALL/UMBRELLA deal type for this coordinated campaign?
+
+Consider:
+- Are these part of ONE coordinated paid sponsorship/campaign?
+- Or are they genuinely separate promotions?
+- Look for patterns: shared CTAs, same giveaway, partner mentions, coordinated timing
+
+Return ONLY a JSON object (no markdown, no explanation):
+{
+  "overall_deal_type": "Paid Sponsorship" | "Coordinated Campaign" | "Mixed Promotions" | other,
+  "reasoning": "1-2 sentence explanation",
+  "should_consolidate": true | false
+}`;
+
+        const cpResp = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.PERPLEXITY_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'sonar-pro',
+            messages: [
+              { role: 'system', content: 'You are a campaign analyst. Output valid JSON only. No markdown.' },
+              { role: 'user', content: consolidatePrompt }
+            ],
+            temperature: 0.4,
+            max_tokens: 300
+          })
+        });
+
+        if (cpResp.ok) {
+          const cpData = await cpResp.json();
+          const cpContent = cpData.choices?.[0]?.message?.content || '';
+          const cleaned = cpContent.replace(/```json\n?|\n?```/g, '').trim();
+          
+          try {
+            const consolidation = JSON.parse(cleaned);
+            if (consolidation.should_consolidate) {
+              // Merge all deals into one
+              consolidatedDeals = [{
+                brands: deals.flatMap(d => d.brands || []).filter((v, i, a) => a.indexOf(v) === i), // unique brands
+                deal_type: consolidation.overall_deal_type,
+                confidence: 'high', // consolidated = high confidence
+                evidence: `Coordinated campaign: ${evidence.slice(0, 200)}...`,
+                video_ref: 'Manual Input'
+              }];
+              console.log('Consolidated deals from', deals.length, 'entries into 1 coordinated campaign');
+            }
+          } catch(e) {
+            console.error('Consolidation parse failed, using original deals');
+          }
+        }
+      } catch(e) {
+        console.error('Consolidation analysis failed, using original deals:', e.message);
+      }
+    }
+
     // Optionally save to history (in background to avoid blocking)
     if (saveToHistory && req.dbUser) {
       const videosList = [{
@@ -493,7 +568,7 @@ ${transcript.slice(0, 3000)}`;
         range: 1,
         video_count: 1,
         credits_used: 0,
-        deals,
+        deals: consolidatedDeals,
         videos: videosList,
       }).then(() => {
         console.log('Manual analysis saved to history for user', req.dbUser.id);
@@ -502,7 +577,7 @@ ${transcript.slice(0, 3000)}`;
       });
     }
 
-    return res.json({ deals });
+    return res.json({ deals: consolidatedDeals });
   } catch(e) {
     console.error('manual-analyze error:', e.message);
     return res.status(500).json({ error: 'Failed to analyze: ' + e.message });
