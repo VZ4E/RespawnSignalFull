@@ -1522,16 +1522,25 @@ async function runManualAnalysis() {
     document.getElementById('manual-input').value = '';
     
     console.log('About to navigate to deals tab');
-    // Switch to All Deals tab
+    // Switch to All Deals tab and render (DON'T reload from server yet)
     setTimeout(() => {
       console.log('Navigating to deals');
-      const dealsNav = document.querySelector('.nav-item[onclick*="deals"]');
-      console.log('Found nav element:', dealsNav);
-      if (dealsNav) {
-        navTo('deals', dealsNav);
-      } else {
-        console.warn('Could not find deals nav item');
+      // Show All Deals page directly
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const dealsPage = document.getElementById('page-deals');
+      if (dealsPage) {
+        dealsPage.classList.add('active');
       }
+      const dealsNav = document.querySelector('.nav-item[onclick*="deals"]');
+      if (dealsNav) {
+        dealsNav.classList.add('active');
+      }
+      document.getElementById('topbar-title').textContent = 'All Deals';
+      
+      // Render deals page with local scanHistory (don't reload from server yet)
+      renderDealsPage();
+      console.log('Rendered deals page with local history');
     }, 100);
   } catch(e) {
     contentEl.innerHTML = `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:8px;padding:12px;color:var(--red);font-size:12px">⚠ ${e.message || 'Analysis failed'}</div>`;
