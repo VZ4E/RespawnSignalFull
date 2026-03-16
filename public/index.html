@@ -1438,9 +1438,12 @@ async function runImportList() {
       const data = await api('/api/scan', 'POST', { username: u, range: autoRange });
       const newScan = { id: Date.now(), label: u, deals: data.deals, videos: data.videos, meta: { range: autoRange, videoCount: data.videos.length, credits: data.creditsUsed }, timestamp: new Date().toISOString() };
       scanHistory.unshift(newScan);
+      console.log('Added to scanHistory, now calling /api/scans/save for @' + u);
       
       // Save to DB immediately (don't wait for it to complete)
-      api('/api/scans/save', 'POST', { scan: newScan }).catch(err => {
+      api('/api/scans/save', 'POST', { scan: newScan }).then(result => {
+        console.log('Scan save response:', result);
+      }).catch(err => {
         console.error('Failed to save scan to DB:', err);
       });
       
