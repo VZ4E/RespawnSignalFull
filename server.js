@@ -7,6 +7,8 @@ const path = require('path');
 const authRoutes = require('./src/routes/auth');
 const billingRoutes = require('./src/routes/billing');
 const scanRoutes = require('./src/routes/scan');
+const creatorRoutes = require('./src/routes/creators');
+const configRoutes = require('./src/routes/configs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +31,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/scan', scanLimiter, scanRoutes);
 app.use('/api/scans', scanRoutes);
+app.use('/api/creators', creatorRoutes);
+app.use('/api/configs', configRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Respawn Signal' }));
