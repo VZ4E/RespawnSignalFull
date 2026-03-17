@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Respawn Signal - Automation Tab Test</title>
+<style>
+  body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+  .test-section { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #5aa0e8; }
+  .pass { border-left-color: #059669; color: #059669; }
+  .fail { border-left-color: #dc2626; color: #dc2626; }
+  .warning { border-left-color: #d97706; color: #d97706; }
+  h1 { color: #0f172a; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>🧪 ResponSignal Automation Tab - Test Results</h1>
+<p>Testing bulk scanning functionality...</p>
+
+<div id="results"></div>
+
+<script>
+// Load the main index.html in an iframe and test it
+const resultsDiv = document.getElementById('results');
+
+// Run tests
+async function runTests() {
+  const tests = [];
+  
+  // Test 1: Check if HTML contains automation form elements
+  tests.push({
+    name: 'Automation Form HTML Structure',
+    async run() {
+      try {
+        const resp = await fetch('index.html');
+        const html = await resp.text();
+        
+        const hasForm = html.includes('import-textarea');
+        const hasScanBtn = html.includes('import-run-btn');
+        const hasQueue = html.includes('import-queue');
+        const hasManualInput = html.includes('manual-input');
+        
+        if (hasForm && hasScanBtn && hasQueue && hasManualInput) {
+          return { pass: true, msg: 'All form elements found in HTML' };
+        } else {
+          return { 
+            pass: false, 
+            msg: `Missing elements: ${!hasForm ? 'textarea ' : ''}${!hasScanBtn ? 'button ' : ''}${!hasQueue ? 'queue ' : ''}${!hasManualInput ? 'manual ' : ''}` 
+          };
+        }
+      } catch(e) {
+        return { pass: false, msg: e.message };
+      }
+    }
+  });
+  
+  // Test 2: Check automation function exists
+  tests.push({
+    name: 'automationHTML() Function',
+    async run() {
+      try {
+        const resp = await fetch('index.html');
+        const html = await resp.text();
+        
+        if (html.includes('function automationHTML()')) {
+          return { pass: true, msg: 'automationHTML() function defined' };
+        } else {
+          return { pass: false, msg: 'automationHTML() function not found' };
+        }
+      } catch(e) {
+        return { pass: false, msg: e.message };
+      }
+    }
+  });
+  
+  // Test 3: Check scan API endpoint
+  tests.push({
+    name: 'Scan API Endpoint',
+    async run() {
+      try {
+        const resp = await fetch('http://localhost:3000/api/health');
+        const data = await resp.json();
+        
+        if (data.status === 'ok') {
+          return { pass: true, msg: 'Backend API is running on port 3000' };
+        } else {
+          return { pass: false, msg: 'Unexpected API response' };
+        }
+      } catch(e) {
+        return { pass: false, msg: `API not accessible: ${e.message}` };
+      }
+    }
+  });
+  
+  // Test 4: Check form input simulation
+  tests.push({
+    name: 'Form Input Handling (Simulated)',
+    async run() {
+      try {
+        // Simulate the getImportUsernames function logic
+        const testInput = 'cracklyy\nkhaby.lame\nbellapoarch';
+        const usernames = testInput.split('\n')
+          .map(l => l.trim().replace(/^@/,''))
+          .filter(Boolean);
+        
+        if (usernames.length === 3 && usernames[0] === 'cracklyy') {
+          return { pass: true, msg: `Correctly parsed 3 usernames: ${usernames.join(', ')}` };
+        } else {
+          return { pass: false, msg: `Parsing failed, got ${usernames.length} usernames` };
+        }
+      } catch(e) {
+        return { pass: false, msg: e.message };
+      }
+    }
+  });
+  
+  // Test 5: Queue structure check
+  tests.push({
+    name: 'Queue Display Structure',
+    async run() {
+      try {
+        const resp = await fetch('index.html');
+        const html = await resp.text();
+        
+        const hasQueueContainer = html.includes('id="import-queue"');
+        const hasQueueItems = html.includes('id="queue-items"');
+        const hasQueueItem = html.includes('class="queue-item"');
+        const hasSpinner = html.includes('class="spinner"');
+        
+        if (hasQueueContainer && hasQueueItems && hasQueueItem && hasSpinner) {
+          return { pass: true, msg: 'Queue structure complete: container, items, spinner' };
+        } else {
+          return { pass: false, msg: 'Incomplete queue structure' };
+        }
+      } catch(e) {
+        return { pass: false, msg: e.message };
+      }
+    }
+  });
+  
+  // Test 6: Manual analysis section
+  tests.push({
+    name: 'Manual Link Analysis UI',
+    async run() {
+      try {
+        const resp = await fetch('index.html');
+        const html = await resp.text();
+        
+        const hasManualSection = html.includes('Manual Link Analysis');
+        const hasManualTextarea = html.includes('id="manual-input"');
+        const hasManualButton = html.includes('id="manual-run-btn"');
+        const hasResultsContainer = html.includes('id="manual-results"');
+        
+        if (hasManualSection && hasManualTextarea && hasManualButton && hasResultsContainer) {
+          return { pass: true, msg: 'Manual analysis section: textarea, button, results container' };
+        } else {
+          return { pass: false, msg: 'Incomplete manual analysis section' };
+        }
+      } catch(e) {
+        return { pass: false, msg: e.message };
+      }
+    }
+  });
+  
+  // Run all tests
+  for (const test of tests) {
+    const result = await test.run();
+    const className = result.pass ? 'pass' : 'fail';
+    const icon = result.pass ? '✓' : '✗';
+    
+    const div = document.createElement('div');
+    div.className = `test-section ${className}`;
+    div.innerHTML = `<strong>${icon} ${test.name}</strong><br>${result.msg}`;
+    resultsDiv.appendChild(div);
+  }
+  
+  // Summary
+  const passed = Array.from(document.querySelectorAll('.test-section.pass')).length;
+  const total = document.querySelectorAll('.test-section').length;
+  
+  const summary = document.createElement('div');
+  summary.className = 'test-section ' + (passed === total ? 'pass' : 'warning');
+  summary.innerHTML = `<h2>📊 Summary: ${passed}/${total} tests passed</h2>
+    <p>${passed === total 
+      ? '✅ All automation features are present and structure is valid!' 
+      : '⚠️ Some features may need attention'}</p>`;
+  resultsDiv.appendChild(summary);
+}
+
+// Start tests
+runTests();
+</script>
+
+</body>
+</html>

@@ -376,6 +376,61 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:99px; }
+
+/* ── SETTINGS PAGE ── */
+.settings-tab {
+  background:transparent; border:none; border-bottom:2px solid transparent;
+  color:var(--text3); font-size:13px; font-weight:600; padding:8px 12px;
+  cursor:pointer; transition:all 0.15s; font-family:var(--sans);
+}
+.settings-tab:hover { color:var(--text2); }
+.settings-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+.settings-content { display:none; }
+.settings-content.active { display:block; }
+
+.creator-card, .config-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:16px; display:flex; align-items:flex-start; justify-content:space-between;
+}
+.creator-card:hover, .config-card:hover { border-color:var(--accent-mid); background:var(--surface2); }
+
+.creator-info, .config-info { flex:1; }
+.creator-name { font-size:14px; font-weight:600; color:var(--text); margin-bottom:6px; }
+.config-name { font-size:14px; font-weight:600; color:var(--text); margin-bottom:6px; }
+.creator-platforms { font-size:12px; color:var(--text3); display:flex; gap:8px; flex-wrap:wrap; }
+.platform-badge { background:var(--accent-dim); color:var(--accent); padding:3px 8px; border-radius:4px; font-family:var(--mono); font-size:10px; }
+.config-members { font-size:12px; color:var(--text3); }
+
+.creator-actions, .config-actions { display:flex; gap:8px; }
+.creator-actions button, .config-actions button { padding:6px 12px; font-size:12px; }
+
+/* ── MODALS ── */
+.modal { position:fixed; top:0; left:0; right:0; bottom:0; z-index:100; display:none; }
+.modal.active { display:flex; }
+.modal-backdrop { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); }
+.modal-content {
+  position:relative; background:var(--surface); border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,0.15);
+  width:90%; max-width:450px; margin:auto;
+}
+.modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px; border-bottom:1px solid var(--border); }
+.modal-header h2 { font-size:18px; font-weight:700; margin:0; }
+.modal-close {
+  background:transparent; border:none; font-size:20px; color:var(--text3);
+  cursor:pointer; transition:all 0.15s; padding:0; width:24px; height:24px;
+}
+.modal-close:hover { color:var(--text); }
+.modal-body { padding:20px; }
+.modal-footer { display:flex; gap:8px; justify-content:flex-end; padding:20px; border-top:1px solid var(--border); }
+.modal-footer button { padding:10px 16px; font-size:13px; }
+
+.form-input { 
+  background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  color:var(--text); font-family:var(--sans); font-size:13px; padding:10px 12px;
+  outline:none; transition:all 0.15s;
+}
+.form-input:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px var(--accent-dim); }
+.form-input::placeholder { color:var(--text3); }
 </style>
 </head>
 <body>
@@ -517,7 +572,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <div class="nav-sec" style="margin-top:6px">Tools</div>
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
-      <div class="nav-item" onclick="navTo('account',this)">Account</div>
+      <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
     </nav>
     <div class="sidebar-footer">
       <div class="sf-label">Credits</div>
@@ -627,6 +682,140 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
         </div>
       </div>
     </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="sec-head"><h1>Settings</h1><p>Manage creators, scan configs, and account preferences.</p></div>
+      
+      <!-- Settings Tabs -->
+      <div style="display:flex;gap:8px;border-bottom:1px solid var(--border);margin-bottom:20px;padding-bottom:12px">
+        <button class="settings-tab active" onclick="switchSettingsTab('creators',this)">Creators</button>
+        <button class="settings-tab" onclick="switchSettingsTab('configs',this)">Scan Configs</button>
+        <button class="settings-tab" onclick="switchSettingsTab('account',this)">Account</button>
+      </div>
+
+      <!-- CREATORS TAB -->
+      <div id="settings-creators-tab" class="settings-content active">
+        <div style="margin-bottom:20px">
+          <button class="run-btn" onclick="showAddCreatorModal()">+ Add Creator</button>
+        </div>
+        <div id="creators-list" style="display:grid;gap:12px"></div>
+      </div>
+
+      <!-- CONFIGS TAB -->
+      <div id="settings-configs-tab" class="settings-content" style="display:none">
+        <div style="margin-bottom:20px">
+          <button class="run-btn" onclick="showAddConfigModal()">+ New Scan Config</button>
+        </div>
+        <div id="configs-list" style="display:grid;gap:12px"></div>
+      </div>
+
+      <!-- ACCOUNT TAB -->
+      <div id="settings-account-tab" class="settings-content" style="display:none">
+        <div class="card">
+          <div class="acct-row">
+            <div><div class="acct-lbl">Email</div><div class="acct-val" id="acct-email-settings">—</div></div>
+          </div>
+          <div class="acct-row">
+            <div><div class="acct-lbl">Plan</div><div class="acct-val"><span class="plan-chip" id="acct-plan-settings">—</span></div></div>
+            <div id="acct-upgrade-btn-settings"></div>
+          </div>
+          <div class="acct-row">
+            <div><div class="acct-lbl">Billing</div><div class="acct-val" style="font-size:13px;color:var(--text2)">Manage subscription</div></div>
+            <button class="btn-ghost" style="font-size:12px;padding:8px 16px" onclick="openBillingPortal()">Manage Billing</button>
+          </div>
+          <div class="acct-row">
+            <div><div class="acct-lbl">Password</div><div class="acct-val" style="font-size:13px;color:var(--text2)">Send a reset link to your email</div></div>
+            <button class="btn-ghost" style="font-size:12px;padding:8px 16px" onclick="sendResetFromAccount()">Reset Password</button>
+          </div>
+          <div class="acct-row">
+            <div><div class="acct-lbl">Session</div><div class="acct-val" style="font-size:13px;color:var(--text2)">Sign out of your account</div></div>
+            <button class="danger-btn" onclick="logout()">Log Out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="add-creator-modal" class="modal" style="display:none">
+      <div class="modal-backdrop" onclick="closeModal('add-creator-modal')"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Add Creator</h2>
+          <button class="modal-close" onclick="closeModal('add-creator-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label style="display:block;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Creator Name</div>
+            <input class="form-input" id="creator-name-input" type="text" placeholder="e.g., HotRodd, NotKinja" style="width:100%" />
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <input type="checkbox" id="creator-is-agency" />
+            <span style="font-size:13px">This is an agency creator</span>
+          </label>
+          <div id="creator-add-msg" style="font-size:12px;margin-bottom:12px;display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeModal('add-creator-modal')">Cancel</button>
+          <button class="run-btn" onclick="submitAddCreator()">Create Creator</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="add-config-modal" class="modal" style="display:none">
+      <div class="modal-backdrop" onclick="closeModal('add-config-modal')"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>New Scan Config</h2>
+          <button class="modal-close" onclick="closeModal('add-config-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label style="display:block;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Config Name</div>
+            <input class="form-input" id="config-name-input" type="text" placeholder="e.g., Q1 Gaming Creators" style="width:100%" />
+          </label>
+          <label style="display:block;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Description (optional)</div>
+            <textarea class="form-input" id="config-desc-input" placeholder="Notes about this config..." style="width:100%;resize:vertical" rows="3"></textarea>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <input type="checkbox" id="config-is-agency" checked />
+            <span style="font-size:13px">Agency config</span>
+          </label>
+          <div style="margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Add Creators</div>
+            <div id="config-creators-list" style="display:grid;gap:6px;max-height:200px;overflow-y:auto"></div>
+          </div>
+          <div id="config-add-msg" style="font-size:12px;margin-bottom:12px;display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeModal('add-config-modal')">Cancel</button>
+          <button class="run-btn" onclick="submitAddConfig()">Create Config</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="add-platform-modal" class="modal" style="display:none">
+      <div class="modal-backdrop" onclick="closeModal('add-platform-modal')"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="platform-modal-title">Add Platform</h2>
+          <button class="modal-close" onclick="closeModal('add-platform-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label style="display:block;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Handle</div>
+            <input class="form-input" id="platform-handle-input" type="text" placeholder="e.g., @hotrodd" style="width:100%" />
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Include @ for consistency (e.g., @handle)</div>
+          </label>
+          <div id="platform-add-msg" style="font-size:12px;margin-bottom:12px;display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeModal('add-platform-modal')">Cancel</button>
+          <button class="run-btn" onclick="submitAddPlatform()">Add Platform</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -653,7 +842,7 @@ let autoRange = 3;
 
 const PLAN_MAX_RANGE = { none: 0, pro: 14, max: 30, enterprise: 30 };
 const PLAN_CREDITS = { none: 0, pro: 300, max: 1000, enterprise: 9999 };
-const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', credits:'Credits', account:'Account' };
+const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', credits:'Credits', settings:'Settings', account:'Account' };
 
 // ── INIT ──
 async function init() {
@@ -1759,6 +1948,319 @@ function fmtNum(n) {
   if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
   if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
   return String(n);
+}
+
+// ── SETTINGS ──
+let creatorsList = [];
+let configsList = [];
+let currentCreatorId = null;
+let currentConfigId = null;
+let selectedCreatorsForConfig = [];
+
+function switchSettingsTab(tab, btn) {
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.settings-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('settings-'+tab+'-tab').classList.add('active');
+  
+  // Load data when tab is opened
+  if (tab === 'creators') loadCreators();
+  else if (tab === 'configs') loadConfigs();
+  else if (tab === 'account') loadAccountData();
+}
+
+function showAddCreatorModal() {
+  currentCreatorId = null;
+  document.getElementById('creator-name-input').value = '';
+  document.getElementById('creator-is-agency').checked = false;
+  document.getElementById('creator-add-msg').style.display = 'none';
+  document.getElementById('add-creator-modal').style.display = 'flex';
+}
+
+function showAddConfigModal() {
+  currentConfigId = null;
+  selectedCreatorsForConfig = [];
+  document.getElementById('config-name-input').value = '';
+  document.getElementById('config-desc-input').value = '';
+  document.getElementById('config-is-agency').checked = true;
+  document.getElementById('config-add-msg').style.display = 'none';
+  populateConfigCreatorsList();
+  document.getElementById('add-config-modal').style.display = 'flex';
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+}
+
+async function submitAddCreator() {
+  const name = document.getElementById('creator-name-input').value.trim();
+  const isAgency = document.getElementById('creator-is-agency').checked;
+  
+  if (!name) {
+    showMsg('creator-add-msg', '✗ Please enter a creator name', 'error');
+    return;
+  }
+  
+  try {
+    const res = await fetch('/api/creators', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ display_name: name, is_agency: isAgency })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      showMsg('creator-add-msg', '✗ ' + (err.error || 'Failed to create creator'), 'error');
+      return;
+    }
+    
+    closeModal('add-creator-modal');
+    loadCreators();
+  } catch (e) {
+    showMsg('creator-add-msg', '✗ Error: ' + e.message, 'error');
+  }
+}
+
+async function submitAddPlatform() {
+  const handle = document.getElementById('platform-handle-input').value.trim();
+  const platform = document.getElementById('platform-modal-title').textContent.split(' ').pop().toLowerCase();
+  
+  if (!handle) {
+    showMsg('platform-add-msg', '✗ Please enter a handle', 'error');
+    return;
+  }
+  
+  // Client-side validation
+  if (platform !== 'youtube' && !handle.startsWith('@')) {
+    showMsg('platform-add-msg', '✗ Handle should start with @', 'error');
+    return;
+  }
+  
+  try {
+    const res = await fetch('/api/creators/' + currentCreatorId + '/accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ platform, handle, platform_id: handle })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      showMsg('platform-add-msg', '✗ ' + (err.error || 'Failed to add platform'), 'error');
+      return;
+    }
+    
+    closeModal('add-platform-modal');
+    loadCreators();
+  } catch (e) {
+    showMsg('platform-add-msg', '✗ Error: ' + e.message, 'error');
+  }
+}
+
+async function submitAddConfig() {
+  const name = document.getElementById('config-name-input').value.trim();
+  const desc = document.getElementById('config-desc-input').value.trim();
+  const isAgency = document.getElementById('config-is-agency').checked;
+  
+  if (!name) {
+    showMsg('config-add-msg', '✗ Please enter a config name', 'error');
+    return;
+  }
+  
+  if (selectedCreatorsForConfig.length === 0) {
+    showMsg('config-add-msg', '✗ Add at least one creator', 'error');
+    return;
+  }
+  
+  try {
+    const res = await fetch('/api/configs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ 
+        name, 
+        description: desc, 
+        is_agency: isAgency,
+        creator_account_ids: selectedCreatorsForConfig
+      })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      showMsg('config-add-msg', '✗ ' + (err.error || 'Failed to create config'), 'error');
+      return;
+    }
+    
+    closeModal('add-config-modal');
+    loadConfigs();
+  } catch (e) {
+    showMsg('config-add-msg', '✗ Error: ' + e.message, 'error');
+  }
+}
+
+async function loadCreators() {
+  try {
+    const res = await fetch('/api/creators', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (!res.ok) return;
+    
+    const data = await res.json();
+    creatorsList = data.creators || [];
+    renderCreators();
+  } catch (e) {
+    console.error('Failed to load creators:', e);
+  }
+}
+
+function renderCreators() {
+  const list = document.getElementById('creators-list');
+  
+  if (creatorsList.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3)">No creators yet. Add one to get started.</div>';
+    return;
+  }
+  
+  list.innerHTML = creatorsList.map(c => `
+    <div class="creator-card">
+      <div class="creator-info">
+        <div class="creator-name">${c.display_name}</div>
+        <div class="creator-platforms">
+          ${c.accounts && c.accounts.length > 0 
+            ? c.accounts.map(a => `<span class="platform-badge">${a.platform.toUpperCase()}</span>`).join('')
+            : '<span style="color:var(--text3);font-size:11px">No platforms added</span>'
+          }
+        </div>
+      </div>
+      <div class="creator-actions">
+        <button class="btn-ghost" onclick="showAddPlatformModal(${c.id})">+ Platform</button>
+        <button class="btn-ghost" onclick="deleteCreator(${c.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadConfigs() {
+  try {
+    const res = await fetch('/api/configs', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (!res.ok) return;
+    
+    const data = await res.json();
+    configsList = data.configs || [];
+    renderConfigs();
+  } catch (e) {
+    console.error('Failed to load configs:', e);
+  }
+}
+
+function renderConfigs() {
+  const list = document.getElementById('configs-list');
+  
+  if (configsList.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3)">No configs yet. Create one to organize creators.</div>';
+    return;
+  }
+  
+  list.innerHTML = configsList.map(c => `
+    <div class="config-card">
+      <div class="config-info">
+        <div class="config-name">${c.name}</div>
+        ${c.description ? '<div style="font-size:12px;color:var(--text3);margin-bottom:6px">' + c.description + '</div>' : ''}
+        <div class="config-members">${c.members || 0} creator${(c.members || 0) !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="config-actions">
+        <button class="btn-ghost" onclick="editConfig(${c.id})">Edit</button>
+        <button class="btn-ghost" onclick="deleteConfig(${c.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showAddPlatformModal(creatorId) {
+  currentCreatorId = creatorId;
+  const creator = creatorsList.find(c => c.id === creatorId);
+  document.getElementById('platform-modal-title').textContent = 'Add Platform to ' + creator.display_name;
+  document.getElementById('platform-handle-input').value = '';
+  document.getElementById('platform-add-msg').style.display = 'none';
+  document.getElementById('add-platform-modal').style.display = 'flex';
+}
+
+function populateConfigCreatorsList() {
+  const list = document.getElementById('config-creators-list');
+  list.innerHTML = creatorsList.flatMap(c => 
+    (c.accounts || []).map(a => `
+      <label style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" value="${a.id}" onchange="updateSelectedCreators()" />
+        <span style="font-size:13px">${c.display_name} <span style="color:var(--text3);font-size:11px">(${a.platform.toUpperCase()})</span></span>
+      </label>
+    `)
+  ).join('');
+}
+
+function updateSelectedCreators() {
+  const checkboxes = document.querySelectorAll('#config-creators-list input[type="checkbox"]');
+  selectedCreatorsForConfig = Array.from(checkboxes).filter(cb => cb.checked).map(cb => parseInt(cb.value));
+}
+
+function loadAccountData() {
+  if (!currentUser) return;
+  document.getElementById('acct-email-settings').textContent = currentUser.email || '—';
+  const plan = currentUser.plan || 'none';
+  document.getElementById('acct-plan-settings').textContent = plan.toUpperCase();
+}
+
+async function deleteCreator(creatorId) {
+  if (!confirm('Delete this creator? This cannot be undone.')) return;
+  
+  try {
+    const res = await fetch('/api/creators/' + creatorId, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (!res.ok) {
+      alert('Failed to delete creator');
+      return;
+    }
+    
+    loadCreators();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function deleteConfig(configId) {
+  if (!confirm('Delete this config? This cannot be undone.')) return;
+  
+  try {
+    const res = await fetch('/api/configs/' + configId, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (!res.ok) {
+      alert('Failed to delete config');
+      return;
+    }
+    
+    loadConfigs();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function editConfig(configId) {
+  alert('Edit config coming soon');
+  // TODO: Implement edit flow
+}
+
+function showMsg(elementId, msg, type) {
+  const el = document.getElementById(elementId);
+  el.textContent = msg;
+  el.className = type === 'error' ? 'form-error-msg' : 'form-success';
+  el.style.display = 'block';
 }
 
 init();
