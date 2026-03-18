@@ -1,4 +1,5 @@
 -- Multi-Platform Creator Management Schema
+-- Run this migration in Supabase SQL Editor to set up Phase 1.2 tables
 -- Drop existing tables in reverse dependency order
 DROP TABLE IF EXISTS scan_results CASCADE;
 DROP TABLE IF EXISTS scanned_videos CASCADE;

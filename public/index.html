@@ -799,15 +799,25 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <div class="modal-backdrop" onclick="closeModal('add-platform-modal')"></div>
       <div class="modal-content">
         <div class="modal-header">
-          <h2 id="platform-modal-title">Add Platform</h2>
+          <h2>Add Platform to <span id="platform-modal-creator-name">Creator</span></h2>
           <button class="modal-close" onclick="closeModal('add-platform-modal')">✕</button>
         </div>
         <div class="modal-body">
           <label style="display:block;margin-bottom:12px">
-            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Handle</div>
-            <input class="form-input" id="platform-handle-input" type="text" placeholder="e.g., @hotrodd" style="width:100%" />
-            <div style="font-size:11px;color:var(--text3);margin-top:4px">Include @ for consistency (e.g., @handle)</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Profile Link or Username</div>
+            <input class="form-input" id="platform-input" type="text" placeholder="e.g., @hotrodd, https://tiktok.com/@hotrodd, UCxxxxx" style="width:100%" oninput="detectPlatform()" />
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Paste a link or username — we'll auto-detect the platform</div>
           </label>
+          
+          <!-- Detected Platform Display -->
+          <div id="platform-detected" style="display:none;margin-bottom:12px;padding:12px;background:var(--accent-dim);border:1px solid var(--accent-mid);border-radius:8px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">DETECTED PLATFORM</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="platform-badge-detected" style="font-family:var(--mono);font-weight:600;color:var(--accent);font-size:13px">TIKTOK</span>
+              <span id="platform-handle-detected" style="font-family:var(--mono);color:var(--text2);font-size:12px">@hotrodd</span>
+            </div>
+          </div>
+
           <div id="platform-add-msg" style="font-size:12px;margin-bottom:12px;display:none"></div>
         </div>
         <div class="modal-footer">
@@ -2022,17 +2032,8 @@ async function submitAddCreator() {
 }
 
 async function submitAddPlatform() {
-  const handle = document.getElementById('platform-handle-input').value.trim();
-  const platform = document.getElementById('platform-modal-title').textContent.split(' ').pop().toLowerCase();
-  
-  if (!handle) {
-    showMsg('platform-add-msg', '✗ Please enter a handle', 'error');
-    return;
-  }
-  
-  // Client-side validation
-  if (platform !== 'youtube' && !handle.startsWith('@')) {
-    showMsg('platform-add-msg', '✗ Handle should start with @', 'error');
+  if (!detectedPlatform || !detectedHandle) {
+    showMsg('platform-add-msg', '✗ Could not detect platform. Try a valid link or username.', 'error');
     return;
   }
   
@@ -2040,7 +2041,11 @@ async function submitAddPlatform() {
     const res = await fetch('/api/creators/' + currentCreatorId + '/accounts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ platform, handle, platform_id: handle })
+      body: JSON.stringify({ 
+        platform: detectedPlatform, 
+        handle: detectedHandle, 
+        platform_id: detectedHandle 
+      })
     });
     
     if (!res.ok) {
@@ -2181,10 +2186,115 @@ function renderConfigs() {
 function showAddPlatformModal(creatorId) {
   currentCreatorId = creatorId;
   const creator = creatorsList.find(c => c.id === creatorId);
-  document.getElementById('platform-modal-title').textContent = 'Add Platform to ' + creator.display_name;
-  document.getElementById('platform-handle-input').value = '';
+  document.getElementById('platform-modal-creator-name').textContent = creator.display_name;
+  document.getElementById('platform-input').value = '';
+  document.getElementById('platform-detected').style.display = 'none';
   document.getElementById('platform-add-msg').style.display = 'none';
   document.getElementById('add-platform-modal').style.display = 'flex';
+}
+
+// Platform detection logic
+let detectedPlatform = null;
+let detectedHandle = null;
+
+function detectPlatform() {
+  const input = document.getElementById('platform-input').value.trim();
+  
+  if (!input) {
+    document.getElementById('platform-detected').style.display = 'none';
+    detectedPlatform = null;
+    detectedHandle = null;
+    return;
+  }
+
+  const patterns = {
+    tiktok: {
+      urls: [
+        /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@([a-zA-Z0-9_.-]+)/i,
+        /(?:https?:\/\/)?(?:www\.)?vm\.tiktok\.com\/([a-zA-Z0-9]+)/i,
+        /(?:https?:\/\/)?(?:www\.)?vt\.tiktok\.com\/([a-zA-Z0-9]+)/i
+      ],
+      handle: /^@?([a-zA-Z0-9_.-]+)$/
+    },
+    youtube: {
+      urls: [
+        /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:@|c|channel\/|user\/)([a-zA-Z0-9_-]+)/i,
+        /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)/i,
+        /UC[a-zA-Z0-9_-]{21}[AQww]/  // YouTube channel ID
+      ],
+      handle: /^(?:UC[a-zA-Z0-9_-]{21}[AQww]|@?[a-zA-Z0-9_-]+)$/
+    },
+    instagram: {
+      urls: [
+        /(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9_.-]+)/i,
+        /(?:https?:\/\/)?(?:www\.)?ig\.me\/([a-zA-Z0-9_.-]+)/i
+      ],
+      handle: /^@?([a-zA-Z0-9_.-]+)$/
+    },
+    twitch: {
+      urls: [
+        /(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([a-zA-Z0-9_]+)/i
+      ],
+      handle: /^@?([a-zA-Z0-9_]+)$/
+    }
+  };
+
+  let platform = null;
+  let handle = null;
+
+  // Try URL patterns first
+  for (const [plat, patts] of Object.entries(patterns)) {
+    for (const urlPatt of patts.urls) {
+      const match = input.match(urlPatt);
+      if (match) {
+        platform = plat;
+        handle = match[1];
+        break;
+      }
+    }
+    if (platform) break;
+  }
+
+  // If no URL match, try handle patterns
+  if (!platform) {
+    for (const [plat, patts] of Object.entries(patterns)) {
+      const handlePatt = patts.handle;
+      if (handlePatt.test(input)) {
+        // For YouTube, check if it's a channel ID first
+        if (input.match(/^UC[a-zA-Z0-9_-]{21}[AQww]$/)) {
+          platform = 'youtube';
+          handle = input;
+          break;
+        }
+        // Otherwise, be smart about detection:
+        // If input looks like just a username (no @), could be any platform
+        // If @ is present, treat as universal handle
+        platform = plat;
+        handle = input.replace(/^@/, ''); // Remove @ if present
+        
+        // For YouTube, if no @ and no UC prefix, assume it's a handle
+        if (plat === 'youtube' && !input.match(/^UC/) && !input.startsWith('@')) {
+          handle = input; // Keep as-is for channel name
+        } else if (plat !== 'youtube') {
+          handle = '@' + handle.replace(/^@/, '');
+        }
+        break;
+      }
+    }
+  }
+
+  // Update UI
+  if (platform && handle) {
+    detectedPlatform = platform;
+    detectedHandle = handle;
+    document.getElementById('platform-badge-detected').textContent = platform.toUpperCase();
+    document.getElementById('platform-handle-detected').textContent = handle;
+    document.getElementById('platform-detected').style.display = 'block';
+  } else {
+    document.getElementById('platform-detected').style.display = 'none';
+    detectedPlatform = null;
+    detectedHandle = null;
+  }
 }
 
 function populateConfigCreatorsList() {
