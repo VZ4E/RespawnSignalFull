@@ -243,6 +243,17 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .range-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 8px var(--accent-glow); }
 .range-btn:disabled { opacity:0.35; cursor:not-allowed; }
 
+.platform-selector {
+  background:var(--surface2); border:2px solid var(--border); border-radius:10px;
+  padding:16px 12px; cursor:pointer; transition:all 0.15s; text-align:center;
+  color:var(--text2); font-family:var(--sans); font-size:12px;
+}
+.platform-selector:hover { border-color:var(--accent); color:var(--text); background:var(--surface); }
+.platform-selector.active { 
+  background:var(--accent-dim); border-color:var(--accent); color:var(--accent);
+  box-shadow:0 2px 8px var(--accent-glow);
+}
+
 .scan-btn {
   width:100%; background:var(--accent); border:none; border-radius:10px; color:white;
   font-family:var(--sans); font-size:14px; font-weight:700; padding:14px;
@@ -593,10 +604,40 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
     <!-- SCANNER -->
     <div class="page active" id="page-scan">
       <div class="sec-head"><h1>Scan a Creator</h1><p>Fetch videos, transcribe them, and detect brand deals automatically.</p></div>
+      
+      <!-- Platform Selector -->
       <div class="card">
-        <div class="card-label">TikTok Username</div>
-        <div class="at-wrap"><span class="at-sym">@</span><input type="text" id="username-input" placeholder="cracklyy" /></div>
+        <div class="card-label">Platform</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <button class="platform-selector active" data-platform="tiktok" onclick="selectPlatform('tiktok',this)">
+            <div style="font-size:24px;margin-bottom:4px">🎵</div>
+            <div style="font-size:12px;font-weight:600">TikTok</div>
+          </button>
+          <button class="platform-selector" data-platform="youtube" onclick="selectPlatform('youtube',this)">
+            <div style="font-size:24px;margin-bottom:4px">▶️</div>
+            <div style="font-size:12px;font-weight:600">YouTube</div>
+          </button>
+          <button class="platform-selector" data-platform="instagram" onclick="selectPlatform('instagram',this)">
+            <div style="font-size:24px;margin-bottom:4px">📸</div>
+            <div style="font-size:12px;font-weight:600">Instagram</div>
+          </button>
+          <button class="platform-selector" data-platform="twitch" onclick="selectPlatform('twitch',this)">
+            <div style="font-size:24px;margin-bottom:4px">🎮</div>
+            <div style="font-size:12px;font-weight:600">Twitch</div>
+          </button>
+        </div>
       </div>
+
+      <!-- Input Field -->
+      <div class="card">
+        <div class="card-label" id="input-label">Creator Profile or Username</div>
+        <input type="text" id="creator-input" class="form-input" placeholder="@hotrodd, https://tiktok.com/@hotrodd, UCxxxxx" style="width:100%;padding:12px" oninput="validateInput()" />
+        <div id="input-hint" style="font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--mono)">Paste a link or username</div>
+        <div id="input-detected" style="display:none;margin-top:8px;padding:8px;background:var(--green-dim);border:1px solid var(--green);border-radius:4px;font-size:11px;color:var(--green);font-family:var(--mono)"></div>
+        <div id="input-error" style="display:none;margin-top:8px;padding:8px;background:var(--red-dim);border:1px solid var(--red);border-radius:4px;font-size:11px;color:var(--red);font-family:var(--mono)"></div>
+      </div>
+
+      <!-- Scan Range -->
       <div class="card">
         <div class="card-label">Scan Range</div>
         <div class="range-group" id="range-group">
@@ -606,6 +647,8 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
         </div>
         <p style="font-size:11px;color:var(--text3);margin-top:9px;font-family:var(--mono)">~1–2 credits per video</p>
       </div>
+
+      <!-- Scan Button -->
       <button class="scan-btn" id="scan-btn" onclick="startScan()">Scan for Brand Deals</button>
       <div id="scan-results"></div>
     </div>
@@ -1111,15 +1154,22 @@ function setError(msg) {
 }
 
 async function startScan() {
-  const username = document.getElementById('username-input').value.trim().replace('@','');
-  if (!username) { setError('Enter a TikTok username.'); return; }
+  const input = document.getElementById('creator-input').value.trim();
+  if (!input) { setError('Enter a creator profile link or username.'); return; }
+
+  // Detect platform from input or use selected
+  const detectedPlatform = detectPlatform(input);
+  const platform = detectedPlatform || selectedPlatform;
+  const handle = parseHandle(input, platform);
+  
+  if (!handle) { setError('Invalid input format.'); return; }
 
   const btn = document.getElementById('scan-btn');
   btn.disabled = true;
-  setStatus(`Scanning @${username}...`);
+  setStatus(`Scanning ${platform.toUpperCase()} @${handle}...`);
 
   try {
-    const data = await api('/api/scan', 'POST', { username, range: scanRange });
+    const data = await api('/api/scan', 'POST', { platform, handle, range: scanRange });
     const { videos, deals, creditsUsed } = data;
 
     // Show cached notice or video list
@@ -1131,7 +1181,7 @@ async function startScan() {
       </div>`;
     } else if (videos.length) {
       listHtml = `<div class="card" style="margin-bottom:13px">
-        <div class="card-label">Fetched — @${username}</div>
+        <div class="card-label">Fetched — ${platform.toUpperCase()} @${handle}</div>
         <div class="video-list">${videos.map((v,i) => `
           <div class="video-item">
             <span class="v-num">${String(i+1).padStart(2,'0')}</span>
@@ -1154,7 +1204,7 @@ async function startScan() {
     renderDeals(deals, listHtml + warnings);
 
     // Add to local history cache
-    scanHistory.unshift({ id: Date.now(), label: username, deals, meta: { range: scanRange, videoCount: videos.length, credits: creditsUsed }, timestamp: new Date().toISOString() });
+    scanHistory.unshift({ id: Date.now(), label: `${platform.toUpperCase()} @${handle}`, platform, handle, deals, meta: { range: scanRange, videoCount: videos.length, credits: creditsUsed }, timestamp: new Date().toISOString() });
     updateBadges();
 
     // Refresh credits
@@ -1958,6 +2008,92 @@ function fmtNum(n) {
   if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
   if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
   return String(n);
+}
+
+// ── PLATFORM SELECTOR ──
+let selectedPlatform = 'tiktok';
+
+function selectPlatform(platform, btn) {
+  selectedPlatform = platform;
+  document.querySelectorAll('.platform-selector').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  // Update input label and placeholder
+  const labels = {
+    tiktok: 'TikTok Creator',
+    youtube: 'YouTube Channel',
+    instagram: 'Instagram Profile',
+    twitch: 'Twitch Channel'
+  };
+  const placeholders = {
+    tiktok: '@hotrodd, https://tiktok.com/@hotrodd',
+    youtube: 'UCxxxxx, https://youtube.com/channel/UCxxxxx, @cracklyy',
+    instagram: '@hotrodd, https://instagram.com/hotrodd',
+    twitch: 'hotrodd, https://twitch.tv/hotrodd'
+  };
+  
+  document.getElementById('input-label').textContent = labels[platform];
+  document.getElementById('creator-input').placeholder = placeholders[platform];
+  document.getElementById('creator-input').focus();
+  validateInput(); // Re-validate with new platform
+}
+
+function detectPlatform(input) {
+  // Detect platform from URL or username
+  const val = input.toLowerCase().trim();
+  
+  if (val.includes('tiktok') || val.includes('vm.tiktok')) return 'tiktok';
+  if (val.includes('youtube') || val.includes('youtu.be') || val.match(/^UC[a-z0-9_-]{21}[a-z0-9_-]$/i)) return 'youtube';
+  if (val.includes('instagram') || val.includes('insta')) return 'instagram';
+  if (val.includes('twitch')) return 'twitch';
+  
+  return null; // Could not detect
+}
+
+function parseHandle(input, platform) {
+  // Extract handle from various formats
+  input = input.trim();
+  
+  if (input.startsWith('@')) input = input.slice(1);
+  
+  // URL formats
+  if (input.includes('/')) {
+    const parts = input.split('/').filter(p => p.length > 0);
+    return parts[parts.length - 1]; // Last segment
+  }
+  
+  // Raw handle/ID
+  return input;
+}
+
+function validateInput() {
+  const input = document.getElementById('creator-input').value.trim();
+  const detected = document.getElementById('input-detected');
+  const error = document.getElementById('input-error');
+  const hint = document.getElementById('input-hint');
+  
+  detected.style.display = 'none';
+  error.style.display = 'none';
+  hint.style.display = 'block';
+  
+  if (!input) return;
+  
+  // Try to detect platform from input
+  const detectedPlatform = detectPlatform(input);
+  const platform = detectedPlatform || selectedPlatform;
+  const handle = parseHandle(input, platform);
+  
+  if (!handle) {
+    error.textContent = '✗ Invalid format';
+    error.style.display = 'block';
+    hint.style.display = 'none';
+    return;
+  }
+  
+  // Show detected info
+  detected.textContent = `✓ Detected: ${platform.toUpperCase()} (@${handle})`;
+  detected.style.display = 'block';
+  hint.style.display = 'none';
 }
 
 // ── SETTINGS ──

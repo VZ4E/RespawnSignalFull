@@ -6,9 +6,22 @@ const { authMiddleware } = require('../middleware/auth');
 
 // POST /api/scan
 router.post('/', authMiddleware, async (req, res) => {
-  const rawUsername = req.body.username;
-  if (!rawUsername) return res.status(400).json({ error: 'Username required' });
-  const username = rawUsername.trim().replace(/^@/, '').toLowerCase();
+  // Support both old (username) and new (platform, handle) formats
+  let username = req.body.username;
+  let platform = req.body.platform || 'tiktok';
+  let handle = req.body.handle;
+  
+  if (!username && !handle) {
+    return res.status(400).json({ error: 'Username or handle required' });
+  }
+  
+  // If handle provided, use it; otherwise use username
+  if (handle) {
+    username = handle.trim().replace(/^@/, '').toLowerCase();
+  } else {
+    username = username.trim().replace(/^@/, '').toLowerCase();
+  }
+  
   const { range } = req.body;
 
   const { dbUser, planConfig } = req;
