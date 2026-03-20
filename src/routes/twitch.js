@@ -1,117 +1,178 @@
 const express = require('express');
 const router = express.Router();
-const { fetchChannelData } = require('../services/twitchService');
-const { runTwitchScan } = require('../services/twitchScanner');
 const { supabase } = require('../supabase');
-const { authMiddleware } = require('../middleware/auth');
+const { scanTwitchChannel } = require('../services/twitchScanner');
+const planConfig = require('../config/planConfig');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
+const CACHE_DURATION_MS = planConfig.caches.twitch;
+const CREDIT_COST = planConfig.creditCost;
+
+/**
+ * POST /api/twitch/scan
+ * Scan Twitch channel for brand deals in stream titles/descriptions
+ */
 router.post('/scan', authMiddleware, async (req, res) => {
-  const { channelInput, scanDepth = 10 } = req.body;
+  const userId = req.dbUser.id;
+  const { channel_input, range } = req.body;
 
-  if (!channelInput || typeof channelInput !== 'string' || !channelInput.trim()) {
-    return res.status(400).json({ error: 'channelInput is required' });
+  // Validation
+  if (!channel_input || !range) {
+    return res.status(400).json({
+      error: 'Missing required fields: channel_input, range',
+    });
   }
 
-  const { dbUser, planConfig } = req;
+  // Validate range against plan
+  const plan = planConfig.plans[req.dbUser.plan] || planConfig.plans.free;
+  const rangeConfig = plan.twitch?.[range];
 
-  if (!dbUser.plan || dbUser.plan === 'none') {
-    return res.status(403).json({ error: 'No active plan. Please subscribe to start scanning.' });
+  if (!rangeConfig) {
+    return res.status(400).json({
+      error: `Invalid range '${range}' for plan ${req.dbUser.plan}`,
+    });
   }
 
-  if (dbUser.credits_remaining <= 0) {
-    return res.status(402).json({ error: 'No credits remaining.' });
-  }
-
-  const safeDepth = Math.min(parseInt(scanDepth) || 10, planConfig.maxRange);
-
-  const { data: existing } = await supabase
-    .from('scans')
-    .select('*')
-    .eq('user_id', dbUser.id)
-    .eq('platform', 'twitch')
-    .eq('channel_input', channelInput.trim())
-    .eq('scan_depth', safeDepth)
-    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (existing) {
-    return res.json({ cached: true, cachedAt: existing.created_at, ...existing });
-  }
-
-  let scanResult;
-  let creditsUsed = 0;
+  const scanDepth = rangeConfig.depth;
+  const creditsRequired = scanDepth * CREDIT_COST;
 
   try {
-    const channelData = await fetchChannelData(channelInput.trim(), safeDepth);
-    scanResult = await runTwitchScan(channelData);
-    creditsUsed = Math.min(scanResult.vodsAnalyzed, dbUser.credits_remaining);
-  } catch (err) {
-    console.error('[twitch route] Scan error:', err.message);
+    // Check cache first
+    const { data: existingScans, error: cacheError } = await supabase
+      .from('scans')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('platform', 'twitch')
+      .eq('channel_input', channel_input.toLowerCase())
+      .eq('range', range)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (err.message.includes('No Twitch channel found')) {
-      return res.status(404).json({ error: err.message });
+    if (cacheError) {
+      console.error('Cache lookup error:', cacheError);
     }
-    if (err.message.includes('Twitch API error')) {
-      return res.status(502).json({ error: 'Twitch API unavailable. Try again shortly.' });
+
+    // Check if cache is valid
+    if (existingScans && existingScans.length > 0) {
+      const lastScan = existingScans[0];
+      const cacheAge = Date.now() - new Date(lastScan.created_at).getTime();
+
+      if (cacheAge < CACHE_DURATION_MS) {
+        return res.json({
+          success: true,
+          cached: true,
+          scan_id: lastScan.id,
+          deals: lastScan.deals,
+          brands: lastScan.brands,
+          channel_handle: lastScan.channel_handle,
+          channel_name: lastScan.channel_name,
+          channel_thumbnail: lastScan.channel_thumbnail,
+          subscriber_count: lastScan.subscriber_count,
+          scan_depth: lastScan.scan_depth,
+          created_at: lastScan.created_at,
+        });
+      }
     }
 
-    return res.status(500).json({ error: 'Scan failed. Please try again.' });
-  }
+    // Check user credits
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('credits')
+      .eq('id', userId)
+      .single();
 
-  try {
-    if (creditsUsed > 0) {
-      await supabase
+    if (userError || !userData) {
+      return res.status(500).json({ error: 'Failed to fetch user credits' });
+    }
+
+    if (userData.credits < creditsRequired) {
+      return res.status(402).json({
+        error: `Insufficient credits. Required: ${creditsRequired}, Available: ${userData.credits}`,
+      });
+    }
+
+    // Perform the scan
+    const scanResult = await scanTwitchChannel(channel_input, scanDepth);
+
+    // Deduct credits
+    let creditError = null;
+    try {
+      const { error: updateError } = await supabase
         .from('users')
-        .update({ credits_remaining: dbUser.credits_remaining - creditsUsed })
-        .eq('id', dbUser.id);
+        .update({ credits: userData.credits - creditsRequired })
+        .eq('id', userId);
+
+      if (updateError) {
+        creditError = updateError;
+      }
+    } catch (err) {
+      creditError = err;
     }
-  } catch (creditErr) {
-    console.error('[twitch route] Credit deduction failed:', creditErr);
-  }
 
-  const { data: scanRecord, error: insertError } = await supabase
-    .from('scans')
-    .insert({
-      user_id: dbUser.id,
+    // Persist scan results
+    const scanData = {
+      user_id: userId,
       platform: 'twitch',
-      username: scanResult.channel.title,
-      channel_name: scanResult.channel.title,
-      channel_handle: scanResult.channel.handle,
-      channel_input: channelInput.trim(),
-      channel_thumbnail: scanResult.channel.thumbnailUrl,
-      unique_brand_count: scanResult.uniqueBrandCount,
-      total_deals_found: scanResult.totalDealsFound,
-      videos_analyzed: scanResult.vodsAnalyzed,
-      videos_with_deals: scanResult.vodsWithDeals,
-      scan_depth: safeDepth,
-      summary: scanResult.summary,
-      deals: scanResult.brandsFound,
-      unique_brands: scanResult.uniqueBrands,
-      videos: scanResult.vods,
-      credits_used: creditsUsed,
-    })
-    .select('id')
-    .single();
+      channel_input: channel_input.toLowerCase(),
+      channel_handle: scanResult.channel_handle,
+      channel_name: scanResult.channel_name,
+      channel_thumbnail: scanResult.channel_thumbnail,
+      subscriber_count: scanResult.subscriber_count,
+      scan_depth: scanDepth,
+      range: range,
+      deals: scanResult.deals_found,
+      brands: scanResult.brands_detected,
+      keywords: scanResult.keywords_matched,
+      videos_scanned: scanResult.streams_scanned,
+    };
 
-  if (insertError) console.error('[twitch route] Scan insert failed:', insertError);
+    const { data: insertedScan, error: insertError } = await supabase
+      .from('scans')
+      .insert([scanData])
+      .select()
+      .single();
 
-  return res.json({
-    success: true,
-    scanId: scanRecord?.id || null,
-    platform: 'twitch',
-    cached: false,
-    channel: scanResult.channel,
-    deals: scanResult.brandsFound,
-    uniqueBrands: scanResult.uniqueBrands,
-    totalDealsFound: scanResult.totalDealsFound,
-    uniqueBrandCount: scanResult.uniqueBrandCount,
-    vodsAnalyzed: scanResult.vodsAnalyzed,
-    vodsWithDeals: scanResult.vodsWithDeals,
-    summary: scanResult.summary,
-    creditsUsed,
-  });
+    if (insertError) {
+      console.error('Failed to persist scan:', insertError);
+    }
+
+    // Return response
+    res.json({
+      success: true,
+      cached: false,
+      scan_id: insertedScan?.id,
+      deals: scanResult.deals_found,
+      brands: scanResult.brands_detected,
+      keywords: scanResult.keywords_matched,
+      channel_handle: scanResult.channel_handle,
+      channel_name: scanResult.channel_name,
+      channel_thumbnail: scanResult.channel_thumbnail,
+      subscriber_count: scanResult.subscriber_count,
+      scan_depth: scanDepth,
+      streams_scanned: scanResult.streams_scanned,
+      credits_used: creditsRequired,
+      credits_remaining: userData.credits - creditsRequired,
+      ...(creditError && { credit_warning: 'Credits may not have been deducted due to a database error' }),
+    });
+  } catch (error) {
+    console.error('Twitch scan error:', error);
+
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        error: `Twitch channel not found: ${channel_input}`,
+      });
+    }
+
+    if (error.message.includes('rate limit')) {
+      return res.status(502).json({
+        error: 'Twitch API rate limited - please try again in a few minutes',
+      });
+    }
+
+    res.status(500).json({
+      error: error.message || 'Failed to scan Twitch channel',
+    });
+  }
 });
 
 module.exports = router;

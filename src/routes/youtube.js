@@ -7,7 +7,7 @@ const router = express.Router();
 const { fetchChannelData, VALID_SCAN_DEPTHS, DEFAULT_SCAN_DEPTH } = require('../services/youtubeService');
 const { runYoutubeScan } = require('../services/youtubeScanner');
 const { supabase } = require('../supabase');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 // POST /api/youtube/scan
 router.post('/scan', authMiddleware, async (req, res) => {

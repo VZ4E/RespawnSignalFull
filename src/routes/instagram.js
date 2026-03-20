@@ -3,7 +3,7 @@ const router = express.Router();
 const { supabase } = require('../supabase');
 const { scanInstagramChannel } = require('../services/instagramScanner');
 const planConfig = require('../config/planConfig');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 const CACHE_DURATION_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const CREDIT_COST = 1; // 1 credit per scan
@@ -13,7 +13,7 @@ const CREDIT_COST = 1; // 1 credit per scan
  * Scan Instagram channel for brand deals
  */
 router.post('/scan', authMiddleware, async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.dbUser.id;
   const { channel_input, range } = req.body;
 
   // Validation
@@ -24,12 +24,12 @@ router.post('/scan', authMiddleware, async (req, res) => {
   }
 
   // Validate range against plan
-  const plan = planConfig.plans[req.user.plan] || planConfig.plans.free;
+  const plan = planConfig.plans[req.dbUser.plan] || planConfig.plans.free;
   const rangeConfig = plan.instagram?.[range];
 
   if (!rangeConfig) {
     return res.status(400).json({
-      error: `Invalid range '${range}' for plan ${req.user.plan}`,
+      error: `Invalid range '${range}' for plan ${req.dbUser.plan}`,
     });
   }
 
