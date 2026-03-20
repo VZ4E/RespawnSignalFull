@@ -1190,8 +1190,9 @@ async function startScan() {
     let listHtml = '';
     if (data.cached) {
       const ago = timeAgo(new Date(data.cachedAt));
-      listHtml = `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:10px;padding:11px 15px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:13px;display:flex;align-items:center;gap:8px;">
-        Already scanned ${ago} — showing cached results. No credits used.
+      listHtml = `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:10px;padding:11px 15px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:13px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <span>Already scanned ${ago} — showing cached results. No credits used.</span>
+        <button onclick="forceFreshScan('${handle}','${platform}',${scanRange})" style="background:var(--amber);border:none;border-radius:6px;color:white;font-family:var(--mono);font-size:10px;font-weight:600;padding:5px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0">↺ Rescan</button>
       </div>`;
     } else if (videos && videos.length) {
       listHtml = `<div class="card" style="margin-bottom:13px">
@@ -1229,6 +1230,21 @@ async function startScan() {
     setError(e.message || 'Scan failed.');
   }
   btn.disabled = false;
+}
+
+async function forceFreshScan(handle, platform, range) {
+  // Delete cache then trigger a fresh scan
+  try {
+    await api('/api/scan/delete-cache', 'POST', { username: handle, range });
+  } catch(_) {}
+  // Pre-fill input and trigger scan
+  document.getElementById('creator-input').value = handle;
+  scanRange = range;
+  // Update range button UI
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent.replace('Last ','')) === range);
+  });
+  await startScan();
 }
 
 function renderDeals(deals, prefix = '', groupByVideo = true) {
