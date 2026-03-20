@@ -13,6 +13,9 @@ const configRoutes = require('./src/routes/configs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust Railway's proxy (required for express-rate-limit behind load balancer)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors());
 // Stripe webhook needs raw body — must be before express.json()
