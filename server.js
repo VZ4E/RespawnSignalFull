@@ -7,6 +7,7 @@ const path = require('path');
 const authRoutes = require('./src/routes/auth');
 const billingRoutes = require('./src/routes/billing');
 const scanRoutes = require('./src/routes/scan');
+const youtubeRoutes = require('./src/routes/youtube');
 const creatorRoutes = require('./src/routes/creators');
 const configRoutes = require('./src/routes/configs');
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/scan', scanLimiter, scanRoutes);
 app.use('/api/scans', scanRoutes);
+app.use('/api/youtube', scanLimiter, youtubeRoutes);
 app.use('/api/creators', creatorRoutes);
 app.use('/api/configs', configRoutes);
 
