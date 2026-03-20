@@ -4,12 +4,9 @@
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
-// Max chars per description sent to Perplexity — keeps token usage predictable
-const MAX_DESC_CHARS = 1500;
+// Reduced to prevent token overflow on large scans
+const MAX_DESC_CHARS = 800;
 
-/**
- * Build the detection prompt from channel metadata + video list.
- */
 function buildDetectionPrompt(channel, videos) {
   const videoBlocks = videos
     .map((v, i) => {
@@ -37,7 +34,7 @@ Look for:
 - Affiliate links or promo codes (e.g. "use code CREATOR for 10% off")
 - Product integrations where a brand is named with a discount or call to action
 - FTC disclosure language anywhere in the description
-- YouTube's partner links and affiliate programs mentioned in description
+- YouTube partner links and affiliate programs mentioned in description
 
 For EACH brand deal found, return:
 - brandName: the exact company or product name
@@ -72,9 +69,6 @@ VIDEO DATA:
 ${videoBlocks}`;
 }
 
-/**
- * Send descriptions to Perplexity and parse the response.
- */
 async function detectBrands(channel, videos) {
   const prompt = buildDetectionPrompt(channel, videos);
 
@@ -90,7 +84,7 @@ async function detectBrands(channel, videos) {
         {
           role: 'system',
           content:
-            'You are a brand deal analyst. Respond only with valid JSON. Never include markdown code fences, explanations, or any text outside the JSON object.',
+            'You are a brand deal analyst. Respond only with valid JSON. Never include markdown code fences, explanations, or any text outside the JSON object. Keep your response concise.',
         },
         {
           role: 'user',
@@ -98,7 +92,7 @@ async function detectBrands(channel, videos) {
         },
       ],
       temperature: 0.1,
-      max_tokens: 2000,
+      max_tokens: 4000,
     }),
   });
 
@@ -131,10 +125,6 @@ async function detectBrands(channel, videos) {
   };
 }
 
-/**
- * Aggregate raw deal list into unique brands with appearance history.
- * Same brand across multiple videos gets merged into one entry.
- */
 function aggregateBrands(brandsFound) {
   const brandMap = {};
 
@@ -171,9 +161,6 @@ function aggregateBrands(brandsFound) {
   }));
 }
 
-/**
- * Full scan pipeline — takes channelData from youtubeService, returns structured results.
- */
 async function runYoutubeScan(channelData) {
   const { channel, videos } = channelData;
 
