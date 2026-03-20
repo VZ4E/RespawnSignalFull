@@ -611,19 +611,15 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
         <div class="card-label">Platform</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
           <button class="platform-selector active" data-platform="tiktok" onclick="selectPlatform('tiktok',this)">
-            <div style="font-size:24px;margin-bottom:4px">🎵</div>
             <div style="font-size:12px;font-weight:600">TikTok</div>
           </button>
           <button class="platform-selector" data-platform="youtube" onclick="selectPlatform('youtube',this)">
-            <div style="font-size:24px;margin-bottom:4px">▶️</div>
             <div style="font-size:12px;font-weight:600">YouTube</div>
           </button>
           <button class="platform-selector" data-platform="instagram" onclick="selectPlatform('instagram',this)">
-            <div style="font-size:24px;margin-bottom:4px">📸</div>
             <div style="font-size:12px;font-weight:600">Instagram</div>
           </button>
           <button class="platform-selector" data-platform="twitch" onclick="selectPlatform('twitch',this)">
-            <div style="font-size:24px;margin-bottom:4px">🎮</div>
             <div style="font-size:12px;font-weight:600">Twitch</div>
           </button>
         </div>
@@ -1170,7 +1166,24 @@ async function startScan() {
   setStatus(`Scanning ${platform.toUpperCase()} @${handle}...`);
 
   try {
-    const data = await api('/api/scan', 'POST', { platform, handle, range: scanRange });
+    let data;
+    if (platform === 'youtube') {
+      // Map scan range to YouTube scan depth (10/20/30)
+      const scanDepth = scanRange <= 10 ? 10 : scanRange <= 20 ? 20 : 30;
+      data = await api('/api/youtube/scan', 'POST', { channelInput: handle, scanDepth });
+      // Normalize YouTube brandsFound into the common deals format
+      data.deals = (data.deals || []).map(d => ({
+        brands: [d.brandName],
+        video_ref: d.videoTitle,
+        deal_type: d.dealType,
+        evidence: d.evidenceSnippet,
+        confidence: 'high',
+      }));
+      data.videos = (data.videos || []).map(v => ({ title: v.title, views: v.viewCount || 0 }));
+    } else {
+      data = await api('/api/scan', 'POST', { platform, handle, range: scanRange });
+    }
+
     const { videos, deals, creditsUsed } = data;
 
     // Show cached notice or video list
@@ -1178,9 +1191,9 @@ async function startScan() {
     if (data.cached) {
       const ago = timeAgo(new Date(data.cachedAt));
       listHtml = `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:10px;padding:11px 15px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:13px;display:flex;align-items:center;gap:8px;">
-        ⚡ Already scanned ${ago} — showing cached results. No credits used.
+        Already scanned ${ago} — showing cached results. No credits used.
       </div>`;
-    } else if (videos.length) {
+    } else if (videos && videos.length) {
       listHtml = `<div class="card" style="margin-bottom:13px">
         <div class="card-label">Fetched — ${platform.toUpperCase()} @${handle}</div>
         <div class="video-list">${videos.map((v,i) => `
@@ -1199,13 +1212,13 @@ async function startScan() {
       warnings += `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:9px">⚠ ${data.analysisFailures} video${data.analysisFailures>1?'s':''} could not be analyzed — results may be incomplete.</div>`;
     }
     if (data.analysisError) {
-      warnings += `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:9px">✗ Analysis failed — could not extract deals.</div>`;
+      warnings += `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:9px">Analysis failed — could not extract deals.</div>`;
     }
 
     renderDeals(deals, listHtml + warnings);
 
     // Add to local history cache
-    scanHistory.unshift({ id: Date.now(), label: `${platform.toUpperCase()} @${handle}`, platform, handle, deals, meta: { range: scanRange, videoCount: videos.length, credits: creditsUsed }, timestamp: new Date().toISOString() });
+    scanHistory.unshift({ id: Date.now(), label: `${platform.toUpperCase()} @${handle}`, platform, handle, deals, meta: { range: scanRange, videoCount: (videos||[]).length, credits: creditsUsed }, timestamp: new Date().toISOString() });
     updateBadges();
 
     // Refresh credits

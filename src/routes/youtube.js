@@ -132,6 +132,8 @@ router.post('/scan', authMiddleware, async (req, res) => {
     platform: 'youtube',
     cached: false,
     channel: scanResult.channel,
+    deals: scanResult.brandsFound,
+    videos: scanResult.videos,
     uniqueBrands: scanResult.uniqueBrands,
     totalDealsFound: scanResult.totalDealsFound,
     uniqueBrandCount: scanResult.uniqueBrandCount,
