@@ -626,13 +626,37 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
         </div>
       </div>
 
-      <!-- Input Field -->
+      <!-- Scan Mode Toggle -->
       <div class="card">
+        <div class="card-label">Scan Mode</div>
+        <div style="display:flex;gap:10px">
+          <button class="mode-btn active" id="mode-single" onclick="setScanMode('single',this)" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-weight:600;font-size:13px;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">Single Creator</button>
+          <button class="mode-btn" id="mode-group" onclick="setScanMode('group',this)" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-weight:600;font-size:13px;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">Group Scan</button>
+        </div>
+      </div>
+
+      <!-- Input Field (Single Mode) -->
+      <div class="card" id="single-mode-card">
         <div class="card-label" id="input-label">Creator Profile or Username</div>
         <input type="text" id="creator-input" class="form-input" placeholder="@hotrodd, https://tiktok.com/@hotrodd, UCxxxxx" style="width:100%;padding:12px" oninput="validateInput()" />
         <div id="input-hint" style="font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--mono)">Paste a link or username</div>
         <div id="input-detected" style="display:none;margin-top:8px;padding:8px;background:var(--green-dim);border:1px solid var(--green);border-radius:4px;font-size:11px;color:var(--green);font-family:var(--mono)"></div>
         <div id="input-error" style="display:none;margin-top:8px;padding:8px;background:var(--red-dim);border:1px solid var(--red);border-radius:4px;font-size:11px;color:var(--red);font-family:var(--mono)"></div>
+      </div>
+
+      <!-- Group Selector (Group Mode) -->
+      <div class="card" id="group-mode-card" style="display:none">
+        <div class="card-label">Select a Group</div>
+        <select id="group-selector" class="form-input" style="width:100%;padding:12px;margin-bottom:12px" onchange="onGroupSelected()">
+          <option value="">Loading groups...</option>
+        </select>
+        <div id="group-info" style="font-size:12px;color:var(--text2);margin-bottom:12px;display:none">
+          <strong id="group-creator-count">0</strong> creators in this group
+        </div>
+        <div id="no-groups-msg" style="text-align:center;padding:20px;color:var(--text3);display:none">
+          <p style="margin-bottom:8px">No groups yet</p>
+          <button class="btn-ghost" style="font-size:12px;padding:6px 12px" onclick="navTo('settings',null);switchSettingsTab('groups',document.querySelector('[onclick*=switchSettingsTab][onclick*=groups]'))">Create one in Settings</button>
+        </div>
       </div>
 
       <!-- Scan Range -->
@@ -643,11 +667,12 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
           <button class="range-btn" id="range-14" onclick="setRange(14,this)">Last 14</button>
           <button class="range-btn" id="range-30" onclick="setRange(30,this)">Last 30</button>
         </div>
-        <p style="font-size:11px;color:var(--text3);margin-top:9px;font-family:var(--mono)">~1–2 credits per video</p>
+        <p id="credit-preview" style="font-size:11px;color:var(--text3);margin-top:9px;font-family:var(--mono)">~1–2 credits per video</p>
       </div>
 
       <!-- Scan Button -->
       <button class="scan-btn" id="scan-btn" onclick="startScan()">Scan for Brand Deals</button>
+      <div id="group-scan-warning" style="display:none;margin-top:12px;padding:12px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:4px;font-size:12px;color:var(--amber)"></div>
       <div id="scan-results"></div>
     </div>
 
@@ -1193,7 +1218,276 @@ function setError(msg) {
   document.getElementById('scan-results').innerHTML = `<div class="err-bar">⚠ ${msg}</div>`;
 }
 
+// ── SCAN MODE & GROUP FUNCTIONS ──
+let scanMode = 'single'; // 'single' or 'group'
+let selectedGroupId = null;
+let selectedGroupCreators = [];
+
+function setScanMode(mode, btn) {
+  scanMode = mode;
+  
+  // Update button styles
+  document.getElementById('mode-single').style.background = mode === 'single' ? 'var(--accent-dim)' : 'var(--surface)';
+  document.getElementById('mode-single').style.color = mode === 'single' ? 'var(--accent)' : 'var(--text)';
+  document.getElementById('mode-single').style.borderColor = mode === 'single' ? 'var(--accent)' : 'var(--border)';
+  
+  document.getElementById('mode-group').style.background = mode === 'group' ? 'var(--accent-dim)' : 'var(--surface)';
+  document.getElementById('mode-group').style.color = mode === 'group' ? 'var(--accent)' : 'var(--text)';
+  document.getElementById('mode-group').style.borderColor = mode === 'group' ? 'var(--accent)' : 'var(--border)';
+  
+  // Toggle UI elements
+  document.getElementById('single-mode-card').style.display = mode === 'single' ? 'block' : 'none';
+  document.getElementById('group-mode-card').style.display = mode === 'group' ? 'block' : 'none';
+  
+  // Update button label
+  const btnLabel = mode === 'single' ? 'Scan for Brand Deals' : 'Bulk Scan Group';
+  document.getElementById('scan-btn').textContent = btnLabel;
+  
+  // Load groups if switching to group mode
+  if (mode === 'group') {
+    loadGroupsForScanner();
+  }
+  
+  // Reset credit preview
+  updateCreditPreview();
+}
+
+async function loadGroupsForScanner() {
+  try {
+    const res = await fetch('/api/groups', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    
+    if (!res.ok) throw new Error('Failed to load groups');
+    
+    const data = await res.json();
+    const groups = data.groups || [];
+    
+    const selector = document.getElementById('group-selector');
+    const noGroupsMsg = document.getElementById('no-groups-msg');
+    const groupInfo = document.getElementById('group-info');
+    
+    if (groups.length === 0) {
+      selector.style.display = 'none';
+      groupInfo.style.display = 'none';
+      noGroupsMsg.style.display = 'block';
+      document.getElementById('scan-btn').disabled = true;
+      document.getElementById('scan-btn').style.opacity = '0.5';
+      return;
+    }
+    
+    selector.style.display = 'block';
+    noGroupsMsg.style.display = 'none';
+    document.getElementById('scan-btn').disabled = false;
+    document.getElementById('scan-btn').style.opacity = '1';
+    
+    selector.innerHTML = '<option value="">Select a group...</option>' + 
+      groups.map(g => `<option value="${g.id}" data-count="${g.memberCount}">${escapeHtml(g.name)} — ${g.memberCount} creator${g.memberCount !== 1 ? 's' : ''}</option>`).join('');
+    
+    selectedGroupId = null;
+    groupInfo.style.display = 'none';
+  } catch (e) {
+    console.error('Load groups error:', e.message);
+    document.getElementById('group-selector').innerHTML = '<option value="">Error loading groups</option>';
+  }
+}
+
+function onGroupSelected() {
+  const selector = document.getElementById('group-selector');
+  selectedGroupId = selector.value;
+  
+  if (!selectedGroupId) {
+    document.getElementById('group-info').style.display = 'none';
+    document.getElementById('scan-btn').disabled = true;
+    document.getElementById('scan-btn').style.opacity = '0.5';
+    updateCreditPreview();
+    return;
+  }
+  
+  const option = selector.options[selector.selectedIndex];
+  const creatorCount = parseInt(option.dataset.count) || 0;
+  
+  document.getElementById('group-creator-count').textContent = creatorCount;
+  document.getElementById('group-info').style.display = 'block';
+  
+  if (creatorCount === 0) {
+    document.getElementById('scan-btn').disabled = true;
+    document.getElementById('scan-btn').style.opacity = '0.5';
+    document.getElementById('group-scan-warning').style.display = 'block';
+    document.getElementById('group-scan-warning').textContent = 'This group has no creators';
+  } else {
+    document.getElementById('scan-btn').disabled = false;
+    document.getElementById('scan-btn').style.opacity = '1';
+    document.getElementById('group-scan-warning').style.display = 'none';
+  }
+  
+  updateCreditPreview();
+}
+
+function updateCreditPreview() {
+  const preview = document.getElementById('credit-preview');
+  
+  if (scanMode === 'single') {
+    preview.textContent = '~1–2 credits per video';
+  } else {
+    const selector = document.getElementById('group-selector');
+    const creatorCount = parseInt(selector.options[selector.selectedIndex]?.dataset.count) || 0;
+    
+    if (creatorCount === 0) {
+      preview.textContent = 'No creators in group';
+    } else {
+      // Estimate: 1-2 credits per video per creator
+      const minRange = { 3: 3, 14: 14, 30: 30 };
+      const currentRange = parseInt(document.querySelector('.range-btn.active')?.textContent) || 3;
+      const minCredits = creatorCount * currentRange;
+      const maxCredits = creatorCount * currentRange * 2;
+      preview.textContent = `~${minCredits}–${maxCredits} credits for ${creatorCount} creators on Last ${currentRange}`;
+    }
+  }
+}
+
+// Override setRange to update credit preview
+const originalSetRange = window.setRange || function() {};
+function setRange(range, btn) {
+  if (originalSetRange) originalSetRange(range, btn);
+  updateCreditPreview();
+}
+
+async function startGroupBulkScan() {
+  if (!selectedGroupId) {
+    setError('Select a group');
+    return;
+  }
+
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  
+  try {
+    // Get group details
+    const groupRes = await fetch(`/api/groups/${selectedGroupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    
+    if (!groupRes.ok) throw new Error('Failed to load group');
+    
+    const group = await groupRes.json();
+    const members = group.members || [];
+    
+    if (members.length === 0) {
+      setError('This group has no creators');
+      btn.disabled = false;
+      return;
+    }
+    
+    // Get credits info
+    const meRes = await fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    const meData = await meRes.json();
+    const availableCredits = meData.credits_remaining || 0;
+    const estCreditsNeeded = members.length * scanRange;
+    
+    if (availableCredits < estCreditsNeeded) {
+      const msg = `Not enough credits. Need ~${estCreditsNeeded}, have ${availableCredits}`;
+      document.getElementById('group-scan-warning').style.display = 'block';
+      document.getElementById('group-scan-warning').style.background = 'var(--red-dim)';
+      document.getElementById('group-scan-warning').style.borderColor = 'var(--red)';
+      document.getElementById('group-scan-warning').style.color = 'var(--red)';
+      document.getElementById('group-scan-warning').textContent = msg;
+      btn.disabled = false;
+      return;
+    }
+    
+    // Start progress tracking
+    setStatus(`Starting bulk scan of ${members.length} creators...`);
+    
+    // Scan each creator sequentially
+    let completedCount = 0;
+    let failedCount = 0;
+    const results = [];
+    
+    for (const member of members) {
+      completedCount++;
+      setStatus(`Scanning ${completedCount} of ${members.length} creators...`);
+      
+      try {
+        const scanRes = await fetch('/api/scan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+          },
+          body: JSON.stringify({
+            platform: member.platform,
+            handle: member.handle,
+            range: scanRange,
+            groupId: selectedGroupId,
+            groupName: group.name
+          })
+        });
+        
+        if (scanRes.ok) {
+          const scanData = await scanRes.json();
+          results.push({
+            creator: member.handle,
+            platform: member.platform,
+            deals: (scanData.deals || []).length,
+            status: 'success'
+          });
+        } else {
+          failedCount++;
+          results.push({
+            creator: member.handle,
+            platform: member.platform,
+            deals: 0,
+            status: 'failed'
+          });
+        }
+      } catch (e) {
+        failedCount++;
+        results.push({
+          creator: member.handle,
+          platform: member.platform,
+          deals: 0,
+          status: 'failed'
+        });
+      }
+    }
+    
+    // Display results
+    const resultHtml = `
+      <div class="card" style="margin-top:16px">
+        <div class="card-label">Bulk Scan Complete — ${group.name}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
+          Scanned ${completedCount} creators (${failedCount} failed)
+        </div>
+        <div style="display:grid;gap:8px">
+          ${results.map(r => `
+            <div style="display:flex;justify-content:space-between;padding:8px;background:${r.status === 'success' ? 'var(--green-dim)' : 'var(--red-dim)'};border-radius:4px;border:1px solid ${r.status === 'success' ? 'var(--green)' : 'var(--red)'};font-size:11px">
+              <span><strong>${escapeHtml(r.creator)}</strong> • ${r.platform}</span>
+              <span>${r.deals} deal${r.deals !== 1 ? 's' : ''}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('scan-results').innerHTML = resultHtml;
+    setStatus(`Bulk scan complete! Found ${results.filter(r => r.status === 'success').length} creators with deals`);
+    
+  } catch (e) {
+    setError('Bulk scan failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function startScan() {
+  // Handle group scan mode
+  if (scanMode === 'group') {
+    return startGroupBulkScan();
+  }
+  
   const input = document.getElementById('creator-input').value.trim();
   if (!input) { setError('Enter a creator profile link or username.'); return; }
 
