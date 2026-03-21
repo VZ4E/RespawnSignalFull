@@ -710,4 +710,70 @@ router.post('/save', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/scan/recent — fetch recent scans and deals for dashboard
+router.get('/recent', authMiddleware, async (req, res) => {
+  try {
+    const { dbUser } = req;
+    
+    // Get last 5-8 scans
+    const { data: scans, error: scansError } = await supabase
+      .from('scans')
+      .select('id, username, handle, platform, created_at, deals')
+      .eq('user_id', dbUser.id)
+      .order('created_at', { ascending: false })
+      .limit(8);
+    
+    if (scansError) throw scansError;
+    
+    // Process scans for display
+    const processedScans = (scans || []).map(scan => {
+      const deals = Array.isArray(scan.deals) ? scan.deals : [];
+      return {
+        id: scan.id,
+        creator_handle: scan.handle || scan.username,
+        platform: scan.platform || 'tiktok',
+        created_at: scan.created_at,
+        deals_count: deals.length
+      };
+    });
+    
+    // Get recent deals (last 5)
+    const { data: dealsRaw, error: dealsError } = await supabase
+      .from('scans')
+      .select('id, handle, username, platform, deals, created_at')
+      .eq('user_id', dbUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    
+    if (dealsError) throw dealsError;
+    
+    // Flatten deals from scans
+    const allDeals = [];
+    (dealsRaw || []).forEach(scan => {
+      const deals = Array.isArray(scan.deals) ? scan.deals : [];
+      deals.forEach(deal => {
+        allDeals.push({
+          ...deal,
+          brand_name: deal.brands?.[0] || deal.brand_name || 'Unknown',
+          creator_handle: scan.handle || scan.username,
+          platform: scan.platform || 'tiktok',
+          created_at: scan.created_at
+        });
+      });
+    });
+    
+    // Take top 5 deals
+    const recentDeals = allDeals.slice(0, 5);
+    
+    return res.json({
+      scans: processedScans,
+      deals: recentDeals
+    });
+    
+  } catch (e) {
+    console.error('Recent activity error:', e.message);
+    return res.status(500).json({ error: 'Failed to load recent activity: ' + e.message });
+  }
+});
+
 module.exports = router;

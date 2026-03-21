@@ -607,6 +607,10 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
     <div class="page active" id="page-scan">
       <div class="sec-head"><h1>Scan a Creator</h1><p>Fetch videos, transcribe them, and detect brand deals automatically.</p></div>
       
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+        <!-- LEFT COLUMN: Scanner Form -->
+        <div>
+      
       <!-- Platform Selector -->
       <div class="card">
         <div class="card-label">Platform</div>
@@ -674,6 +678,34 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <button class="scan-btn" id="scan-btn" onclick="startScan()">Scan for Brand Deals</button>
       <div id="group-scan-warning" style="display:none;margin-top:12px;padding:12px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:4px;font-size:12px;color:var(--amber)"></div>
       <div id="scan-results"></div>
+        </div>
+
+        <!-- RIGHT COLUMN: Recent Activity Panel -->
+        <div id="recent-activity-panel" style="display:none;position:sticky;top:100px;max-height:calc(100vh - 120px);overflow-y:auto">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <h3 style="font-size:13px;font-weight:700;margin:0">Recent Activity</h3>
+              <a href="#" onclick="navTo('history');return false" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">View All →</a>
+            </div>
+
+            <!-- Recent Scans Section -->
+            <div id="recent-scans-list" style="margin-bottom:20px">
+              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Scans</div>
+              <div id="recent-scans-items" style="display:grid;gap:8px">
+                <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>
+              </div>
+            </div>
+
+            <!-- Recent Deals Section -->
+            <div id="recent-deals-list" style="border-top:1px solid var(--border);padding-top:16px">
+              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Deals</div>
+              <div id="recent-deals-items" style="display:grid;gap:8px">
+                <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- HISTORY -->
@@ -1007,6 +1039,7 @@ function showApp() {
   applyPlanLimits();
   loadHistory();
   updateCreditsUI();
+  loadRecentActivity();
 }
 function setView(v) {
   ['landing','auth','app'].forEach(id => {
@@ -1218,6 +1251,66 @@ function setError(msg) {
   document.getElementById('scan-results').innerHTML = `<div class="err-bar">⚠ ${msg}</div>`;
 }
 
+// ── RECENT ACTIVITY PANEL ──
+async function loadRecentActivity() {
+  try {
+    const res = await fetch('/api/scan/recent', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    
+    if (!res.ok) return;
+    
+    const data = await res.json();
+    const recentScans = data.scans || [];
+    const recentDeals = data.deals || [];
+    
+    // Show/hide panel
+    const panel = document.getElementById('recent-activity-panel');
+    if (recentScans.length > 0 || recentDeals.length > 0) {
+      panel.style.display = 'block';
+    } else {
+      panel.style.display = 'none';
+    }
+    
+    // Render recent scans
+    const scansHtml = recentScans.length > 0 ? recentScans.map(scan => `
+      <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="navTo('history')">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:4px">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">${escapeHtml(scan.handle || scan.creator_handle)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${getPlatformIcon(scan.platform)} ${timeAgo(new Date(scan.created_at))}</div>
+          </div>
+          <span style="font-size:10px;font-weight:600;background:${scan.deals_count > 0 ? 'var(--green-dim)' : 'var(--border)'};color:${scan.deals_count > 0 ? 'var(--green)' : 'var(--text3)'};padding:2px 6px;border-radius:3px;white-space:nowrap">${scan.deals_count || 0} deal${scan.deals_count !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    `).join('') : '<div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>';
+    
+    document.getElementById('recent-scans-items').innerHTML = scansHtml;
+    
+    // Render recent deals
+    const dealsHtml = recentDeals.length > 0 ? recentDeals.map(deal => `
+      <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="navTo('history')">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${escapeHtml(deal.brand_name || deal.brands?.[0] || 'Unknown')}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${getPlatformIcon(deal.platform)} on ${escapeHtml(deal.creator_handle)} • ${timeAgo(new Date(deal.created_at))}</div>
+      </div>
+    `).join('') : '<div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>';
+    
+    document.getElementById('recent-deals-items').innerHTML = dealsHtml;
+    
+  } catch (e) {
+    console.error('Load recent activity error:', e.message);
+  }
+}
+
+function getPlatformIcon(platform) {
+  const p = (platform || '').toLowerCase();
+  if (p === 'tiktok') return '🎵';
+  if (p === 'youtube') return '▶️';
+  if (p === 'instagram') return '📸';
+  if (p === 'twitch') return '⚡';
+  return '📱';
+}
+
 // ── SCAN MODE & GROUP FUNCTIONS ──
 let scanMode = 'single'; // 'single' or 'group'
 let selectedGroupId = null;
@@ -1411,33 +1504,41 @@ async function startGroupBulkScan() {
       setStatus(`Scanning ${completedCount} of ${members.length} creators...`);
       
       try {
-        const scanRes = await fetch('/api/scan', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('rs_token')}`
-          },
-          body: JSON.stringify({
-            platform: member.platform,
-            handle: member.handle,
+        let scanRes;
+        const platform = member.platform.toLowerCase();
+        const handle = member.handle;
+        
+        // Route to platform-specific endpoint
+        if (platform === 'youtube') {
+          const scanDepth = scanRange <= 10 ? 10 : scanRange <= 20 ? 20 : 30;
+          scanRes = await api('/api/youtube/scan', 'POST', { 
+            channelInput: handle, 
+            scanDepth,
+            groupId: selectedGroupId,
+            groupName: group.name
+          });
+        } else {
+          // TikTok, Instagram, Twitch all use /api/scan
+          scanRes = await api('/api/scan', 'POST', {
+            platform,
+            handle,
             range: scanRange,
             groupId: selectedGroupId,
             groupName: group.name
-          })
-        });
+          });
+        }
         
-        if (scanRes.ok) {
-          const scanData = await scanRes.json();
+        if (scanRes && scanRes.deals) {
           results.push({
-            creator: member.handle,
+            creator: handle,
             platform: member.platform,
-            deals: (scanData.deals || []).length,
+            deals: (scanRes.deals || []).length,
             status: 'success'
           });
         } else {
           failedCount++;
           results.push({
-            creator: member.handle,
+            creator: handle,
             platform: member.platform,
             deals: 0,
             status: 'failed'
@@ -1474,6 +1575,9 @@ async function startGroupBulkScan() {
     
     document.getElementById('scan-results').innerHTML = resultHtml;
     setStatus(`Bulk scan complete! Found ${results.filter(r => r.status === 'success').length} creators with deals`);
+    
+    // Refresh recent activity
+    loadRecentActivity();
     
   } catch (e) {
     setError('Bulk scan failed: ' + e.message);
@@ -1563,6 +1667,9 @@ async function startScan() {
     const me = await api('/api/auth/me');
     currentUser = me;
     updateCreditsUI();
+    
+    // Refresh recent activity
+    loadRecentActivity();
   } catch(e) {
     setError(e.message || 'Scan failed.');
   }
