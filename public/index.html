@@ -607,10 +607,6 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
     <div class="page active" id="page-scan">
       <div class="sec-head"><h1>Scan a Creator</h1><p>Fetch videos, transcribe them, and detect brand deals automatically.</p></div>
       
-      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
-        <!-- LEFT COLUMN: Scanner Form -->
-        <div>
-      
       <!-- Platform Selector -->
       <div class="card">
         <div class="card-label">Platform</div>
@@ -678,31 +674,27 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <button class="scan-btn" id="scan-btn" onclick="startScan()">Scan for Brand Deals</button>
       <div id="group-scan-warning" style="display:none;margin-top:12px;padding:12px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:4px;font-size:12px;color:var(--amber)"></div>
       <div id="scan-results"></div>
+
+      <!-- Recent Activity Panel (Below Form) -->
+      <div id="recent-activity-panel" style="display:none;margin-top:30px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-size:13px;font-weight:700;margin:0">Recent Activity</h3>
+          <a href="#" onclick="navTo('history');return false" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">View All →</a>
         </div>
 
-        <!-- RIGHT COLUMN: Recent Activity Panel -->
-        <div id="recent-activity-panel" style="display:none;position:sticky;top:100px;max-height:calc(100vh - 120px);overflow-y:auto">
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-              <h3 style="font-size:13px;font-weight:700;margin:0">Recent Activity</h3>
-              <a href="#" onclick="navTo('history');return false" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">View All →</a>
-            </div>
+        <!-- Recent Scans Section -->
+        <div id="recent-scans-list" style="margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Scans</div>
+          <div id="recent-scans-items" style="display:grid;gap:8px">
+            <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>
+          </div>
+        </div>
 
-            <!-- Recent Scans Section -->
-            <div id="recent-scans-list" style="margin-bottom:20px">
-              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Scans</div>
-              <div id="recent-scans-items" style="display:grid;gap:8px">
-                <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>
-              </div>
-            </div>
-
-            <!-- Recent Deals Section -->
-            <div id="recent-deals-list" style="border-top:1px solid var(--border);padding-top:16px">
-              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Deals</div>
-              <div id="recent-deals-items" style="display:grid;gap:8px">
-                <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>
-              </div>
-            </div>
+        <!-- Recent Deals Section -->
+        <div id="recent-deals-list" style="border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Deals</div>
+          <div id="recent-deals-items" style="display:grid;gap:8px">
+            <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>
           </div>
         </div>
       </div>
@@ -1457,13 +1449,7 @@ async function startGroupBulkScan() {
   
   try {
     // Get group details
-    const groupRes = await fetch(`/api/groups/${selectedGroupId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
-    });
-    
-    if (!groupRes.ok) throw new Error('Failed to load group');
-    
-    const group = await groupRes.json();
+    const group = await api(`/api/groups/${selectedGroupId}`, 'GET');
     const members = group.members || [];
     
     if (members.length === 0) {
@@ -1473,11 +1459,8 @@ async function startGroupBulkScan() {
     }
     
     // Get credits info
-    const meRes = await fetch('/api/auth/me', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
-    });
-    const meData = await meRes.json();
-    const availableCredits = meData.credits_remaining || 0;
+    const me = await api('/api/auth/me', 'GET');
+    const availableCredits = me.credits_remaining || 0;
     const estCreditsNeeded = members.length * scanRange;
     
     if (availableCredits < estCreditsNeeded) {
@@ -1495,63 +1478,64 @@ async function startGroupBulkScan() {
     setStatus(`Starting bulk scan of ${members.length} creators...`);
     
     // Scan each creator sequentially
-    let completedCount = 0;
+    let successCount = 0;
     let failedCount = 0;
     const results = [];
     
-    for (const member of members) {
-      completedCount++;
-      setStatus(`Scanning ${completedCount} of ${members.length} creators...`);
+    for (let i = 0; i < members.length; i++) {
+      const member = members[i];
+      setStatus(`Scanning ${i + 1} of ${members.length} creators...`);
       
       try {
-        let scanRes;
-        const platform = member.platform.toLowerCase();
+        let scanData;
+        const platform = (member.platform || '').toLowerCase();
         const handle = member.handle;
+        
+        console.log(`[Group Scan] Starting scan for ${handle} on ${platform}`);
         
         // Route to platform-specific endpoint
         if (platform === 'youtube') {
           const scanDepth = scanRange <= 10 ? 10 : scanRange <= 20 ? 20 : 30;
-          scanRes = await api('/api/youtube/scan', 'POST', { 
+          scanData = await api('/api/youtube/scan', 'POST', { 
             channelInput: handle, 
             scanDepth,
             groupId: selectedGroupId,
             groupName: group.name
           });
-        } else {
+        } else if (platform === 'tiktok' || platform === 'instagram' || platform === 'twitch') {
           // TikTok, Instagram, Twitch all use /api/scan
-          scanRes = await api('/api/scan', 'POST', {
+          scanData = await api('/api/scan', 'POST', {
             platform,
             handle,
             range: scanRange,
             groupId: selectedGroupId,
             groupName: group.name
           });
+        } else {
+          throw new Error(`Unsupported platform: ${platform}`);
         }
         
-        if (scanRes && scanRes.deals) {
-          results.push({
-            creator: handle,
-            platform: member.platform,
-            deals: (scanRes.deals || []).length,
-            status: 'success'
-          });
-        } else {
-          failedCount++;
-          results.push({
-            creator: handle,
-            platform: member.platform,
-            deals: 0,
-            status: 'failed'
-          });
-        }
+        // Check if scan was successful
+        const deals = scanData.deals || [];
+        successCount++;
+        results.push({
+          creator: handle,
+          platform: member.platform,
+          deals: deals.length,
+          status: 'success'
+        });
+        console.log(`[Group Scan] ✓ ${handle} — ${deals.length} deals found`);
+        
       } catch (e) {
         failedCount++;
         results.push({
           creator: member.handle,
           platform: member.platform,
           deals: 0,
-          status: 'failed'
+          status: 'failed',
+          error: e.message
         });
+        console.error(`[Group Scan] ✗ ${member.handle} — ${e.message}`);
       }
     }
     
@@ -1560,7 +1544,7 @@ async function startGroupBulkScan() {
       <div class="card" style="margin-top:16px">
         <div class="card-label">Bulk Scan Complete — ${group.name}</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
-          Scanned ${completedCount} creators (${failedCount} failed)
+          Scanned ${successCount + failedCount} creators (${failedCount} failed)
         </div>
         <div style="display:grid;gap:8px">
           ${results.map(r => `
@@ -1574,12 +1558,13 @@ async function startGroupBulkScan() {
     `;
     
     document.getElementById('scan-results').innerHTML = resultHtml;
-    setStatus(`Bulk scan complete! Found ${results.filter(r => r.status === 'success').length} creators with deals`);
+    setStatus(`Bulk scan complete! Found ${successCount} creators with deals`);
     
     // Refresh recent activity
     loadRecentActivity();
     
   } catch (e) {
+    console.error('[Group Scan] Error:', e);
     setError('Bulk scan failed: ' + e.message);
   } finally {
     btn.disabled = false;
