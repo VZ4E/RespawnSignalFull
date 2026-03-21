@@ -1245,6 +1245,7 @@ function setError(msg) {
 
 // ── RECENT ACTIVITY PANEL ──
 async function loadRecentActivity() {
+  console.log('[Recent Activity] Loading...');
   try {
     const res = await fetch('/api/scan/recent', {
       headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
@@ -1260,12 +1261,13 @@ async function loadRecentActivity() {
     
     // Handle empty response or error
     if (!data || !data.scans || !data.deals) {
-      console.warn('[Recent Activity] No data in response');
+      console.warn('[Recent Activity] No data in response', data);
       document.getElementById('recent-activity-panel').style.display = 'none';
       return;
     }
     const recentScans = data.scans || [];
     const recentDeals = data.deals || [];
+    console.log(`[Recent Activity] Loaded ${recentScans.length} scans, ${recentDeals.length} deals`);
     
     // Show/hide panel
     const panel = document.getElementById('recent-activity-panel');
@@ -1280,7 +1282,7 @@ async function loadRecentActivity() {
       <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="navTo('history')">
         <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:4px">
           <div>
-            <div style="font-size:12px;font-weight:600;color:var(--text)">${escapeHtml(scan.handle || scan.creator_handle)}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">${escapeHtml(scan.creator_handle)}</div>
             <div style="font-size:10px;color:var(--text3);margin-top:2px">${getPlatformIcon(scan.platform)} ${timeAgo(new Date(scan.created_at))}</div>
           </div>
           <span style="font-size:10px;font-weight:600;background:${scan.deals_count > 0 ? 'var(--green-dim)' : 'var(--border)'};color:${scan.deals_count > 0 ? 'var(--green)' : 'var(--text3)'};padding:2px 6px;border-radius:3px;white-space:nowrap">${scan.deals_count || 0} deal${scan.deals_count !== 1 ? 's' : ''}</span>
@@ -1574,8 +1576,12 @@ async function startGroupBulkScan() {
     document.getElementById('scan-results').innerHTML = resultHtml;
     setStatus(`Bulk scan complete! Found ${successCount} creators with deals`);
     
-    // Refresh recent activity
-    loadRecentActivity();
+    // Refresh recent activity — wait a bit for DB to sync
+    console.log('[Group Scan] Waiting 2s before refreshing activity feed...');
+    setTimeout(() => {
+      console.log('[Group Scan] Refreshing activity feed now');
+      loadRecentActivity();
+    }, 2000);
     
   } catch (e) {
     console.error('[Group Scan] Error:', e);
