@@ -1250,9 +1250,20 @@ async function loadRecentActivity() {
       headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
     });
     
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn(`[Recent Activity] API returned ${res.status}`);
+      document.getElementById('recent-activity-panel').style.display = 'none';
+      return;
+    }
     
     const data = await res.json();
+    
+    // Handle empty response or error
+    if (!data || !data.scans || !data.deals) {
+      console.warn('[Recent Activity] No data in response');
+      document.getElementById('recent-activity-panel').style.display = 'none';
+      return;
+    }
     const recentScans = data.scans || [];
     const recentDeals = data.deals || [];
     
@@ -1290,7 +1301,10 @@ async function loadRecentActivity() {
     document.getElementById('recent-deals-items').innerHTML = dealsHtml;
     
   } catch (e) {
-    console.error('Load recent activity error:', e.message);
+    console.error('[Recent Activity] Load error:', e.message);
+    // Hide panel on error
+    const panel = document.getElementById('recent-activity-panel');
+    if (panel) panel.style.display = 'none';
   }
 }
 

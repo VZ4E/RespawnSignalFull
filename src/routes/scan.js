@@ -715,6 +715,13 @@ router.get('/recent', authMiddleware, async (req, res) => {
   try {
     const { dbUser } = req;
     
+    if (!dbUser || !dbUser.id) {
+      console.error('Recent activity: No user in request');
+      return res.status(401).json({ error: 'Unauthorized', scans: [], deals: [] });
+    }
+    
+    console.log(`[Recent Activity] Fetching for user ${dbUser.id}`);
+    
     // Get last 5-8 scans
     const { data: scans, error: scansError } = await supabase
       .from('scans')
@@ -723,7 +730,12 @@ router.get('/recent', authMiddleware, async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(8);
     
-    if (scansError) throw scansError;
+    if (scansError) {
+      console.error('[Recent Activity] Scans query error:', scansError);
+      throw scansError;
+    }
+    
+    console.log(`[Recent Activity] Found ${(scans || []).length} scans`);
     
     // Process scans for display
     const processedScans = (scans || []).map(scan => {
@@ -737,7 +749,7 @@ router.get('/recent', authMiddleware, async (req, res) => {
       };
     });
     
-    // Get recent deals (last 5)
+    // Get recent deals (last 20 scans, flatten all their deals)
     const { data: dealsRaw, error: dealsError } = await supabase
       .from('scans')
       .select('id, handle, username, platform, deals, created_at')
@@ -745,7 +757,10 @@ router.get('/recent', authMiddleware, async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(20);
     
-    if (dealsError) throw dealsError;
+    if (dealsError) {
+      console.error('[Recent Activity] Deals query error:', dealsError);
+      throw dealsError;
+    }
     
     // Flatten deals from scans
     const allDeals = [];
@@ -765,14 +780,16 @@ router.get('/recent', authMiddleware, async (req, res) => {
     // Take top 5 deals
     const recentDeals = allDeals.slice(0, 5);
     
+    console.log(`[Recent Activity] Returning ${processedScans.length} scans + ${recentDeals.length} deals`);
+    
     return res.json({
       scans: processedScans,
       deals: recentDeals
     });
     
   } catch (e) {
-    console.error('Recent activity error:', e.message);
-    return res.status(500).json({ error: 'Failed to load recent activity: ' + e.message });
+    console.error('[Recent Activity] Error:', e.message, e.stack);
+    return res.status(500).json({ error: 'Failed to load recent activity: ' + e.message, scans: [], deals: [] });
   }
 });
 
