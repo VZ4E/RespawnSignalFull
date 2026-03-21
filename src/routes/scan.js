@@ -129,9 +129,8 @@ router.post('/', authMiddleware, async (req, res) => {
 
     if (!transcript) {
       transcriptFailures++;
+      // Only use title/description, NOT hashtags (they shouldn't be analyzed for deals)
       transcript = v.title || v.desc || '';
-      const tags = (v.text_extra || []).map(t => t.hashtag_name).filter(Boolean).join(' ');
-      if (tags) transcript += ' ' + tags;
       totalCredits += 1;
     }
 
@@ -156,6 +155,8 @@ router.post('/', authMiddleware, async (req, res) => {
 
 Analyze the following TikTok video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
 
+IMPORTANT: Ignore hashtags (#word). Only analyze the actual spoken content or description text.
+
 TYPES TO DETECT (not limited to these):
 - Traditional sponsorships ("this video is sponsored by X")
 - Affiliate links and discount codes ("use code X for 10% off")
@@ -175,7 +176,7 @@ Return a JSON array where each object has:
 - "brands": string[] — brand/game/app/creator names
 - "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Game Promotion"|"App Promotion"|"Unknown"
 - "confidence": "high"|"medium"|"low"
-- "evidence": exact quote or phrase from transcript
+- "evidence": exact quote or phrase from transcript (NOT hashtags)
 - "video_ref": e.g. "Video 1"
 
 Return ONLY a valid JSON array. No markdown, no explanation. Return [] only if there are genuinely zero promotional mentions.
@@ -298,7 +299,7 @@ router.post('/analyze-video', authMiddleware, async (req, res) => {
         model: 'sonar-pro',
         messages: [{
           role: 'user',
-          content: `Analyze this TikTok transcript for brand deals, sponsorships, affiliate links, and paid partnerships:\n\n"${transcript}"\n\nRespond ONLY with valid JSON (no markdown): {"deals": [{"brands": ["Brand"], "deal_type": "sponsorship|affiliate|discount", "confidence": "high|medium|low", "evidence": "quote"}]}. If no deals, return {"deals": []}.`
+          content: `Analyze this TikTok transcript for brand deals, sponsorships, affiliate links, and paid partnerships. IMPORTANT: Ignore hashtags (#word). Only analyze actual spoken content or description text.\n\n"${transcript}"\n\nRespond ONLY with valid JSON (no markdown): {"deals": [{"brands": ["Brand"], "deal_type": "sponsorship|affiliate|discount", "confidence": "high|medium|low", "evidence": "quote"}]}. If no deals, return {"deals": []}.`
         }],
         temperature: 0.3,
         max_tokens: 3000
@@ -423,6 +424,8 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
 
 Analyze the following TikTok video transcript and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
 
+IMPORTANT: Ignore hashtags (#word). Only analyze actual spoken content or description text.
+
 TYPES TO DETECT (not limited to these):
 - Traditional sponsorships ("this video is sponsored by X")
 - Affiliate links and discount codes ("use code X for 10% off")
@@ -442,7 +445,7 @@ Return a JSON array where each object has:
 - "brands": string[] — brand/game/app/creator names
 - "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Game Promotion"|"App Promotion"|"Unknown"
 - "confidence": "high"|"medium"|"low"
-- "evidence": exact quote or phrase from transcript
+- "evidence": exact quote or phrase from transcript (NOT hashtags)
 - "video_ref": "Manual Input"
 
 Return ONLY a valid JSON array. No markdown, no explanation. Return [] only if there are genuinely zero promotional mentions.
