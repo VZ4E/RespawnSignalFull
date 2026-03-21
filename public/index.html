@@ -1581,6 +1581,12 @@ async function startGroupBulkScan() {
     setTimeout(() => {
       console.log('[Group Scan] Refreshing activity feed now');
       loadRecentActivity();
+      
+      // Also refresh scan history if user is viewing it
+      if (currentPage === 'history') {
+        console.log('[Group Scan] Refreshing Scan History');
+        loadHistory();
+      }
     }, 2000);
     
   } catch (e) {
