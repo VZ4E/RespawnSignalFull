@@ -2679,7 +2679,7 @@ function editConfig(configId) {
 async function loadGroups() {
   try {
     const res = await fetch('/api/groups', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
     });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
@@ -2761,7 +2761,7 @@ async function createGroup() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
       },
       body: JSON.stringify({ name, description: desc || null })
     });
@@ -2785,7 +2785,7 @@ async function createGroup() {
 async function editGroup(groupId) {
   try {
     const res = await fetch(`/api/groups/${groupId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
     });
     if (!res.ok) throw new Error(await res.text());
     const group = await res.json();
@@ -2891,7 +2891,7 @@ async function addGroupMember() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
       },
       body: JSON.stringify({ members: [{ platform, handle }] })
     });
@@ -2905,7 +2905,7 @@ async function addGroupMember() {
     
     // Reload group
     const groupRes = await fetch(`/api/groups/${groupId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
     });
     const group = await groupRes.json();
     displayGroupMembers(group.members || []);
@@ -2946,7 +2946,7 @@ async function addGroupMembersBulk() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
       },
       body: JSON.stringify({ members })
     });
@@ -2960,7 +2960,7 @@ async function addGroupMembersBulk() {
     
     // Reload group
     const groupRes = await fetch(`/api/groups/${groupId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
     });
     const group = await groupRes.json();
     displayGroupMembers(group.members || []);
@@ -2977,14 +2977,14 @@ async function removeGroupMember(memberId) {
   try {
     const res = await fetch(`/api/groups/${groupId}/members/${memberId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
     });
 
     if (!res.ok) throw new Error(await res.text());
     
     // Reload group
     const groupRes = await fetch(`/api/groups/${groupId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
     });
     const group = await groupRes.json();
     displayGroupMembers(group.members || []);
@@ -3008,7 +3008,7 @@ async function saveGroupChanges() {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
       },
       body: JSON.stringify({ name, description: description || null })
     });
@@ -3031,7 +3031,7 @@ async function deleteGroup(groupId) {
   try {
     const res = await fetch(`/api/groups/${groupId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
     });
 
     if (!res.ok) throw new Error(await res.text());
