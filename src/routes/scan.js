@@ -725,7 +725,7 @@ router.get('/recent', authMiddleware, async (req, res) => {
     // Get last 5-8 scans
     const { data: scans, error: scansError } = await supabase
       .from('scans')
-      .select('id, username, handle, platform, created_at, deals')
+      .select('id, username, platform, created_at, deals')
       .eq('user_id', dbUser.id)
       .order('created_at', { ascending: false })
       .limit(8);
@@ -742,7 +742,7 @@ router.get('/recent', authMiddleware, async (req, res) => {
       const deals = Array.isArray(scan.deals) ? scan.deals : [];
       return {
         id: scan.id,
-        creator_handle: scan.handle || scan.username,
+        creator_handle: scan.username,
         platform: scan.platform || 'tiktok',
         created_at: scan.created_at,
         deals_count: deals.length
@@ -752,7 +752,7 @@ router.get('/recent', authMiddleware, async (req, res) => {
     // Get recent deals (last 20 scans, flatten all their deals)
     const { data: dealsRaw, error: dealsError } = await supabase
       .from('scans')
-      .select('id, handle, username, platform, deals, created_at')
+      .select('id, username, platform, deals, created_at')
       .eq('user_id', dbUser.id)
       .order('created_at', { ascending: false })
       .limit(20);
@@ -770,7 +770,7 @@ router.get('/recent', authMiddleware, async (req, res) => {
         allDeals.push({
           ...deal,
           brand_name: deal.brands?.[0] || deal.brand_name || 'Unknown',
-          creator_handle: scan.handle || scan.username,
+          creator_handle: scan.username,
           platform: scan.platform || 'tiktok',
           created_at: scan.created_at
         });
