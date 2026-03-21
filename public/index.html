@@ -582,6 +582,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <div class="nav-item" onclick="navTo('deals',this)">All Deals <span class="nav-badge" id="nb-deals">0</span></div>
       <div class="nav-sec" style="margin-top:6px">Tools</div>
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
+      <div class="nav-item" onclick="navTo('groups',this)">Groups</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
       <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
       <div class="nav-item" onclick="navTo('account',this)">Account</div>
@@ -673,6 +674,15 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <div id="automation-content"></div>
     </div>
 
+    <!-- GROUPS -->
+    <div class="page" id="page-groups">
+      <div class="sec-head"><h1>Groups</h1><p>Create named lists of creators and bulk scan them.</p></div>
+      <div style="margin-bottom:20px">
+        <button class="run-btn" onclick="showCreateGroupModal()">+ New Group</button>
+      </div>
+      <div id="groups-page-list" style="display:grid;gap:12px"></div>
+    </div>
+
     <!-- CREDITS -->
     <div class="page" id="page-credits">
       <div class="sec-head"><h1>Credits</h1><p>Analysis usage — billed at ~1 credit per minute of video.</p></div>
@@ -730,6 +740,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <!-- Settings Tabs -->
       <div style="display:flex;gap:8px;border-bottom:1px solid var(--border);margin-bottom:20px;padding-bottom:12px">
         <button class="settings-tab active" onclick="switchSettingsTab('creators',this)">Creators</button>
+        <button class="settings-tab" onclick="switchSettingsTab('groups',this)">Groups</button>
         <button class="settings-tab" onclick="switchSettingsTab('configs',this)">Scan Configs</button>
         <button class="settings-tab" onclick="switchSettingsTab('account',this)">Account</button>
       </div>
@@ -740,6 +751,14 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
           <button class="run-btn" onclick="showAddCreatorModal()">+ Add Creator</button>
         </div>
         <div id="creators-list" style="display:grid;gap:12px"></div>
+      </div>
+
+      <!-- GROUPS TAB -->
+      <div id="settings-groups-tab" class="settings-content" style="display:none">
+        <div style="margin-bottom:20px">
+          <button class="run-btn" onclick="showCreateGroupModal()">+ New Group</button>
+        </div>
+        <div id="groups-list" style="display:grid;gap:12px"></div>
       </div>
 
       <!-- CONFIGS TAB -->
@@ -892,7 +911,7 @@ let autoRange = 3;
 
 const PLAN_MAX_RANGE = { none: 0, pro: 14, max: 30, enterprise: 30 };
 const PLAN_CREDITS = { none: 0, pro: 300, max: 1000, enterprise: 9999 };
-const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', credits:'Credits', settings:'Settings', account:'Account' };
+const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', credits:'Credits', settings:'Settings', account:'Account' };
 
 // ── INIT ──
 async function init() {
@@ -1099,6 +1118,12 @@ async function logout() {
   showLanding();
 }
 
+// ── UTILITIES ––
+function escapeHtml(text) {
+  const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+  return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+}
+
 // ── PLAN LIMITS ──
 function applyPlanLimits() {
   if (!currentUser) return;
@@ -1150,6 +1175,7 @@ function navTo(id, el) {
   if (id === 'history') loadHistory();
   if (id === 'deals') loadHistory();
   if (id === 'credits') loadHistory();
+  if (id === 'groups') loadGroupsUI();
   if (id === 'account') refreshAccount();
 }
 
@@ -2257,6 +2283,7 @@ function switchSettingsTab(tab, btn) {
   
   // Load data when tab is opened
   if (tab === 'creators') loadCreators();
+  else if (tab === 'groups') loadGroups();
   else if (tab === 'configs') loadConfigs();
   else if (tab === 'account') loadAccountData();
 }
@@ -2648,11 +2675,384 @@ function editConfig(configId) {
   // TODO: Implement edit flow
 }
 
+// ──── GROUPS ────
+async function loadGroups() {
+  try {
+    const res = await fetch('/api/groups', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    displayGroupsList(data.groups);
+  } catch (e) {
+    console.error('Load groups error:', e.message);
+    document.getElementById('groups-list').innerHTML = '<div class="empty-state">Failed to load groups</div>';
+  }
+}
+
+function displayGroupsList(groups) {
+  const list = document.getElementById('groups-list');
+  const pageList = document.getElementById('groups-page-list');
+  
+  if (!groups || groups.length === 0) {
+    const emptyMsg = '<div class="empty-state">No groups yet. Create one to start!</div>';
+    if (list) list.innerHTML = emptyMsg;
+    if (pageList) pageList.innerHTML = emptyMsg;
+    return;
+  }
+
+  const html = groups.map(g => `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div style="flex:1;cursor:pointer" onclick="editGroup('${g.id}')">
+        <div style="font-weight:600;margin-bottom:4px">${escapeHtml(g.name)}</div>
+        <div style="font-size:12px;color:var(--text3)">${g.memberCount} creator${g.memberCount !== 1 ? 's' : ''} ${g.lastScannedAt ? '• Last scanned ' + new Date(g.lastScannedAt).toLocaleDateString() : ''}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" style="font-size:12px;padding:6px 12px" onclick="editGroup('${g.id}')">Edit</button>
+        <button class="danger-btn" style="font-size:12px;padding:6px 12px" onclick="deleteGroup('${g.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+
+  if (list) list.innerHTML = html;
+  if (pageList) pageList.innerHTML = html;
+}
+
+function showCreateGroupModal() {
+  const modal = document.getElementById('create-group-modal') || createGroupModal();
+  modal.style.display = 'flex';
+}
+
+function createGroupModal() {
+  if (document.getElementById('create-group-modal')) return document.getElementById('create-group-modal');
+  
+  const modal = document.createElement('div');
+  modal.id = 'create-group-modal';
+  modal.className = 'modal';
+  modal.style.cssText = 'display:flex';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
+    <div class="modal-content">
+      <div class="modal-header"><h2>Create Group</h2></div>
+      <input class="form-input" id="group-name-input" type="text" placeholder="Group name (e.g., 'Fitness Creators')" style="margin-bottom:12px" />
+      <textarea class="form-input" id="group-desc-input" placeholder="Description (optional)" style="margin-bottom:12px;height:80px"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="document.getElementById('create-group-modal').style.display='none'">Cancel</button>
+        <button class="auth-btn" onclick="createGroup()">Create</button>
+      </div>
+      <div id="group-create-msg" style="margin-top:12px;font-size:12px;display:none"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+async function createGroup() {
+  const name = document.getElementById('group-name-input').value.trim();
+  const desc = document.getElementById('group-desc-input').value.trim();
+  
+  if (!name) {
+    showMsg('group-create-msg', 'Group name required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/groups', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ name, description: desc || null })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    const group = await res.json();
+    document.getElementById('create-group-modal').style.display = 'none';
+    document.getElementById('group-name-input').value = '';
+    document.getElementById('group-desc-input').value = '';
+    loadGroups();
+    editGroup(group.id);
+  } catch (e) {
+    showMsg('group-create-msg', 'Error: ' + e.message, 'error');
+  }
+}
+
+async function editGroup(groupId) {
+  try {
+    const res = await fetch(`/api/groups/${groupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const group = await res.json();
+
+    const modal = document.getElementById('edit-group-modal') || createEditGroupModal();
+    modal.style.display = 'flex';
+    
+    document.getElementById('edit-group-id').value = group.id;
+    document.getElementById('edit-group-name').value = group.name;
+    document.getElementById('edit-group-desc').value = group.description || '';
+    
+    displayGroupMembers(group.members || []);
+  } catch (e) {
+    console.error('Edit group error:', e.message);
+  }
+}
+
+function createEditGroupModal() {
+  if (document.getElementById('edit-group-modal')) return document.getElementById('edit-group-modal');
+  
+  const modal = document.createElement('div');
+  modal.id = 'edit-group-modal';
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
+    <div class="modal-content" style="max-width:600px">
+      <div class="modal-header"><h2>Edit Group</h2></div>
+      <input class="form-input" id="edit-group-id" type="hidden" />
+      
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-weight:500;margin-bottom:6px">Group Name</label>
+        <input class="form-input" id="edit-group-name" type="text" />
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-weight:500;margin-bottom:6px">Description</label>
+        <textarea class="form-input" id="edit-group-desc" style="height:60px"></textarea>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-weight:500;margin-bottom:6px">Members (Max 20)</label>
+        <div id="group-members-list" style="display:grid;gap:8px;margin-bottom:12px"></div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Add Manual</label>
+            <select id="add-member-platform" class="form-input" style="margin-bottom:4px">
+              <option value="tiktok">TikTok</option>
+              <option value="youtube">YouTube</option>
+              <option value="instagram">Instagram</option>
+              <option value="twitch">Twitch</option>
+            </select>
+            <input class="form-input" id="add-member-handle" type="text" placeholder="Handle (e.g., johndoe)" style="margin-bottom:4px" />
+            <button class="btn-ghost" style="width:100%;font-size:12px;padding:6px" onclick="addGroupMember()">Add</button>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Paste List</label>
+            <textarea id="add-members-bulk" class="form-input" placeholder="tiktok:user1&#10;youtube:user2" style="margin-bottom:4px;height:76px;font-size:11px;font-family:var(--mono)"></textarea>
+            <button class="btn-ghost" style="width:100%;font-size:12px;padding:6px" onclick="addGroupMembersBulk()">Import</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="document.getElementById('edit-group-modal').style.display='none'">Cancel</button>
+        <button class="auth-btn" onclick="saveGroupChanges()">Save</button>
+      </div>
+      <div id="group-edit-msg" style="margin-top:12px;font-size:12px;display:none"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function displayGroupMembers(members) {
+  const list = document.getElementById('group-members-list');
+  if (!members || members.length === 0) {
+    list.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:12px;color:var(--text3);font-size:12px">No members yet</div>';
+    return;
+  }
+
+  list.innerHTML = members.map(m => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:4px;font-size:12px">
+      <span>${m.platform} • <strong>${escapeHtml(m.handle)}</strong></span>
+      <button class="danger-btn" style="font-size:10px;padding:3px 8px" onclick="removeGroupMember('${m.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+async function addGroupMember() {
+  const platform = document.getElementById('add-member-platform').value;
+  const handle = document.getElementById('add-member-handle').value.trim();
+  
+  if (!handle) {
+    alert('Enter a handle');
+    return;
+  }
+
+  const groupId = document.getElementById('edit-group-id').value;
+  
+  try {
+    const res = await fetch(`/api/groups/${groupId}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ members: [{ platform, handle }] })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    document.getElementById('add-member-handle').value = '';
+    
+    // Reload group
+    const groupRes = await fetch(`/api/groups/${groupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    const group = await groupRes.json();
+    displayGroupMembers(group.members || []);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function addGroupMembersBulk() {
+  const text = document.getElementById('add-members-bulk').value.trim();
+  if (!text) {
+    alert('Paste creator list');
+    return;
+  }
+
+  const groupId = document.getElementById('edit-group-id').value;
+  const lines = text.split('\n').filter(l => l.trim());
+  const members = [];
+
+  for (const line of lines) {
+    const parts = line.trim().split(/[:\s]+/);
+    if (parts.length >= 2) {
+      const platform = parts[0].toLowerCase();
+      const handle = parts.slice(1).join(' ');
+      if (['tiktok', 'youtube', 'instagram', 'twitch'].includes(platform)) {
+        members.push({ platform, handle });
+      }
+    }
+  }
+
+  if (members.length === 0) {
+    alert('No valid creators found. Use format: platform:handle (e.g., tiktok:johndoe)');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/groups/${groupId}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ members })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    document.getElementById('add-members-bulk').value = '';
+    
+    // Reload group
+    const groupRes = await fetch(`/api/groups/${groupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    const group = await groupRes.json();
+    displayGroupMembers(group.members || []);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function removeGroupMember(memberId) {
+  if (!confirm('Remove this creator?')) return;
+
+  const groupId = document.getElementById('edit-group-id').value;
+  
+  try {
+    const res = await fetch(`/api/groups/${groupId}/members/${memberId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    
+    // Reload group
+    const groupRes = await fetch(`/api/groups/${groupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    const group = await groupRes.json();
+    displayGroupMembers(group.members || []);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function saveGroupChanges() {
+  const groupId = document.getElementById('edit-group-id').value;
+  const name = document.getElementById('edit-group-name').value.trim();
+  const description = document.getElementById('edit-group-desc').value.trim();
+
+  if (!name) {
+    showMsg('group-edit-msg', 'Group name required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/groups/${groupId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ name, description: description || null })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    document.getElementById('edit-group-modal').style.display = 'none';
+    loadGroups();
+  } catch (e) {
+    showMsg('group-edit-msg', 'Error: ' + e.message, 'error');
+  }
+}
+
+async function deleteGroup(groupId) {
+  if (!confirm('Delete this group and all its members?')) return;
+
+  try {
+    const res = await fetch(`/api/groups/${groupId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    loadGroups();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// Load groups when visiting groups page or settings
+function loadGroupsUI() {
+  loadGroups();
+}
+
 function showMsg(elementId, msg, type) {
   const el = document.getElementById(elementId);
-  el.textContent = msg;
-  el.className = type === 'error' ? 'form-error-msg' : 'form-success';
-  el.style.display = 'block';
+  if (el) {
+    el.textContent = msg;
+    el.className = type === 'error' ? 'form-error-msg' : 'form-success';
+    el.style.display = 'block';
+  }
 }
 
 init();
