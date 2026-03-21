@@ -40,24 +40,32 @@ router.post('/', authMiddleware, async (req, res) => {
   const safeRange = Math.min(parseInt(range) || 3, planConfig.maxRange);
 
   // Check for existing scan (same username + range) — return cached, no credit deduction
-  const { data: existing } = await supabase
-    .from('scans')
-    .select('*')
-    .eq('user_id', dbUser.id)
-    .eq('username', username)
-    .eq('range', safeRange)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+  // BUT: Skip cache for group scans (groupId param means this is a bulk scan, always run fresh)
+  const { groupId } = req.body;
+  
+  if (!groupId) {
+    const { data: existing } = await supabase
+      .from('scans')
+      .select('*')
+      .eq('user_id', dbUser.id)
+      .eq('username', username)
+      .eq('range', safeRange)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-  if (existing) {
-    return res.json({
-      videos: [],
-      deals: existing.deals || [],
-      creditsUsed: 0,
-      cached: true,
-      cachedAt: existing.created_at,
-    });
+    if (existing) {
+      console.log(`[Scan] Cache hit for ${username}`);
+      return res.json({
+        videos: [],
+        deals: existing.deals || [],
+        creditsUsed: 0,
+        cached: true,
+        cachedAt: existing.created_at,
+      });
+    }
+  } else {
+    console.log(`[Scan] Group scan (groupId: ${groupId}) — skipping cache, running fresh`);
   }
 
   // 1. Fetch TikTok videos
@@ -237,7 +245,7 @@ TRANSCRIPTS:\n${text}`;
     views: v.views,
   }));
   
-  await supabase.from('scans').insert({
+  const { error: insertError } = await supabase.from('scans').insert({
     user_id: dbUser.id,
     username,
     range: safeRange,
@@ -246,6 +254,12 @@ TRANSCRIPTS:\n${text}`;
     deals,
     videos: videosList,
   });
+
+  if (insertError) {
+    console.error('[Scan] Insert error:', insertError.message);
+  } else {
+    console.log(`[Scan] ✓ Saved scan for ${username} with ${deals.length} deals`);
+  }
 
   return res.json({
     videos: withTranscripts,
