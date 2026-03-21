@@ -1039,11 +1039,27 @@ async function submitAuth() {
 
   try {
     const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
-    const data = await api(endpoint, 'POST', { email, password });
+    // Don't use api() here since we don't have a token yet
+    const opts = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    };
+    const resp = await fetch(endpoint, opts);
+    const data = await resp.json();
+    
+    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
 
-    if (data.session?.access_token) {
-      token = data.session.access_token;
-      localStorage.setItem('rs_token', token);
+    if (data.accessToken || data.session?.access_token) {
+      const accessToken = data.accessToken || data.session.access_token;
+      const refreshToken = data.refreshToken || data.session.refresh_token;
+      
+      token = accessToken;
+      localStorage.setItem('rs_token', accessToken);
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+      
       const me = await api('/api/auth/me');
       currentUser = me;
       showApp();
@@ -1079,6 +1095,7 @@ async function logout() {
   try { await api('/api/auth/logout', 'POST'); } catch(_) {}
   token = null; currentUser = null; scanHistory = [];
   localStorage.removeItem('rs_token');
+  localStorage.removeItem('refreshToken');
   showLanding();
 }
 
@@ -2010,18 +2027,117 @@ function updateBadges() {
   document.getElementById('nb-deals').textContent = total;
 }
 
+// ── TOKEN MANAGEMENT ──
+function parseJWT(tokenStr) {
+  try {
+    const base64Url = tokenStr.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
+function isTokenExpired(tokenStr) {
+  if (!tokenStr) return true;
+  const decoded = parseJWT(tokenStr);
+  if (!decoded || !decoded.exp) return true;
+  const expiresAt = decoded.exp * 1000;
+  const bufferMs = 5 * 60 * 1000; // 5 minutes before actual expiry
+  return expiresAt - bufferMs < Date.now();
+}
+
+async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) {
+    throw new Error('No refresh token available. Please log in again.');
+  }
+
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Refresh failed: ' + res.statusText);
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = await res.json();
+    token = accessToken;
+    localStorage.setItem('rs_token', accessToken);
+    if (newRefreshToken) {
+      localStorage.setItem('refreshToken', newRefreshToken);
+    }
+
+    return accessToken;
+  } catch (err) {
+    console.error('Token refresh error:', err);
+    // If refresh fails, user is logged out
+    token = null;
+    localStorage.removeItem('rs_token');
+    localStorage.removeItem('refreshToken');
+    logout();
+    throw err;
+  }
+}
+
+async function getValidToken() {
+  let currentToken = token || localStorage.getItem('rs_token');
+  
+  if (!currentToken) {
+    throw new Error('No access token. Please log in.');
+  }
+
+  if (isTokenExpired(currentToken)) {
+    console.log('Token expired, refreshing...');
+    currentToken = await refreshAccessToken();
+  }
+
+  return currentToken;
+}
+
 // ── API HELPER ──
 async function api(path, method = 'GET', body = null) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
-  if (body) opts.body = JSON.stringify(body);
-  const resp = await fetch(path, opts);
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
-  return data;
+  try {
+    const validToken = await getValidToken();
+    
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (validToken) opts.headers['Authorization'] = `Bearer ${validToken}`;
+    if (body) opts.body = JSON.stringify(body);
+    
+    let resp = await fetch(path, opts);
+    
+    // If we got a 401, try to refresh and retry once
+    if (resp.status === 401) {
+      console.log('401 received, attempting refresh and retry...');
+      try {
+        const newToken = await refreshAccessToken();
+        opts.headers['Authorization'] = `Bearer ${newToken}`;
+        resp = await fetch(path, opts);
+      } catch (err) {
+        console.error('Refresh + retry failed:', err);
+        showAuth('login');
+        throw err;
+      }
+    }
+    
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+    return data;
+  } catch (err) {
+    throw err;
+  }
 }
 
 // ── UTILS ──
