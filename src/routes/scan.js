@@ -68,40 +68,76 @@ router.post('/', authMiddleware, async (req, res) => {
     console.log(`[Scan] Group scan (groupId: ${groupId}) — skipping cache, running fresh`);
   }
 
-  // 1. Fetch TikTok videos
+  // 1. Fetch videos (TikTok or Twitch)
   let videos = [];
   try {
-    const ttResp = await fetch(
-      `https://tiktok-scraper7.p.rapidapi.com/user/posts?unique_id=${encodeURIComponent(username)}&count=${safeRange}`,
-      {
-        headers: {
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-          'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
-        },
+    if (platform === 'twitch') {
+      // Fetch from Twitch (VODs/clips)
+      console.log(`[Scan] Fetching Twitch videos for ${username}`);
+      
+      const twitchResp = await fetch(
+        `https://twitch-api.p.rapidapi.com/user/videos?login=${encodeURIComponent(username)}&count=${safeRange}`,
+        {
+          headers: {
+            'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+            'x-rapidapi-host': 'twitch-api.p.rapidapi.com',
+          },
+        }
+      );
+      const twitchData = await twitchResp.json();
+
+      let items = [];
+      if (Array.isArray(twitchData?.data)) items = twitchData.data;
+      else if (Array.isArray(twitchData?.videos)) items = twitchData.videos;
+      else if (Array.isArray(twitchData?.vods)) items = twitchData.vods;
+      else if (twitchData?.data && typeof twitchData.data === 'object') {
+        const found = Object.values(twitchData.data).find(v => Array.isArray(v) && v.length > 0);
+        if (found) items = found;
       }
-    );
-    const ttData = await ttResp.json();
 
-    let items = [];
-    if (Array.isArray(ttData?.data?.videos)) items = ttData.data.videos;
-    else if (Array.isArray(ttData?.data?.itemList)) items = ttData.data.itemList;
-    else if (Array.isArray(ttData?.data)) items = ttData.data;
-    else if (Array.isArray(ttData?.result)) items = ttData.result;
-    else if (Array.isArray(ttData?.videos)) items = ttData.videos;
-    else if (Array.isArray(ttData?.itemList)) items = ttData.itemList;
-    else if (ttData?.data && typeof ttData.data === 'object') {
-      const found = Object.values(ttData.data).find(v => Array.isArray(v) && v.length > 0);
-      if (found) items = found;
-    }
+      videos = items.slice(0, safeRange);
 
-    videos = items.slice(0, safeRange);
+      if (!videos.length) {
+        const apiMsg = twitchData?.message || twitchData?.msg || twitchData?.error || '';
+        return res.status(404).json({ error: `No Twitch videos found for @${username}${apiMsg ? ' — ' + apiMsg : '. Check username or channel privacy.'}` });
+      }
+    } else {
+      // Default to TikTok
+      console.log(`[Scan] Fetching TikTok videos for ${username}`);
+      
+      const ttResp = await fetch(
+        `https://tiktok-scraper7.p.rapidapi.com/user/posts?unique_id=${encodeURIComponent(username)}&count=${safeRange}`,
+        {
+          headers: {
+            'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+            'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
+          },
+        }
+      );
+      const ttData = await ttResp.json();
 
-    if (!videos.length) {
-      const apiMsg = ttData?.message || ttData?.msg || ttData?.error || '';
-      return res.status(404).json({ error: `No videos found for @${username}${apiMsg ? ' — ' + apiMsg : '. Check username or account privacy.'}` });
+      let items = [];
+      if (Array.isArray(ttData?.data?.videos)) items = ttData.data.videos;
+      else if (Array.isArray(ttData?.data?.itemList)) items = ttData.data.itemList;
+      else if (Array.isArray(ttData?.data)) items = ttData.data;
+      else if (Array.isArray(ttData?.result)) items = ttData.result;
+      else if (Array.isArray(ttData?.videos)) items = ttData.videos;
+      else if (Array.isArray(ttData?.itemList)) items = ttData.itemList;
+      else if (ttData?.data && typeof ttData.data === 'object') {
+        const found = Object.values(ttData.data).find(v => Array.isArray(v) && v.length > 0);
+        if (found) items = found;
+      }
+
+      videos = items.slice(0, safeRange);
+
+      if (!videos.length) {
+        const apiMsg = ttData?.message || ttData?.msg || ttData?.error || '';
+        return res.status(404).json({ error: `No videos found for @${username}${apiMsg ? ' — ' + apiMsg : '. Check username or account privacy.'}` });
+      }
     }
   } catch (err) {
-    return res.status(502).json({ error: 'Failed to fetch TikTok videos: ' + err.message });
+    const platformName = platform === 'twitch' ? 'Twitch' : 'TikTok';
+    return res.status(502).json({ error: `Failed to fetch ${platformName} videos: ` + err.message });
   }
 
   // 2. Transcribe each video
@@ -117,13 +153,21 @@ router.post('/', authMiddleware, async (req, res) => {
     let transcript = '';
     let transcribed = false;
     try {
+      // Build the correct URL based on platform
+      let videoUrl;
+      if (platform === 'twitch') {
+        videoUrl = `https://www.twitch.tv/videos/${videoId}`;
+      } else {
+        videoUrl = `https://www.tiktok.com/@${username}/video/${videoId}`;
+      }
+
       const tr = await fetch('https://api.transcript24.com/transcribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${process.env.TRANSCRIPT24_TOKEN}`,
         },
-        body: JSON.stringify({ url: `https://www.tiktok.com/@${username}/video/${videoId}` }),
+        body: JSON.stringify({ url: videoUrl }),
       });
       const td = await tr.json();
       if (td?.caption && Array.isArray(td.caption)) {
@@ -159,9 +203,10 @@ router.post('/', authMiddleware, async (req, res) => {
       .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, 800)}`)
       .join('\n\n---\n\n');
 
+    const platformLabel = platform === 'twitch' ? 'Twitch' : 'TikTok';
     const prompt = `You are an expert at identifying brand deals, sponsorships, and paid partnerships in social media content.
 
-Analyze the following TikTok video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
+Analyze the following ${platformLabel} video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
 
 IMPORTANT: Ignore hashtags (#word). Only analyze the actual spoken content or description text.
 
@@ -248,6 +293,7 @@ TRANSCRIPTS:\n${text}`;
   const { error: insertError } = await supabase.from('scans').insert({
     user_id: dbUser.id,
     username,
+    platform, // ← Save platform for context
     range: safeRange,
     video_count: videos.length,
     credits_used: creditsToDeduct,
@@ -258,7 +304,7 @@ TRANSCRIPTS:\n${text}`;
   if (insertError) {
     console.error('[Scan] Insert error:', insertError.message);
   } else {
-    console.log(`[Scan] ✓ Saved scan for ${username} with ${deals.length} deals`);
+    console.log(`[Scan] ✓ Saved ${platform} scan for ${username} with ${deals.length} deals`);
   }
 
   return res.json({
@@ -313,7 +359,7 @@ router.post('/analyze-video', authMiddleware, async (req, res) => {
         model: 'sonar-pro',
         messages: [{
           role: 'user',
-          content: `Analyze this TikTok transcript for brand deals, sponsorships, affiliate links, and paid partnerships. IMPORTANT: Ignore hashtags (#word). Only analyze actual spoken content or description text.\n\n"${transcript}"\n\nRespond ONLY with valid JSON (no markdown): {"deals": [{"brands": ["Brand"], "deal_type": "sponsorship|affiliate|discount", "confidence": "high|medium|low", "evidence": "quote"}]}. If no deals, return {"deals": []}.`
+          content: `Analyze this social media transcript for brand deals, sponsorships, affiliate links, and paid partnerships. IMPORTANT: Ignore hashtags (#word). Only analyze actual spoken content or description text.\n\n"${transcript}"\n\nRespond ONLY with valid JSON (no markdown): {"deals": [{"brands": ["Brand"], "deal_type": "sponsorship|affiliate|discount", "confidence": "high|medium|low", "evidence": "quote"}]}. If no deals, return {"deals": []}.`
         }],
         temperature: 0.3,
         max_tokens: 3000
@@ -395,13 +441,28 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
   }
 
   let transcript = input.trim();
+  let detectedPlatform = 'unknown';
 
-  // If it's a TikTok URL, try to fetch the video and transcript
+  // Detect platform from URL
   if (transcript.includes('tiktok.com')) {
+    detectedPlatform = 'tiktok';
+  } else if (transcript.includes('twitch.tv')) {
+    detectedPlatform = 'twitch';
+  }
+
+  // If it's a TikTok/Twitch URL, try to fetch the video and transcript
+  if (transcript.includes('tiktok.com') || transcript.includes('twitch.tv')) {
     try {
-      const urlMatch = transcript.match(/\/video\/(\d+)/);
-      if (urlMatch) {
-        const videoId = urlMatch[1];
+      let videoId;
+      if (transcript.includes('tiktok.com')) {
+        const urlMatch = transcript.match(/\/video\/(\d+)/);
+        videoId = urlMatch ? urlMatch[1] : null;
+      } else if (transcript.includes('twitch.tv')) {
+        const urlMatch = transcript.match(/\/videos\/(\d+)/);
+        videoId = urlMatch ? urlMatch[1] : null;
+      }
+
+      if (videoId) {
         // Try to fetch transcript via Transcript24
         try {
           const tr = await fetch('https://api.transcript24.com/transcribe', {
@@ -427,16 +488,17 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
     }
     
     // If we still only have a URL (content fetch failed), ask user to paste
-    if (transcript.includes('tiktok.com')) {
+    if (transcript.includes('tiktok.com') || transcript.includes('twitch.tv')) {
       return res.status(400).json({ error: 'Could not fetch content from URL. Please paste the video description or text directly.' });
     }
   }
 
   // Analyze with Perplexity — use the full prompt like the main scanner
   try {
+    const platformLabel = detectedPlatform === 'twitch' ? 'Twitch' : 'TikTok';
     const prompt = `You are an expert at identifying brand deals, sponsorships, and paid partnerships in social media content.
 
-Analyze the following TikTok video transcript and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
+Analyze the following ${platformLabel} video transcript and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
 
 IMPORTANT: Ignore hashtags (#word). Only analyze actual spoken content or description text.
 
@@ -597,6 +659,7 @@ Return ONLY a JSON object (no markdown, no explanation):
       console.log('Insert payload:', {
         user_id: req.dbUser.id,
         username: 'manual-analysis',
+        platform: detectedPlatform,
         range: 1,
         video_count: 1,
         credits_used: 0,
@@ -607,6 +670,7 @@ Return ONLY a JSON object (no markdown, no explanation):
       const { data, error: saveErr } = await supabase.from('scans').insert({
         user_id: req.dbUser.id,
         username: 'manual-analysis',
+        platform: detectedPlatform,
         range: 1,
         video_count: 1,
         credits_used: 0,
@@ -704,6 +768,7 @@ router.post('/save', authMiddleware, async (req, res) => {
     const { data, error } = await supabase.from('scans').insert({
       user_id: req.dbUser.id,
       username: scan.label,
+      platform: scan.meta?.platform || 'tiktok',
       range: scan.meta?.range || 1,
       video_count: scan.meta?.videoCount || 0,
       credits_used: scan.meta?.credits || 0,
