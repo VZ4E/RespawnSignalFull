@@ -75,32 +75,53 @@ router.post('/', authMiddleware, async (req, res) => {
       // Fetch from Twitch (VODs) using Twitch Scraper 2.0 API
       console.log(`[Scan] Fetching Twitch videos for ${username}`);
       
-      const twitchResp = await fetch(
-        `https://twitch-scraper2.p.rapidapi.com/api/channels/videos?channel=${encodeURIComponent(username)}&limit=${safeRange}`,
-        {
-          headers: {
-            'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-            'x-rapidapi-host': 'twitch-scraper2.p.rapidapi.com',
-          },
+      try {
+        const twitchResp = await fetch(
+          `https://twitch-scraper2.p.rapidapi.com/api/channels/videos?channel=${encodeURIComponent(username)}&limit=${safeRange}`,
+          {
+            headers: {
+              'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+              'x-rapidapi-host': 'twitch-scraper2.p.rapidapi.com',
+            },
+          }
+        );
+        
+        console.log(`[Scan] Twitch API response status: ${twitchResp.status}`);
+        const twitchData = await twitchResp.json();
+        console.log(`[Scan] Twitch API response:`, JSON.stringify(twitchData).substring(0, 500));
+
+        let items = [];
+        if (Array.isArray(twitchData?.data)) {
+          console.log(`[Scan] Found videos in twitchData.data`);
+          items = twitchData.data;
+        } else if (Array.isArray(twitchData?.videos)) {
+          console.log(`[Scan] Found videos in twitchData.videos`);
+          items = twitchData.videos;
+        } else if (Array.isArray(twitchData?.result)) {
+          console.log(`[Scan] Found videos in twitchData.result`);
+          items = twitchData.result;
+        } else if (Array.isArray(twitchData)) {
+          console.log(`[Scan] twitchData is directly an array`);
+          items = twitchData;
+        } else if (twitchData?.data && typeof twitchData.data === 'object') {
+          const found = Object.values(twitchData.data).find(v => Array.isArray(v) && v.length > 0);
+          if (found) {
+            console.log(`[Scan] Found array in twitchData.data object`);
+            items = found;
+          }
         }
-      );
-      const twitchData = await twitchResp.json();
 
-      let items = [];
-      if (Array.isArray(twitchData?.data)) items = twitchData.data;
-      else if (Array.isArray(twitchData?.videos)) items = twitchData.videos;
-      else if (Array.isArray(twitchData?.result)) items = twitchData.result;
-      else if (Array.isArray(twitchData)) items = twitchData;
-      else if (twitchData?.data && typeof twitchData.data === 'object') {
-        const found = Object.values(twitchData.data).find(v => Array.isArray(v) && v.length > 0);
-        if (found) items = found;
-      }
+        console.log(`[Scan] Parsed ${items.length} videos from Twitch API`);
+        videos = items.slice(0, safeRange);
 
-      videos = items.slice(0, safeRange);
-
-      if (!videos.length) {
-        const apiMsg = twitchData?.message || twitchData?.msg || twitchData?.error || '';
-        return res.status(404).json({ error: `No Twitch videos found for @${username}${apiMsg ? ' — ' + apiMsg : '. Check username or channel privacy.'}` });
+        if (!videos.length) {
+          const apiMsg = twitchData?.message || twitchData?.msg || twitchData?.error || '';
+          console.log(`[Scan] No videos found. API message: ${apiMsg}`);
+          return res.status(404).json({ error: `No Twitch videos found for @${username}${apiMsg ? ' — ' + apiMsg : '. Check username or channel privacy.'}` });
+        }
+      } catch (twitchErr) {
+        console.error(`[Scan] Twitch API error:`, twitchErr.message);
+        return res.status(502).json({ error: `Failed to fetch Twitch videos: ` + twitchErr.message });
       }
     } else {
       // Default to TikTok
