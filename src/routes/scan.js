@@ -72,15 +72,15 @@ router.post('/', authMiddleware, async (req, res) => {
   let videos = [];
   try {
     if (platform === 'twitch') {
-      // Fetch from Twitch (VODs/clips)
+      // Fetch from Twitch (VODs) using Twitch Scraper 2.0 API
       console.log(`[Scan] Fetching Twitch videos for ${username}`);
       
       const twitchResp = await fetch(
-        `https://twitch-api.p.rapidapi.com/user/videos?login=${encodeURIComponent(username)}&count=${safeRange}`,
+        `https://twitch-scraper2.p.rapidapi.com/api/channels/videos?channel=${encodeURIComponent(username)}&limit=${safeRange}`,
         {
           headers: {
             'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-            'x-rapidapi-host': 'twitch-api.p.rapidapi.com',
+            'x-rapidapi-host': 'twitch-scraper2.p.rapidapi.com',
           },
         }
       );
@@ -89,7 +89,8 @@ router.post('/', authMiddleware, async (req, res) => {
       let items = [];
       if (Array.isArray(twitchData?.data)) items = twitchData.data;
       else if (Array.isArray(twitchData?.videos)) items = twitchData.videos;
-      else if (Array.isArray(twitchData?.vods)) items = twitchData.vods;
+      else if (Array.isArray(twitchData?.result)) items = twitchData.result;
+      else if (Array.isArray(twitchData)) items = twitchData;
       else if (twitchData?.data && typeof twitchData.data === 'object') {
         const found = Object.values(twitchData.data).find(v => Array.isArray(v) && v.length > 0);
         if (found) items = found;
@@ -293,7 +294,7 @@ TRANSCRIPTS:\n${text}`;
   const { error: insertError } = await supabase.from('scans').insert({
     user_id: dbUser.id,
     username,
-    platform, // ← Save platform for context
+    platform: platform || 'tiktok', // ← Save platform for context
     range: safeRange,
     video_count: videos.length,
     credits_used: creditsToDeduct,
