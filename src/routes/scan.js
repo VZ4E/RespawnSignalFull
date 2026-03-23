@@ -191,32 +191,48 @@ router.post('/', authMiddleware, async (req, res) => {
       // Use TranscriptHQ for Twitch, Transcript24 for TikTok
       if (platform === 'twitch') {
         console.log(`[Transcribe] Fetching Twitch VOD transcript via TranscriptHQ for ${videoId}`);
-        const tr = await fetch('https://api.transcripthq.com/v1/transcribe', {
+        const tr = await fetch('https://api.transcripthq.io/v1/transcripts', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-API-Key': process.env.TRANSCRIPTHQ_KEY,
           },
-          body: JSON.stringify({ url: videoUrl }),
+          body: JSON.stringify({ 
+            service_type: 'twitch',
+            videos: [videoId]
+          }),
         });
         const td = await tr.json();
         console.log(`[Transcribe] TranscriptHQ response status: ${tr.status}`);
+        console.log(`[Transcribe] TranscriptHQ response:`, JSON.stringify(td).substring(0, 500));
         
-        if (td?.transcript) {
-          transcript = td.transcript;
-          totalCredits += td.taskCredits || 1;
-          transcribed = true;
-          console.log(`[Transcribe] ✓ Transcribed via TranscriptHQ: ${transcript.length} chars`);
+        // TranscriptHQ returns array of transcript objects or a single transcript
+        if (td?.transcripts && Array.isArray(td.transcripts) && td.transcripts[0]) {
+          transcript = td.transcripts[0].text || td.transcripts[0].transcript || td.transcripts[0].content || '';
+          totalCredits += td.transcripts[0].credits || 1;
+          if (transcript) {
+            transcribed = true;
+            console.log(`[Transcribe] ✓ Transcribed via TranscriptHQ: ${transcript.length} chars`);
+          }
         } else if (td?.text) {
           transcript = td.text;
           totalCredits += 1;
           transcribed = true;
-        } else if (td?.caption && Array.isArray(td.caption)) {
-          transcript = td.caption.map(c => c.text).join(' ');
-          totalCredits += td.taskCredits || 1;
+        } else if (td?.transcript) {
+          transcript = td.transcript;
+          totalCredits += 1;
           transcribed = true;
+        } else if (td?.content) {
+          transcript = td.content;
+          totalCredits += 1;
+          transcribed = true;
+        } else if (Array.isArray(td) && td[0]) {
+          // Direct array response
+          transcript = td[0].text || td[0].transcript || td[0].content || '';
+          totalCredits += td[0].credits || 1;
+          if (transcript) transcribed = true;
         } else {
-          console.error(`[Transcribe] TranscriptHQ returned unexpected format:`, JSON.stringify(td).substring(0, 200));
+          console.error(`[Transcribe] TranscriptHQ returned unexpected format:`, JSON.stringify(td).substring(0, 300));
         }
       } else {
         // Use Transcript24 for TikTok
@@ -529,21 +545,28 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
         try {
           if (istwitch) {
             console.log(`[Manual] Fetching Twitch transcript via TranscriptHQ for ${videoId}`);
-            const tr = await fetch('https://api.transcripthq.com/v1/transcribe', {
+            const tr = await fetch('https://api.transcripthq.io/v1/transcripts', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': process.env.TRANSCRIPTHQ_KEY,
               },
-              body: JSON.stringify({ url: transcript }),
+              body: JSON.stringify({ 
+                service_type: 'twitch',
+                videos: [videoId]
+              }),
             });
             const td = await tr.json();
-            if (td?.transcript) {
-              transcript = td.transcript;
+            if (td?.transcripts && Array.isArray(td.transcripts) && td.transcripts[0]) {
+              transcript = td.transcripts[0].text || td.transcripts[0].transcript || td.transcripts[0].content || '';
             } else if (td?.text) {
               transcript = td.text;
-            } else if (td?.caption && Array.isArray(td.caption)) {
-              transcript = td.caption.map(c => c.text).join(' ');
+            } else if (td?.transcript) {
+              transcript = td.transcript;
+            } else if (td?.content) {
+              transcript = td.content;
+            } else if (Array.isArray(td) && td[0]) {
+              transcript = td[0].text || td[0].transcript || td[0].content || '';
             }
           } else {
             const tr = await fetch('https://api.transcript24.com/transcribe', {
