@@ -443,6 +443,721 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .form-input:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px var(--accent-dim); }
 .form-input::placeholder { color:var(--text3); }
 </style>
+
+<!-- ══════════════════════════════════════════════════════
+     RESPAWN SIGNAL UI REFINEMENTS — Phases 2–15
+     Only CSS/styling changes — no layout or functionality altered
+     ══════════════════════════════════════════════════════ -->
+<style>
+
+/* ── Phase 1 additions: Sidebar polish ── */
+
+.sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.logo-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.logo-tag {
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+
+/* Nav items: left-border accent on active */
+.nav-item {
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  margin-left: -10px;
+  padding-left: 13px;
+  transition: all 0.15s ease-out;
+}
+.nav-item:hover {
+  background: #f1f5f9;
+  color: var(--text);
+  border-left-color: transparent;
+}
+.nav-item.active {
+  background: var(--accent-dim);
+  border-left-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Nav badge: solid pill style */
+.nav-badge {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+}
+
+/* Sidebar footer: credits bar */
+.sf-bar-wrap {
+  height: 4px;
+  margin-bottom: 6px;
+}
+.sf-label {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.sf-row {
+  align-items: center;
+}
+.sf-num {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sf-total {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ── Phase 2: Typography & Spacing ── */
+
+/* Page headings: sans-serif, 22px, weight 600 (was 26px serif italic) */
+.sec-head h1 {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.2px;
+  padding-top: 6px;
+}
+
+/* Section labels: 11px, tracking 0.08em, weight 500, muted gray */
+.card-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+/* Body text: relaxed line-height */
+.sec-head p {
+  line-height: 1.7;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+/* ── Phase 3: Scanner Page ── */
+
+/* Scan button: 48px height, font-weight 600, brightness on hover */
+.scan-btn {
+  height: 48px;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+}
+.scan-btn:hover:not(:disabled) {
+  background: var(--accent);
+  filter: brightness(1.06);
+  transform: none;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.scan-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  filter: none;
+}
+
+/* Scan mode buttons: proper filled/outlined segmented control */
+#mode-single,
+#mode-group {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text2) !important;
+  padding: 10px 16px !important;
+  transition: all 0.15s !important;
+}
+#mode-single.active,
+#mode-group.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px var(--accent-glow) !important;
+}
+
+/* Scan range buttons: clean outlined style */
+.range-btn {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.range-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface);
+  box-shadow: none;
+}
+.range-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+/* Platform selector: cleaner sizing */
+.platform-selector {
+  border-width: 1px;
+  padding: 12px 8px;
+  border-radius: 8px;
+}
+.platform-selector.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+/* Detection banner: cleaner inline style */
+#input-detected {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--sans);
+  font-weight: 500;
+}
+
+/* Video list items: left border accent on hover */
+.video-item {
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.video-item:hover {
+  border-left-color: var(--accent);
+  background: var(--accent-dim);
+  border-top-color: var(--border);
+  border-right-color: var(--border);
+  border-bottom-color: var(--border);
+}
+
+/* ── Phase 4: Deals Found Section ── */
+
+/* Deal company label: colored dot before brand */
+.deal-co-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.deal-co-label::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Confidence pills: filled solid style */
+.conf-pill {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--sans);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.conf-high {
+  background: #dcfce7;
+  color: #16a34a;
+  border: none;
+}
+.conf-mid {
+  background: #fef3c7;
+  color: #d97706;
+  border: none;
+}
+.conf-low {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+}
+
+/* "What is this deal?" button: text-only info style */
+.explain-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--sans);
+  padding: 4px 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.13s;
+}
+.explain-btn:hover {
+  background: transparent;
+  border: none;
+  text-decoration: underline;
+  color: var(--accent-dark);
+}
+
+/* Accordion headers: hover bg, clean look */
+.video-group-header {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.video-group-header:hover {
+  background: #f0f7ff;
+}
+
+/* ── Phase 5: Scan History Page ── */
+
+/* History items: cleaner card rows */
+.history-item {
+  border-radius: 10px;
+  padding: 16px 18px;
+  transition: all 0.15s;
+}
+.history-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px var(--accent-dim);
+  background: #fafcff;
+}
+.hi-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.hi-meta {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  gap: 4px;
+}
+.hi-deals {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+
+/* History expand rows */
+.he-brand {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.he-type {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.he-evidence {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── Phase 6: All Deals Page ── */
+
+/* Stat cards: blue-tinted bg + bottom accent border */
+.stat-card {
+  background: #f0f7ff;
+  border: 1px solid #d0e8ff;
+  border-bottom: 4px solid var(--accent);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+.stat-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  margin-bottom: 8px;
+}
+/* Stat value: large bold sans (was serif italic) */
+.stat-val {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.stat-sub {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* Brand master list items: rank circle, filled badge */
+.bml-item {
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+.bml-rank {
+  width: 32px;
+  height: 32px;
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.bml-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.bml-creators {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: #94a3b8;
+}
+.bml-count {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+/* ── Phase 7: Automation Page ── */
+
+/* Run/Scan All button: filled blue (was dark/black) */
+.run-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  height: auto;
+  min-height: 44px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.run-btn:hover {
+  background: var(--accent-dark);
+  filter: brightness(1.05);
+  transform: none;
+}
+.run-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+/* Import textarea: proper font size */
+.import-textarea-wrap textarea {
+  font-size: 14px;
+  min-height: 128px;
+  line-height: 1.6;
+}
+.import-count-float {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ── Phase 8: Groups Page ── */
+
+/* Group cards: more padding, creator count badge */
+#groups-page-list .card,
+#groups-list .card {
+  padding: 22px;
+}
+
+/* ── Phase 9: Credits Page ── */
+
+/* Credits big card: polish typography */
+.cred-big-card {
+  border-radius: 14px;
+  padding: 28px;
+}
+.cbc-num {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: white;
+}
+.cbc-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  margin-top: 4px;
+  margin-bottom: 18px;
+}
+.cbc-bar-wrap {
+  height: 6px;
+  margin-bottom: 10px;
+}
+.cbc-sub {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Usage history rows */
+.uh-row {
+  padding: 12px 16px;
+  border-radius: 9px;
+  margin-bottom: 6px;
+}
+.uh-lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.uh-date {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.uh-cost {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Phase 10: Account Page ── */
+
+/* Account rows: more breathing room */
+.acct-row {
+  padding: 18px 0;
+}
+.acct-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.acct-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Plan chip: proper pill badge */
+.plan-chip {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+/* Danger button: lowercase, red outlined, less aggressive */
+.danger-btn {
+  background: transparent;
+  border: 1px solid rgba(220,38,38,0.4);
+  border-radius: 7px;
+  color: var(--red);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: all 0.13s;
+}
+.danger-btn:hover {
+  background: var(--red-dim);
+  border-color: var(--red);
+}
+
+/* ── Phase 11: Settings Page ── */
+
+/* Settings tabs: clean modern underline */
+.settings-tab {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-bottom-width: 2px;
+  color: var(--text3);
+  transition: all 0.15s;
+}
+.settings-tab:hover {
+  color: var(--text2);
+  border-bottom-color: var(--border);
+}
+.settings-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Phases 12–15: Global polish & consistency ── */
+
+/* All pill badges: consistent rounded-full style */
+.count-pill {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+/* Deal brand tags: slightly softer */
+.brand-tag {
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Deal evidence quote: clean left border */
+.deal-evidence {
+  border-left: 2px solid var(--accent-mid);
+  padding-left: 12px;
+  font-size: 12px;
+  line-height: 1.65;
+  font-style: italic;
+  color: var(--text2);
+}
+
+/* Queue items in automation: clean status */
+.q-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.q-status {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.q-pill {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Empty state: cleaner look */
+.empty-state {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 48px 20px;
+  border: 1px dashed var(--border2);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+/* Global transition smoothness */
+* {
+  transition-timing-function: ease-out;
+}
+
+/* Input height: 40px minimum */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Textarea: no min-height override needed, keep as is */
+
+/* Platform badge in settings */
+.platform-badge {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 10px;
+  padding: 3px 8px;
+  font-weight: 500;
+}
+
+/* Modal footer buttons: consistent */
+.modal-footer .run-btn {
+  margin-top: 0;
+}
+
+/* Topbar title: clean */
+.topbar-title {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Topbar pill: clean indicator */
+.topbar-pill {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--text2);
+}
+
+</style>
 </head>
 <body>
 
