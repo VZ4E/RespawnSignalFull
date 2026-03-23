@@ -190,7 +190,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
       // Use TranscriptHQ for Twitch, Transcript24 for TikTok
       if (platform === 'twitch') {
-        console.log(`[Transcribe] Fetching Twitch VOD transcript via TranscriptHQ for ${videoId}`);
+        console.log(`[Transcribe] Submitting Twitch VOD to TranscriptHQ for ${videoId}`);
         const tr = await fetch('https://api.transcripthq.io/v1/transcripts', {
           method: 'POST',
           headers: {
@@ -202,12 +202,18 @@ router.post('/', authMiddleware, async (req, res) => {
             videos: [videoId]
           }),
         });
+        console.log(`[Transcribe] TranscriptHQ submission status: ${tr.status}`);
         const td = await tr.json();
-        console.log(`[Transcribe] TranscriptHQ response status: ${tr.status}`);
         console.log(`[Transcribe] TranscriptHQ response:`, JSON.stringify(td).substring(0, 500));
         
-        // TranscriptHQ returns array of transcript objects or a single transcript
-        if (td?.transcripts && Array.isArray(td.transcripts) && td.transcripts[0]) {
+        // TranscriptHQ is async: 202 means job submitted, poll poll_url for results
+        // For now, fall back to title-only (users can review full transcripts later via poll_url if needed)
+        if (tr.status === 202 && td?.poll_url) {
+          console.log(`[Transcribe] ⏳ Job queued (async): ${td.poll_url}`);
+          console.log(`[Transcribe] Job ID: ${td.job_id} — will complete in background`);
+          // Don't block the scan; use title-only fallback
+        } else if (td?.transcripts && Array.isArray(td.transcripts) && td.transcripts[0]) {
+          // Completed/instant response
           transcript = td.transcripts[0].text || td.transcripts[0].transcript || td.transcripts[0].content || '';
           totalCredits += td.transcripts[0].credits || 1;
           if (transcript) {
@@ -231,8 +237,9 @@ router.post('/', authMiddleware, async (req, res) => {
           transcript = td[0].text || td[0].transcript || td[0].content || '';
           totalCredits += td[0].credits || 1;
           if (transcript) transcribed = true;
-        } else {
-          console.error(`[Transcribe] TranscriptHQ returned unexpected format:`, JSON.stringify(td).substring(0, 300));
+        } else if (tr.status !== 202) {
+          // Not async, and no transcript — log error
+          console.error(`[Transcribe] TranscriptHQ returned unexpected format (status ${tr.status}):`, JSON.stringify(td).substring(0, 300));
         }
       } else {
         // Use Transcript24 for TikTok
@@ -544,7 +551,7 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
         // Try to fetch transcript via TranscriptHQ (Twitch) or Transcript24 (TikTok)
         try {
           if (istwitch) {
-            console.log(`[Manual] Fetching Twitch transcript via TranscriptHQ for ${videoId}`);
+            console.log(`[Manual] Submitting Twitch transcript to TranscriptHQ for ${videoId}`);
             const tr = await fetch('https://api.transcripthq.io/v1/transcripts', {
               method: 'POST',
               headers: {
@@ -557,7 +564,12 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
               }),
             });
             const td = await tr.json();
-            if (td?.transcripts && Array.isArray(td.transcripts) && td.transcripts[0]) {
+            console.log(`[Manual] TranscriptHQ status: ${tr.status}`);
+            
+            if (tr.status === 202 && td?.poll_url) {
+              console.log(`[Manual] Job queued (async): ${td.poll_url}`);
+              // Don't block; continue with user-provided text or title-only fallback
+            } else if (td?.transcripts && Array.isArray(td.transcripts) && td.transcripts[0]) {
               transcript = td.transcripts[0].text || td.transcripts[0].transcript || td.transcripts[0].content || '';
             } else if (td?.text) {
               transcript = td.text;
