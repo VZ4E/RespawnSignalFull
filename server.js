@@ -11,6 +11,7 @@ const instagramRoutes = require('./src/routes/instagram');
 const twitchRoutes = require('./src/routes/twitch');
 const creatorRoutes = require('./src/routes/creators');
 const configRoutes = require('./src/routes/configs');
+const groupsRoutes = require('./src/routes/groups');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ app.use('/api/instagram', scanLimiter, instagramRoutes);
 app.use('/api/twitch', scanLimiter, twitchRoutes);
 app.use('/api/creators', creatorRoutes);
 app.use('/api/configs', configRoutes);
+app.use('/api/groups', groupsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Respawn Signal' }));
 app.get('/auth/callback', (req, res) => res.redirect('/?oauth=1'));

@@ -11,7 +11,12 @@ router.post('/signup', async (req, res) => {
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) return res.status(400).json({ error: error.message });
 
-  return res.json({ user: data.user, session: data.session });
+  return res.json({ 
+    user: data.user, 
+    session: data.session,
+    accessToken: data.session?.access_token,
+    refreshToken: data.session?.refresh_token,
+  });
 });
 
 // POST /api/auth/login
@@ -22,7 +27,12 @@ router.post('/login', async (req, res) => {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return res.status(401).json({ error: error.message });
 
-  return res.json({ user: data.user, session: data.session });
+  return res.json({ 
+    user: data.user, 
+    session: data.session,
+    accessToken: data.session?.access_token,
+    refreshToken: data.session?.refresh_token,
+  });
 });
 
 // POST /api/auth/exchange-code — PKCE code exchange
@@ -34,6 +44,8 @@ router.post('/exchange-code', async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
     return res.json({
       access_token: data.session?.access_token,
+      accessToken: data.session?.access_token,
+      refreshToken: data.session?.refresh_token,
       user: data.user,
     });
   } catch(err) {
@@ -69,6 +81,24 @@ router.post('/logout', authMiddleware, async (req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   const { email, plan, credits_remaining, created_at } = req.dbUser;
   return res.json({ email, plan, credits_remaining, created_at });
+});
+
+// POST /api/auth/refresh — refresh access token using refresh token
+router.post('/refresh', async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(400).json({ error: 'Refresh token required' });
+
+  try {
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+    if (error) return res.status(401).json({ error: 'Refresh failed: ' + error.message });
+
+    return res.json({
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Refresh error: ' + err.message });
+  }
 });
 
 module.exports = router;

@@ -6,7 +6,6 @@
 <title>Respawn Signal — TikTok Brand Deal Scanner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/globals.css">
 <style>
 :root {
   --bg: #f8fafc; --sidebar: #ffffff; --surface: #ffffff; --surface2: #f1f5f9;
@@ -174,9 +173,9 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); }
 .logo-name { font-size:14px; font-weight:800; letter-spacing:-0.2px; color:var(--text); }
 .logo-tag { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; margin-top:4px; }
 .sidebar-nav { flex:1; padding:12px 10px; overflow-y:auto; }
-.nav-sec { display:none; font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:2px; text-transform:uppercase; padding:10px 10px 5px; }
+.nav-sec { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:2px; text-transform:uppercase; padding:10px 10px 5px; }
 .nav-item {
-  display:flex; align-items:center; gap:9px; padding:7px 11px; border-radius:8px;
+  display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:8px;
   cursor:pointer; transition:all 0.13s; font-size:13px; font-weight:500;
   color:var(--text2); border:1px solid transparent; margin-bottom:2px; user-select:none;
 }
@@ -188,16 +187,16 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); }
   border:1px solid var(--accent-mid); font-weight:600;
 }
 .sidebar-footer { padding:16px 18px; border-top:1px solid var(--border); }
-.sf-label { display:none; font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:2px; text-transform:uppercase; margin-bottom:9px; }
+.sf-label { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:2px; text-transform:uppercase; margin-bottom:9px; }
 .sf-bar-wrap { background:var(--surface2); border-radius:99px; height:4px; overflow:hidden; margin-bottom:8px; }
 .sf-bar-fill { height:100%; background:var(--accent); border-radius:99px; transition:width 0.5s; }
-.sf-row { display:flex; justify-content:center; }
+.sf-row { display:flex; justify-content:space-between; }
 .sf-num { font-family:var(--mono); font-size:12px; color:var(--text); font-weight:500; }
-.sf-total { font-family:var(--mono); font-size:11px; color:var(--text3); margin-left:4px; }
+.sf-total { font-family:var(--mono); font-size:11px; color:var(--text3); }
 
 .app-main { margin-left:228px; flex:1; height:100vh; overflow-y:auto; display:flex; flex-direction:column; }
 .topbar {
-  height:60px; border-bottom:1px solid var(--border); display:flex; align-items:center;
+  height:56px; border-bottom:1px solid var(--border); display:flex; align-items:center;
   padding:0 28px; gap:14px; flex-shrink:0; position:sticky; top:0;
   background:var(--bg); z-index:10;
 }
@@ -209,19 +208,17 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); }
 }
 .topbar-dot { width:6px; height:6px; border-radius:50%; background:var(--green); }
 
-.page { display:none; padding:32px 30px; max-width:820px; }
+.page { display:none; padding:28px 30px; max-width:820px; }
 .page.active { display:block; }
-.sec-head { display:none; margin-bottom:24px; }
+.sec-head { margin-bottom:24px; }
 .sec-head h1 { font-family:var(--serif); font-style:italic; font-size:26px; margin-bottom:4px; }
 .sec-head p { font-size:13px; color:var(--text2); }
 
 .card {
   background:var(--surface); border:1px solid var(--border); border-radius:12px;
-  padding:20px 22px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.04);
+  padding:20px 22px; margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,0.04);
 }
-#page-scan .card { background:transparent; border:none; padding:0; margin-bottom:16px; box-shadow:none; }
 .card-label { font-family:var(--mono); font-size:9px; color:var(--accent); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; font-weight:500; }
-#page-scan .card-label { display:none; }
 
 input[type="text"], input[type="email"], input[type="password"], textarea {
   width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px;
@@ -238,22 +235,23 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 
 .range-group { display:flex; gap:7px; }
 .range-btn {
-  flex:1; background:transparent; border:1.5px solid var(--border); border-radius:20px;
-  color:var(--text3); font-family:var(--mono); font-size:12px; padding:6px 0;
-  cursor:pointer; transition:all 0.13s; text-align:center; font-weight:600;
+  flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  color:var(--text3); font-family:var(--mono); font-size:12px; padding:9px 0;
+  cursor:pointer; transition:all 0.13s; text-align:center; font-weight:500;
 }
-.range-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
-.range-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.range-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); background:#fff; }
+.range-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 8px var(--accent-glow); }
 .range-btn:disabled { opacity:0.35; cursor:not-allowed; }
 
 .platform-selector {
-  flex:1; background:transparent; border:1.5px solid var(--border); border-radius:20px;
-  padding:6px 14px; cursor:pointer; transition:all 0.13s; text-align:center;
-  color:var(--text3); font-family:var(--sans); font-size:12px; font-weight:600;
+  background:var(--surface2); border:2px solid var(--border); border-radius:10px;
+  padding:16px 12px; cursor:pointer; transition:all 0.15s; text-align:center;
+  color:var(--text2); font-family:var(--sans); font-size:12px;
 }
-.platform-selector:hover { border-color:var(--accent); color:var(--text); }
+.platform-selector:hover { border-color:var(--accent); color:var(--text); background:var(--surface); }
 .platform-selector.active { 
-  background:var(--accent); border-color:var(--accent); color:white;
+  background:var(--accent-dim); border-color:var(--accent); color:var(--accent);
+  box-shadow:0 2px 8px var(--accent-glow);
 }
 
 .scan-btn {
@@ -265,23 +263,14 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .scan-btn:hover:not(:disabled) { background:var(--accent-dark); transform:translateY(-1px); }
 .scan-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
 
-.mode-toggle { display:flex; gap:6px; }
-.mode-toggle-btn {
-  flex:1; background:transparent; border:1.5px solid var(--border); border-radius:20px;
-  padding:6px 14px; cursor:pointer; transition:all 0.13s; text-align:center;
-  color:var(--text3); font-family:var(--sans); font-size:12px; font-weight:600;
-}
-.mode-toggle-btn:hover { border-color:var(--accent); color:var(--text); }
-.mode-toggle-btn.active { background:var(--accent); border-color:var(--accent); color:white; }
-
 .status-bar {
-  background:transparent; border:none; border-radius:0;
-  padding:0; display:flex; align-items:center; gap:6px;
-  font-size:11px; color:var(--green); font-family:var(--mono); margin-top:8px;
+  background:var(--accent-dim); border:1px solid var(--accent-mid); border-radius:10px;
+  padding:12px 15px; display:flex; align-items:center; gap:10px;
+  font-size:12px; color:var(--accent); font-family:var(--mono); margin-top:12px;
 }
-.pulse { width:5px; height:5px; border-radius:50%; background:var(--green); flex-shrink:0; }
+.pulse { width:7px; height:7px; border-radius:50%; background:var(--accent); animation:pulse 1.1s ease-in-out infinite; flex-shrink:0; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.7)} }
-.err-bar { background:transparent; border:none; border-radius:0; padding:0; font-size:11px; color:var(--red); font-family:var(--mono); margin-top:8px; }
+.err-bar { background:var(--red-dim); border:1px solid rgba(220,38,38,0.2); border-radius:10px; padding:12px 15px; font-size:12px; color:var(--red); font-family:var(--mono); margin-top:12px; }
 
 .results-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .results-title { font-size:14px; font-weight:700; }
@@ -322,7 +311,6 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .hi-meta { display:flex; gap:10px; flex-wrap:wrap; font-family:var(--mono); font-size:10px; color:var(--text3); }
 .hi-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
 .hi-deals { background:var(--accent-dim); border:1px solid var(--accent-mid); color:var(--accent); font-family:var(--mono); font-size:10px; padding:2px 9px; border-radius:99px; font-weight:600; }
-.hi-rescan-btn { display:none; }
 .history-expand { background:var(--surface2); border:1px solid var(--border); border-top:none; border-radius:0 0 11px 11px; padding:14px 17px; margin-top:-7px; margin-bottom:7px; display:none; }
 .history-expand.open { display:block; }
 .he-row { display:flex; align-items:flex-start; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); gap:9px; }
@@ -330,19 +318,17 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .he-brand { font-size:13px; font-weight:600; margin-bottom:2px; }
 .he-type { font-family:var(--mono); font-size:10px; color:var(--text3); }
 .he-evidence { font-size:11px; color:var(--text2); font-style:italic; margin-top:2px; }
-.he-videos { display:none; }
-.he-rescan-btn { background:transparent; border:1.5px solid var(--border); border-radius:8px; color:var(--text3); padding:8px 14px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.13s; margin-top:10px; }
 
-.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
-.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
 .stat-lbl { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
-.stat-val { font-family:var(--serif); font-style:italic; font-size:28px; letter-spacing:-0.5px; }
+.stat-val { font-family:var(--serif); font-style:italic; font-size:32px; letter-spacing:-0.5px; }
 .stat-sub { font-size:11px; color:var(--text3); margin-top:3px; }
 
 .bml-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 15px; display:flex; align-items:center; gap:11px; margin-bottom:7px; }
 .bml-rank { font-family:var(--mono); font-size:11px; color:var(--text3); width:20px; flex-shrink:0; }
 .bml-name { font-size:14px; font-weight:600; flex:1; }
-.bml-creators { display:none; }
+.bml-creators { font-family:var(--mono); font-size:10px; color:var(--text3); }
 .bml-count { background:var(--accent-dim); border:1px solid var(--accent-mid); color:var(--accent); font-family:var(--mono); font-size:10px; padding:2px 9px; border-radius:99px; font-weight:600; }
 
 .upgrade-prompt { background:var(--accent-dim); border:1.5px dashed var(--accent-mid); border-radius:12px; padding:32px; text-align:center; }
@@ -385,7 +371,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .danger-btn { background:transparent; border:1px solid rgba(220,38,38,0.3); border-radius:7px; color:var(--red); font-family:var(--mono); font-size:10px; padding:6px 14px; cursor:pointer; letter-spacing:1px; text-transform:uppercase; transition:all 0.13s; }
 .danger-btn:hover { background:var(--red-dim); border-color:var(--red); }
 
-.empty-state { text-align:center; padding:32px 20px; color:var(--text3); font-family:var(--mono); font-size:12px; border:none; border-radius:0; background:transparent; }
+.empty-state { text-align:center; padding:48px 20px; color:var(--text3); font-family:var(--mono); font-size:12px; border:1px dashed var(--border2); border-radius:12px; background:var(--surface); }
 
 .video-group { border:1px solid var(--border); border-radius:9px; overflow:hidden; }
 .video-group-header { padding:12px 14px; background:var(--surface2); cursor:pointer; display:flex; align-items:center; gap:12px; font-weight:600; user-select:none; transition:all 0.15s; }
@@ -456,6 +442,888 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 }
 .form-input:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px var(--accent-dim); }
 .form-input::placeholder { color:var(--text3); }
+</style>
+
+<!-- ══════════════════════════════════════════════════════
+     RESPAWN SIGNAL UI REFINEMENTS — Phases 2–15
+     Only CSS/styling changes — no layout or functionality altered
+     ══════════════════════════════════════════════════════ -->
+<style>
+
+/* ── Phase 1 additions: Sidebar polish ── */
+
+.sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.logo-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.logo-tag {
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+
+/* Nav items: left-border accent on active */
+.nav-item {
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  margin-left: -10px;
+  padding-left: 13px;
+  transition: all 0.15s ease-out;
+}
+.nav-item:hover {
+  background: #f1f5f9;
+  color: var(--text);
+  border-left-color: transparent;
+}
+.nav-item.active {
+  background: var(--accent-dim);
+  border-left-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Nav badge: solid pill style */
+.nav-badge {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+}
+
+/* Sidebar footer: credits bar */
+.sf-bar-wrap {
+  height: 4px;
+  margin-bottom: 6px;
+}
+.sf-label {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.sf-row {
+  align-items: center;
+}
+.sf-num {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sf-total {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ── Phase 2: Typography & Spacing ── */
+
+/* Page headings: sans-serif, 22px, weight 600 (was 26px serif italic) */
+.sec-head h1 {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.2px;
+  padding-top: 6px;
+}
+
+/* Section labels: 11px, tracking 0.08em, weight 500, muted gray */
+.card-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+/* Body text: relaxed line-height */
+.sec-head p {
+  line-height: 1.7;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+/* ── Phase 3: Scanner Page ── */
+
+/* Scan button: 48px height, font-weight 600, brightness on hover */
+.scan-btn {
+  height: 48px;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+}
+.scan-btn:hover:not(:disabled) {
+  background: var(--accent);
+  filter: brightness(1.06);
+  transform: none;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.scan-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  filter: none;
+}
+
+/* Scan mode buttons: proper filled/outlined segmented control */
+#mode-single,
+#mode-group {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text2) !important;
+  padding: 10px 16px !important;
+  transition: all 0.15s !important;
+}
+#mode-single.active,
+#mode-group.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px var(--accent-glow) !important;
+}
+
+/* Scan range buttons: clean outlined style */
+.range-btn {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.range-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface);
+  box-shadow: none;
+}
+.range-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+/* Platform selector: cleaner sizing */
+.platform-selector {
+  border-width: 1px;
+  padding: 12px 8px;
+  border-radius: 8px;
+}
+.platform-selector.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+/* Detection banner: cleaner inline style */
+#input-detected {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--sans);
+  font-weight: 500;
+}
+
+/* Video list items: left border accent on hover */
+.video-item {
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.video-item:hover {
+  border-left-color: var(--accent);
+  background: var(--accent-dim);
+  border-top-color: var(--border);
+  border-right-color: var(--border);
+  border-bottom-color: var(--border);
+}
+
+/* ── Phase 4: Deals Found Section ── */
+
+/* Deal company label: colored dot before brand */
+.deal-co-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.deal-co-label::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Confidence pills: filled solid style */
+.conf-pill {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--sans);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.conf-high {
+  background: #dcfce7;
+  color: #16a34a;
+  border: none;
+}
+.conf-mid {
+  background: #fef3c7;
+  color: #d97706;
+  border: none;
+}
+.conf-low {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+}
+
+/* "What is this deal?" button: text-only info style */
+.explain-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--sans);
+  padding: 4px 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.13s;
+}
+.explain-btn:hover {
+  background: transparent;
+  border: none;
+  text-decoration: underline;
+  color: var(--accent-dark);
+}
+
+/* Accordion headers: hover bg, clean look */
+.video-group-header {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.video-group-header:hover {
+  background: #f0f7ff;
+}
+
+/* ── Phase 5: Scan History Page ── */
+
+/* History items: cleaner card rows */
+.history-item {
+  border-radius: 10px;
+  padding: 16px 18px;
+  transition: all 0.15s;
+}
+.history-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px var(--accent-dim);
+  background: #fafcff;
+}
+.hi-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.hi-meta {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  gap: 4px;
+}
+.hi-deals {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+
+/* History expand rows */
+.he-brand {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.he-type {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.he-evidence {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── Phase 6: All Deals Page ── */
+
+/* Stat cards: blue-tinted bg + bottom accent border */
+.stat-card {
+  background: #f0f7ff;
+  border: 1px solid #d0e8ff;
+  border-bottom: 4px solid var(--accent);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+.stat-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  margin-bottom: 8px;
+}
+/* Stat value: large bold sans (was serif italic) */
+.stat-val {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.stat-sub {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* Brand master list items: rank circle, filled badge */
+.bml-item {
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+.bml-rank {
+  width: 32px;
+  height: 32px;
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.bml-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.bml-creators {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: #94a3b8;
+}
+.bml-count {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+/* ── Phase 7: Automation Page ── */
+
+/* Run/Scan All button: filled blue (was dark/black) */
+.run-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  height: auto;
+  min-height: 44px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.run-btn:hover {
+  background: var(--accent-dark);
+  filter: brightness(1.05);
+  transform: none;
+}
+.run-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+/* Import textarea: proper font size */
+.import-textarea-wrap textarea {
+  font-size: 14px;
+  min-height: 128px;
+  line-height: 1.6;
+}
+.import-count-float {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ── Phase 8: Groups Page ── */
+
+/* Group cards: more padding, creator count badge */
+#groups-page-list .card,
+#groups-list .card {
+  padding: 22px;
+}
+
+/* ── Phase 9: Credits Page ── */
+
+/* Credits big card: polish typography */
+.cred-big-card {
+  border-radius: 14px;
+  padding: 28px;
+}
+.cbc-num {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: white;
+}
+.cbc-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  margin-top: 4px;
+  margin-bottom: 18px;
+}
+.cbc-bar-wrap {
+  height: 6px;
+  margin-bottom: 10px;
+}
+.cbc-sub {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Usage history rows */
+.uh-row {
+  padding: 12px 16px;
+  border-radius: 9px;
+  margin-bottom: 6px;
+}
+.uh-lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.uh-date {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.uh-cost {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Phase 10: Account Page ── */
+
+/* Account rows: more breathing room */
+.acct-row {
+  padding: 18px 0;
+}
+.acct-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.acct-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Plan chip: proper pill badge */
+.plan-chip {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+/* Danger button: lowercase, red outlined, less aggressive */
+.danger-btn {
+  background: transparent;
+  border: 1px solid rgba(220,38,38,0.4);
+  border-radius: 7px;
+  color: var(--red);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: all 0.13s;
+}
+.danger-btn:hover {
+  background: var(--red-dim);
+  border-color: var(--red);
+}
+
+/* ── Phase 11: Settings Page ── */
+
+/* Settings tabs: clean modern underline */
+.settings-tab {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-bottom-width: 2px;
+  color: var(--text3);
+  transition: all 0.15s;
+}
+.settings-tab:hover {
+  color: var(--text2);
+  border-bottom-color: var(--border);
+}
+.settings-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Phases 12–15: Global polish & consistency ── */
+
+/* All pill badges: consistent rounded-full style */
+.count-pill {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+/* Deal brand tags: slightly softer */
+.brand-tag {
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Deal evidence quote: clean left border */
+.deal-evidence {
+  border-left: 2px solid var(--accent-mid);
+  padding-left: 12px;
+  font-size: 12px;
+  line-height: 1.65;
+  font-style: italic;
+  color: var(--text2);
+}
+
+/* Queue items in automation: clean status */
+.q-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.q-status {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.q-pill {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Empty state: cleaner look */
+.empty-state {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 48px 20px;
+  border: 1px dashed var(--border2);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+/* Global transition smoothness */
+* {
+  transition-timing-function: ease-out;
+}
+
+/* Input height: 40px minimum */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Textarea: no min-height override needed, keep as is */
+
+/* Platform badge in settings */
+.platform-badge {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 10px;
+  padding: 3px 8px;
+  font-weight: 500;
+}
+
+/* Modal footer buttons: consistent */
+.modal-footer .run-btn {
+  margin-top: 0;
+}
+
+/* Topbar title: clean */
+.topbar-title {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Topbar pill: clean indicator */
+.topbar-pill {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* ── Phase 7 additional: Automation page polish ── */
+
+/* Scan all creators button and queue action buttons: consistent blue */
+#page-automation .run-btn,
+#page-automation button.run-btn {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+#page-automation .run-btn:hover {
+  background: var(--accent-dark);
+}
+
+/* Credit cost estimate hint text */
+#page-automation p[style*="font-size:11px"],
+#page-automation .card p {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* ── Phase 8: Groups page polish ── */
+
+/* Groups page new group button: filled blue */
+#page-groups .run-btn {
+  background: var(--accent);
+  color: white;
+}
+
+/* ── Phase 9: Credits page usage history ── */
+
+/* Platform color dots in usage rows */
+.uh-platform-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Phase 10: Account page log out ── */
+
+/* Log Out / danger button text normalize */
+.danger-btn {
+  text-transform: none;
+}
+
+/* ── Phase 11: Settings page add creator/group buttons ── */
+
+/* All run-btn in settings: blue */
+#page-settings .run-btn,
+#settings-creators-tab .run-btn,
+#settings-groups-tab .run-btn,
+#settings-configs-tab .run-btn {
+  background: var(--accent);
+  color: white;
+}
+#page-settings .run-btn:hover,
+#settings-creators-tab .run-btn:hover,
+#settings-groups-tab .run-btn:hover,
+#settings-configs-tab .run-btn:hover {
+  background: var(--accent-dark);
+}
+
+/* Creator/config cards: clean hover */
+.creator-card,
+.config-card {
+  transition: all 0.15s;
+  border-radius: 12px;
+}
+.creator-card:hover,
+.config-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px var(--accent-dim);
+  background: var(--surface);
+}
+
+/* Creator name / config name: consistent */
+.creator-name,
+.config-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Creator/config action buttons */
+.creator-actions button,
+.config-actions button {
+  font-family: var(--sans);
+  font-size: 12px;
+  border-radius: 7px;
+  transition: all 0.13s;
+}
+
+/* ── Phase 12-15: Final polish ── */
+
+/* Fix input height to only affect scanner inputs, not auth */
+.page input[type="text"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Prevent height override on form-inputs with explicit padding */
+.form-input {
+  height: auto;
+  min-height: 38px;
+}
+.form-input[type="email"],
+.form-input[type="password"],
+.form-input[type="text"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Remove the overly broad input height rule above */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  height: auto;
+  min-height: 40px;
+}
+
+/* Apply consistent transition to interactive elements */
+button,
+.nav-item,
+.history-item,
+.deal-card,
+.bml-item,
+.video-item {
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
+/* Accessibility: ensure focus styles are visible */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Result count pill consistency */
+.results-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Upgrade prompt: clean look */
+.upgrade-prompt {
+  border-radius: 12px;
+  padding: 32px;
+}
+.upgrade-prompt h3 {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.upgrade-prompt p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
 </style>
 </head>
 <body>
@@ -596,6 +1464,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <div class="nav-item" onclick="navTo('deals',this)">All Deals <span class="nav-badge" id="nb-deals">0</span></div>
       <div class="nav-sec" style="margin-top:6px">Tools</div>
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
+      <div class="nav-item" onclick="navTo('groups',this)">Groups</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
       <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
       <div class="nav-item" onclick="navTo('account',this)">Account</div>
@@ -618,49 +1487,110 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 
     <!-- SCANNER -->
     <div class="page active" id="page-scan">
+      <div class="sec-head"><h1>Scan a Creator</h1><p>Fetch videos, transcribe them, and detect brand deals automatically.</p></div>
       
       <!-- Platform Selector -->
-      <div style="display:flex;gap:6px;margin-bottom:16px">
-        <button class="platform-selector active" data-platform="tiktok" onclick="selectPlatform('tiktok',this)">TikTok</button>
-        <button class="platform-selector" data-platform="youtube" onclick="selectPlatform('youtube',this)">YouTube</button>
-        <button class="platform-selector" data-platform="instagram" onclick="selectPlatform('instagram',this)">Instagram</button>
-        <button class="platform-selector" data-platform="twitch" onclick="selectPlatform('twitch',this)">Twitch</button>
+      <div class="card">
+        <div class="card-label">Platform</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <button class="platform-selector active" data-platform="tiktok" onclick="selectPlatform('tiktok',this)">
+            <div style="font-size:12px;font-weight:600">TikTok</div>
+          </button>
+          <button class="platform-selector" data-platform="youtube" onclick="selectPlatform('youtube',this)">
+            <div style="font-size:12px;font-weight:600">YouTube</div>
+          </button>
+          <button class="platform-selector" data-platform="instagram" onclick="selectPlatform('instagram',this)">
+            <div style="font-size:12px;font-weight:600">Instagram</div>
+          </button>
+          <button class="platform-selector" data-platform="twitch" onclick="selectPlatform('twitch',this)">
+            <div style="font-size:12px;font-weight:600">Twitch</div>
+          </button>
+        </div>
       </div>
 
       <!-- Scan Mode Toggle -->
-      <div class="mode-toggle" id="mode-toggle" style="margin-bottom:16px;display:none">
-        <button class="mode-toggle-btn active" data-mode="single" onclick="setMode('single',this)">Single Creator</button>
-        <button class="mode-toggle-btn" data-mode="group" onclick="setMode('group',this)">Group Scan</button>
+      <div class="card">
+        <div class="card-label">Scan Mode</div>
+        <div style="display:flex;gap:10px">
+          <button class="mode-btn active" id="mode-single" onclick="setScanMode('single',this)" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-weight:600;font-size:13px;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">Single Creator</button>
+          <button class="mode-btn" id="mode-group" onclick="setScanMode('group',this)" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-weight:600;font-size:13px;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">Group Scan</button>
+        </div>
       </div>
 
-      <!-- Input Field -->
-      <input type="text" id="creator-input" class="form-input" placeholder="@hotrodd, https://tiktok.com/@hotrodd, UCxxxxx" style="width:100%;padding:12px;margin-bottom:8px" oninput="validateInput()" />
-      <div id="input-detected" style="display:none;font-size:11px;color:var(--green);font-family:var(--mono);margin-bottom:16px;display:flex;gap:6px;align-items:center">
-        <span style="color:var(--green)">✓</span>
-        <span id="detected-text">Detected: —</span>
+      <!-- Input Field (Single Mode) -->
+      <div class="card" id="single-mode-card">
+        <div class="card-label" id="input-label">Creator Profile or Username</div>
+        <input type="text" id="creator-input" class="form-input" placeholder="@hotrodd, https://tiktok.com/@hotrodd, UCxxxxx" style="width:100%;padding:12px" oninput="validateInput()" />
+        <div id="input-hint" style="font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--mono)">Paste a link or username</div>
+        <div id="input-detected" style="display:none;margin-top:8px;padding:8px;background:var(--green-dim);border:1px solid var(--green);border-radius:4px;font-size:11px;color:var(--green);font-family:var(--mono)"></div>
+        <div id="input-error" style="display:none;margin-top:8px;padding:8px;background:var(--red-dim);border:1px solid var(--red);border-radius:4px;font-size:11px;color:var(--red);font-family:var(--mono)"></div>
       </div>
-      <div id="input-error" style="display:none;font-size:11px;color:var(--red);font-family:var(--mono);margin-bottom:16px"></div>
+
+      <!-- Group Selector (Group Mode) -->
+      <div class="card" id="group-mode-card" style="display:none">
+        <div class="card-label">Select a Group</div>
+        <select id="group-selector" class="form-input" style="width:100%;padding:12px;margin-bottom:12px" onchange="onGroupSelected()">
+          <option value="">Loading groups...</option>
+        </select>
+        <div id="group-info" style="font-size:12px;color:var(--text2);margin-bottom:12px;display:none">
+          <strong id="group-creator-count">0</strong> creators in this group
+        </div>
+        <div id="no-groups-msg" style="text-align:center;padding:20px;color:var(--text3);display:none">
+          <p style="margin-bottom:8px">No groups yet</p>
+          <button class="btn-ghost" style="font-size:12px;padding:6px 12px" onclick="navTo('settings',null);switchSettingsTab('groups',document.querySelector('[onclick*=switchSettingsTab][onclick*=groups]'))">Create one in Settings</button>
+        </div>
+      </div>
 
       <!-- Scan Range -->
-      <div class="range-group" id="range-group" style="margin-bottom:16px">
-        <button class="range-btn active" onclick="setRange(3,this)">Last 3</button>
-        <button class="range-btn" id="range-14" onclick="setRange(14,this)">Last 14</button>
-        <button class="range-btn" id="range-30" onclick="setRange(30,this)">Last 30</button>
+      <div class="card">
+        <div class="card-label">Scan Range</div>
+        <div class="range-group" id="range-group">
+          <button class="range-btn active" onclick="setRange(3,this)">Last 3</button>
+          <button class="range-btn" id="range-14" onclick="setRange(14,this)">Last 14</button>
+          <button class="range-btn" id="range-30" onclick="setRange(30,this)">Last 30</button>
+        </div>
+        <p id="credit-preview" style="font-size:11px;color:var(--text3);margin-top:9px;font-family:var(--mono)">~1–2 credits per video</p>
       </div>
-      <p style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono)">~1 credit per video</p>
 
       <!-- Scan Button -->
       <button class="scan-btn" id="scan-btn" onclick="startScan()">Scan for Brand Deals</button>
+      <div id="group-scan-warning" style="display:none;margin-top:12px;padding:12px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:4px;font-size:12px;color:var(--amber)"></div>
       <div id="scan-results"></div>
+
+      <!-- Recent Activity Panel (Below Form) -->
+      <div id="recent-activity-panel" style="display:none;margin-top:30px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-size:13px;font-weight:700;margin:0">Recent Activity</h3>
+          <a href="#" onclick="navTo('history');return false" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">View All →</a>
+        </div>
+
+        <!-- Recent Scans Section -->
+        <div id="recent-scans-list" style="margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Scans</div>
+          <div id="recent-scans-items" style="display:grid;gap:8px">
+            <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>
+          </div>
+        </div>
+
+        <!-- Recent Deals Section -->
+        <div id="recent-deals-list" style="border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Deals</div>
+          <div id="recent-deals-items" style="display:grid;gap:8px">
+            <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- HISTORY -->
     <div class="page" id="page-history">
+      <div class="sec-head"><h1>Scan History</h1><p>All past scans — click a row to expand deals.</p></div>
       <div id="history-list"><div class="empty-state">No scans yet</div></div>
     </div>
 
     <!-- ALL DEALS -->
     <div class="page" id="page-deals">
+      <div class="sec-head"><h1>All Deals</h1><p>Every brand detected across all scans, ranked by frequency.</p></div>
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-lbl">Unique Brands</div><div class="stat-val" id="stat-brands">0</div><div class="stat-sub">detected</div></div>
         <div class="stat-card"><div class="stat-lbl">Creators Scanned</div><div class="stat-val" id="stat-scans">0</div><div class="stat-sub">total scans</div></div>
@@ -671,11 +1601,22 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 
     <!-- AUTOMATION -->
     <div class="page" id="page-automation">
+      <div class="sec-head"><h1>Automation</h1><p>Bulk scan multiple creators at once.</p></div>
       <div id="automation-content"></div>
+    </div>
+
+    <!-- GROUPS -->
+    <div class="page" id="page-groups">
+      <div class="sec-head"><h1>Groups</h1><p>Create named lists of creators and bulk scan them.</p></div>
+      <div style="margin-bottom:20px">
+        <button class="run-btn" onclick="showCreateGroupModal()">+ New Group</button>
+      </div>
+      <div id="groups-page-list" style="display:grid;gap:12px"></div>
     </div>
 
     <!-- CREDITS -->
     <div class="page" id="page-credits">
+      <div class="sec-head"><h1>Credits</h1><p>Analysis usage — billed at ~1 credit per minute of video.</p></div>
       <div class="cred-big-card">
         <div class="cbc-num" id="cbc-num">—</div>
         <div class="cbc-lbl">Credits Remaining</div>
@@ -690,6 +1631,7 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 
     <!-- ACCOUNT -->
     <div class="page" id="page-account">
+      <div class="sec-head"><h1>Account</h1><p>Manage your plan and billing.</p></div>
       <div class="card">
         <div class="acct-row">
           <div><div class="acct-lbl">Email</div><div class="acct-val" id="acct-email">—</div></div>
@@ -724,10 +1666,12 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
+      <div class="sec-head"><h1>Settings</h1><p>Manage creators, scan configs, and account preferences.</p></div>
       
       <!-- Settings Tabs -->
       <div style="display:flex;gap:8px;border-bottom:1px solid var(--border);margin-bottom:20px;padding-bottom:12px">
         <button class="settings-tab active" onclick="switchSettingsTab('creators',this)">Creators</button>
+        <button class="settings-tab" onclick="switchSettingsTab('groups',this)">Groups</button>
         <button class="settings-tab" onclick="switchSettingsTab('configs',this)">Scan Configs</button>
         <button class="settings-tab" onclick="switchSettingsTab('account',this)">Account</button>
       </div>
@@ -738,6 +1682,14 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
           <button class="run-btn" onclick="showAddCreatorModal()">+ Add Creator</button>
         </div>
         <div id="creators-list" style="display:grid;gap:12px"></div>
+      </div>
+
+      <!-- GROUPS TAB -->
+      <div id="settings-groups-tab" class="settings-content" style="display:none">
+        <div style="margin-bottom:20px">
+          <button class="run-btn" onclick="showCreateGroupModal()">+ New Group</button>
+        </div>
+        <div id="groups-list" style="display:grid;gap:12px"></div>
       </div>
 
       <!-- CONFIGS TAB -->
@@ -890,7 +1842,7 @@ let autoRange = 3;
 
 const PLAN_MAX_RANGE = { none: 0, pro: 14, max: 30, enterprise: 30 };
 const PLAN_CREDITS = { none: 0, pro: 300, max: 1000, enterprise: 9999 };
-const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', credits:'Credits', settings:'Settings', account:'Account' };
+const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', credits:'Credits', settings:'Settings', account:'Account' };
 
 // ── INIT ──
 async function init() {
@@ -961,6 +1913,7 @@ function showApp() {
   applyPlanLimits();
   loadHistory();
   updateCreditsUI();
+  loadRecentActivity();
 }
 function setView(v) {
   ['landing','auth','app'].forEach(id => {
@@ -1037,11 +1990,27 @@ async function submitAuth() {
 
   try {
     const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
-    const data = await api(endpoint, 'POST', { email, password });
+    // Don't use api() here since we don't have a token yet
+    const opts = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    };
+    const resp = await fetch(endpoint, opts);
+    const data = await resp.json();
+    
+    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
 
-    if (data.session?.access_token) {
-      token = data.session.access_token;
-      localStorage.setItem('rs_token', token);
+    if (data.accessToken || data.session?.access_token) {
+      const accessToken = data.accessToken || data.session.access_token;
+      const refreshToken = data.refreshToken || data.session.refresh_token;
+      
+      token = accessToken;
+      localStorage.setItem('rs_token', accessToken);
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+      
       const me = await api('/api/auth/me');
       currentUser = me;
       showApp();
@@ -1077,7 +2046,14 @@ async function logout() {
   try { await api('/api/auth/logout', 'POST'); } catch(_) {}
   token = null; currentUser = null; scanHistory = [];
   localStorage.removeItem('rs_token');
+  localStorage.removeItem('refreshToken');
   showLanding();
+}
+
+// ── UTILITIES ––
+function escapeHtml(text) {
+  const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+  return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
 }
 
 // ── PLAN LIMITS ──
@@ -1131,6 +2107,7 @@ function navTo(id, el) {
   if (id === 'history') loadHistory();
   if (id === 'deals') loadHistory();
   if (id === 'credits') loadHistory();
+  if (id === 'groups') loadGroupsUI();
   if (id === 'account') refreshAccount();
 }
 
@@ -1148,7 +2125,366 @@ function setError(msg) {
   document.getElementById('scan-results').innerHTML = `<div class="err-bar">⚠ ${msg}</div>`;
 }
 
+// ── RECENT ACTIVITY PANEL ──
+async function loadRecentActivity() {
+  console.log('[Recent Activity] Loading...');
+  try {
+    const res = await fetch('/api/scan/recent', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    
+    if (!res.ok) {
+      console.warn(`[Recent Activity] API returned ${res.status}`);
+      document.getElementById('recent-activity-panel').style.display = 'none';
+      return;
+    }
+    
+    const data = await res.json();
+    
+    // Handle empty response or error
+    if (!data || !data.scans || !data.deals) {
+      console.warn('[Recent Activity] No data in response', data);
+      document.getElementById('recent-activity-panel').style.display = 'none';
+      return;
+    }
+    const recentScans = data.scans || [];
+    const recentDeals = data.deals || [];
+    console.log(`[Recent Activity] Loaded ${recentScans.length} scans, ${recentDeals.length} deals`);
+    
+    // Show/hide panel
+    const panel = document.getElementById('recent-activity-panel');
+    if (recentScans.length > 0 || recentDeals.length > 0) {
+      panel.style.display = 'block';
+    } else {
+      panel.style.display = 'none';
+    }
+    
+    // Render recent scans
+    const scansHtml = recentScans.length > 0 ? recentScans.map(scan => `
+      <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="navTo('history')">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:4px">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">${escapeHtml(scan.creator_handle)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${getPlatformIcon(scan.platform)} ${timeAgo(new Date(scan.created_at))}</div>
+          </div>
+          <span style="font-size:10px;font-weight:600;background:${scan.deals_count > 0 ? 'var(--green-dim)' : 'var(--border)'};color:${scan.deals_count > 0 ? 'var(--green)' : 'var(--text3)'};padding:2px 6px;border-radius:3px;white-space:nowrap">${scan.deals_count || 0} deal${scan.deals_count !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    `).join('') : '<div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>';
+    
+    document.getElementById('recent-scans-items').innerHTML = scansHtml;
+    
+    // Render recent deals
+    const dealsHtml = recentDeals.length > 0 ? recentDeals.map(deal => `
+      <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="navTo('history')">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${escapeHtml(deal.brand_name || deal.brands?.[0] || 'Unknown')}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${getPlatformIcon(deal.platform)} on ${escapeHtml(deal.creator_handle)} • ${timeAgo(new Date(deal.created_at))}</div>
+      </div>
+    `).join('') : '<div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>';
+    
+    document.getElementById('recent-deals-items').innerHTML = dealsHtml;
+    
+  } catch (e) {
+    console.error('[Recent Activity] Load error:', e.message);
+    // Hide panel on error
+    const panel = document.getElementById('recent-activity-panel');
+    if (panel) panel.style.display = 'none';
+  }
+}
+
+function getPlatformIcon(platform) {
+  const p = (platform || '').toLowerCase();
+  if (p === 'tiktok') return '🎵';
+  if (p === 'youtube') return '▶️';
+  if (p === 'instagram') return '📸';
+  if (p === 'twitch') return '⚡';
+  return '📱';
+}
+
+// ── SCAN MODE & GROUP FUNCTIONS ──
+let scanMode = 'single'; // 'single' or 'group'
+let selectedGroupId = null;
+let selectedGroupCreators = [];
+
+function setScanMode(mode, btn) {
+  scanMode = mode;
+  
+  // Update button styles
+  document.getElementById('mode-single').style.background = mode === 'single' ? 'var(--accent-dim)' : 'var(--surface)';
+  document.getElementById('mode-single').style.color = mode === 'single' ? 'var(--accent)' : 'var(--text)';
+  document.getElementById('mode-single').style.borderColor = mode === 'single' ? 'var(--accent)' : 'var(--border)';
+  
+  document.getElementById('mode-group').style.background = mode === 'group' ? 'var(--accent-dim)' : 'var(--surface)';
+  document.getElementById('mode-group').style.color = mode === 'group' ? 'var(--accent)' : 'var(--text)';
+  document.getElementById('mode-group').style.borderColor = mode === 'group' ? 'var(--accent)' : 'var(--border)';
+  
+  // Toggle UI elements
+  document.getElementById('single-mode-card').style.display = mode === 'single' ? 'block' : 'none';
+  document.getElementById('group-mode-card').style.display = mode === 'group' ? 'block' : 'none';
+  
+  // Update button label
+  const btnLabel = mode === 'single' ? 'Scan for Brand Deals' : 'Bulk Scan Group';
+  document.getElementById('scan-btn').textContent = btnLabel;
+  
+  // Load groups if switching to group mode
+  if (mode === 'group') {
+    loadGroupsForScanner();
+  }
+  
+  // Reset credit preview
+  updateCreditPreview();
+}
+
+async function loadGroupsForScanner() {
+  try {
+    const res = await fetch('/api/groups', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    
+    if (!res.ok) throw new Error('Failed to load groups');
+    
+    const data = await res.json();
+    const groups = data.groups || [];
+    
+    const selector = document.getElementById('group-selector');
+    const noGroupsMsg = document.getElementById('no-groups-msg');
+    const groupInfo = document.getElementById('group-info');
+    
+    if (groups.length === 0) {
+      selector.style.display = 'none';
+      groupInfo.style.display = 'none';
+      noGroupsMsg.style.display = 'block';
+      document.getElementById('scan-btn').disabled = true;
+      document.getElementById('scan-btn').style.opacity = '0.5';
+      return;
+    }
+    
+    selector.style.display = 'block';
+    noGroupsMsg.style.display = 'none';
+    document.getElementById('scan-btn').disabled = false;
+    document.getElementById('scan-btn').style.opacity = '1';
+    
+    selector.innerHTML = '<option value="">Select a group...</option>' + 
+      groups.map(g => `<option value="${g.id}" data-count="${g.memberCount}">${escapeHtml(g.name)} — ${g.memberCount} creator${g.memberCount !== 1 ? 's' : ''}</option>`).join('');
+    
+    selectedGroupId = null;
+    groupInfo.style.display = 'none';
+  } catch (e) {
+    console.error('Load groups error:', e.message);
+    document.getElementById('group-selector').innerHTML = '<option value="">Error loading groups</option>';
+  }
+}
+
+function onGroupSelected() {
+  const selector = document.getElementById('group-selector');
+  selectedGroupId = selector.value;
+  
+  if (!selectedGroupId) {
+    document.getElementById('group-info').style.display = 'none';
+    document.getElementById('scan-btn').disabled = true;
+    document.getElementById('scan-btn').style.opacity = '0.5';
+    updateCreditPreview();
+    return;
+  }
+  
+  const option = selector.options[selector.selectedIndex];
+  const creatorCount = parseInt(option.dataset.count) || 0;
+  
+  document.getElementById('group-creator-count').textContent = creatorCount;
+  document.getElementById('group-info').style.display = 'block';
+  
+  if (creatorCount === 0) {
+    document.getElementById('scan-btn').disabled = true;
+    document.getElementById('scan-btn').style.opacity = '0.5';
+    document.getElementById('group-scan-warning').style.display = 'block';
+    document.getElementById('group-scan-warning').textContent = 'This group has no creators';
+  } else {
+    document.getElementById('scan-btn').disabled = false;
+    document.getElementById('scan-btn').style.opacity = '1';
+    document.getElementById('group-scan-warning').style.display = 'none';
+  }
+  
+  updateCreditPreview();
+}
+
+function updateCreditPreview() {
+  const preview = document.getElementById('credit-preview');
+  
+  if (scanMode === 'single') {
+    preview.textContent = '~1–2 credits per video';
+  } else {
+    const selector = document.getElementById('group-selector');
+    const creatorCount = parseInt(selector.options[selector.selectedIndex]?.dataset.count) || 0;
+    
+    if (creatorCount === 0) {
+      preview.textContent = 'No creators in group';
+    } else {
+      // Estimate: 1-2 credits per video per creator
+      const minRange = { 3: 3, 14: 14, 30: 30 };
+      const currentRange = parseInt(document.querySelector('.range-btn.active')?.textContent) || 3;
+      const minCredits = creatorCount * currentRange;
+      const maxCredits = creatorCount * currentRange * 2;
+      preview.textContent = `~${minCredits}–${maxCredits} credits for ${creatorCount} creators on Last ${currentRange}`;
+    }
+  }
+}
+
+// Override setRange to update credit preview
+const originalSetRange = window.setRange || function() {};
+function setRange(range, btn) {
+  if (originalSetRange) originalSetRange(range, btn);
+  updateCreditPreview();
+}
+
+async function startGroupBulkScan() {
+  if (!selectedGroupId) {
+    setError('Select a group');
+    return;
+  }
+
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  
+  try {
+    // Get group details
+    const group = await api(`/api/groups/${selectedGroupId}`, 'GET');
+    const members = group.members || [];
+    
+    if (members.length === 0) {
+      setError('This group has no creators');
+      btn.disabled = false;
+      return;
+    }
+    
+    // Get credits info
+    const me = await api('/api/auth/me', 'GET');
+    const availableCredits = me.credits_remaining || 0;
+    const estCreditsNeeded = members.length * scanRange;
+    
+    if (availableCredits < estCreditsNeeded) {
+      const msg = `Not enough credits. Need ~${estCreditsNeeded}, have ${availableCredits}`;
+      document.getElementById('group-scan-warning').style.display = 'block';
+      document.getElementById('group-scan-warning').style.background = 'var(--red-dim)';
+      document.getElementById('group-scan-warning').style.borderColor = 'var(--red)';
+      document.getElementById('group-scan-warning').style.color = 'var(--red)';
+      document.getElementById('group-scan-warning').textContent = msg;
+      btn.disabled = false;
+      return;
+    }
+    
+    // Start progress tracking
+    setStatus(`Starting bulk scan of ${members.length} creators...`);
+    
+    // Scan each creator sequentially
+    let successCount = 0;
+    let failedCount = 0;
+    const results = [];
+    
+    for (let i = 0; i < members.length; i++) {
+      const member = members[i];
+      setStatus(`Scanning ${i + 1} of ${members.length} creators...`);
+      
+      try {
+        let scanData;
+        const platform = (member.platform || '').toLowerCase();
+        const handle = member.handle;
+        
+        console.log(`[Group Scan] Starting scan for ${handle} on ${platform}`);
+        
+        // Route to platform-specific endpoint
+        if (platform === 'youtube') {
+          const scanDepth = scanRange <= 10 ? 10 : scanRange <= 20 ? 20 : 30;
+          scanData = await api('/api/youtube/scan', 'POST', { 
+            channelInput: handle, 
+            scanDepth,
+            groupId: selectedGroupId,
+            groupName: group.name
+          });
+        } else if (platform === 'tiktok' || platform === 'instagram' || platform === 'twitch') {
+          // TikTok, Instagram, Twitch all use /api/scan
+          scanData = await api('/api/scan', 'POST', {
+            platform,
+            handle,
+            range: scanRange,
+            groupId: selectedGroupId,
+            groupName: group.name
+          });
+        } else {
+          throw new Error(`Unsupported platform: ${platform}`);
+        }
+        
+        // Check if scan was successful
+        const deals = scanData.deals || [];
+        successCount++;
+        results.push({
+          creator: handle,
+          platform: member.platform,
+          deals: deals.length,
+          status: 'success'
+        });
+        console.log(`[Group Scan] ✓ ${handle} — ${deals.length} deals found`);
+        
+      } catch (e) {
+        failedCount++;
+        results.push({
+          creator: member.handle,
+          platform: member.platform,
+          deals: 0,
+          status: 'failed',
+          error: e.message
+        });
+        console.error(`[Group Scan] ✗ ${member.handle} — ${e.message}`);
+      }
+    }
+    
+    // Display results
+    const resultHtml = `
+      <div class="card" style="margin-top:16px">
+        <div class="card-label">Bulk Scan Complete — ${group.name}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
+          Scanned ${successCount + failedCount} creators (${failedCount} failed)
+        </div>
+        <div style="display:grid;gap:8px">
+          ${results.map(r => `
+            <div style="display:flex;justify-content:space-between;padding:8px;background:${r.status === 'success' ? 'var(--green-dim)' : 'var(--red-dim)'};border-radius:4px;border:1px solid ${r.status === 'success' ? 'var(--green)' : 'var(--red)'};font-size:11px">
+              <span><strong>${escapeHtml(r.creator)}</strong> • ${r.platform}</span>
+              <span>${r.deals} deal${r.deals !== 1 ? 's' : ''}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('scan-results').innerHTML = resultHtml;
+    setStatus(`Bulk scan complete! Found ${successCount} creators with deals`);
+    
+    // Refresh recent activity — wait a bit for DB to sync
+    console.log('[Group Scan] Waiting 2s before refreshing activity feed...');
+    setTimeout(() => {
+      console.log('[Group Scan] Refreshing activity feed now');
+      loadRecentActivity();
+      
+      // Also refresh scan history if user is viewing it
+      if (currentPage === 'history') {
+        console.log('[Group Scan] Refreshing Scan History');
+        loadHistory();
+      }
+    }, 2000);
+    
+  } catch (e) {
+    console.error('[Group Scan] Error:', e);
+    setError('Bulk scan failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function startScan() {
+  // Handle group scan mode
+  if (scanMode === 'group') {
+    return startGroupBulkScan();
+  }
+  
   const input = document.getElementById('creator-input').value.trim();
   if (!input) { setError('Enter a creator profile link or username.'); return; }
 
@@ -1188,8 +2524,9 @@ async function startScan() {
     let listHtml = '';
     if (data.cached) {
       const ago = timeAgo(new Date(data.cachedAt));
-      listHtml = `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:10px;padding:11px 15px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:13px;display:flex;align-items:center;gap:8px;">
-        Already scanned ${ago} — showing cached results. No credits used.
+      listHtml = `<div style="background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);border-radius:10px;padding:11px 15px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:13px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <span>Already scanned ${ago} — showing cached results. No credits used.</span>
+        <button onclick="forceFreshScan('${handle}','${platform}',${scanRange})" style="background:var(--amber);border:none;border-radius:6px;color:white;font-family:var(--mono);font-size:10px;font-weight:600;padding:5px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0">↺ Rescan</button>
       </div>`;
     } else if (videos && videos.length) {
       listHtml = `<div class="card" style="margin-bottom:13px">
@@ -1223,10 +2560,28 @@ async function startScan() {
     const me = await api('/api/auth/me');
     currentUser = me;
     updateCreditsUI();
+    
+    // Refresh recent activity
+    loadRecentActivity();
   } catch(e) {
     setError(e.message || 'Scan failed.');
   }
   btn.disabled = false;
+}
+
+async function forceFreshScan(handle, platform, range) {
+  // Delete cache then trigger a fresh scan
+  try {
+    await api('/api/scan/delete-cache', 'POST', { username: handle, range });
+  } catch(_) {}
+  // Pre-fill input and trigger scan
+  document.getElementById('creator-input').value = handle;
+  scanRange = range;
+  // Update range button UI
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent.replace('Last ','')) === range);
+  });
+  await startScan();
 }
 
 function renderDeals(deals, prefix = '', groupByVideo = true) {
@@ -1992,18 +3347,117 @@ function updateBadges() {
   document.getElementById('nb-deals').textContent = total;
 }
 
+// ── TOKEN MANAGEMENT ──
+function parseJWT(tokenStr) {
+  try {
+    const base64Url = tokenStr.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
+function isTokenExpired(tokenStr) {
+  if (!tokenStr) return true;
+  const decoded = parseJWT(tokenStr);
+  if (!decoded || !decoded.exp) return true;
+  const expiresAt = decoded.exp * 1000;
+  const bufferMs = 5 * 60 * 1000; // 5 minutes before actual expiry
+  return expiresAt - bufferMs < Date.now();
+}
+
+async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) {
+    throw new Error('No refresh token available. Please log in again.');
+  }
+
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Refresh failed: ' + res.statusText);
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = await res.json();
+    token = accessToken;
+    localStorage.setItem('rs_token', accessToken);
+    if (newRefreshToken) {
+      localStorage.setItem('refreshToken', newRefreshToken);
+    }
+
+    return accessToken;
+  } catch (err) {
+    console.error('Token refresh error:', err);
+    // If refresh fails, user is logged out
+    token = null;
+    localStorage.removeItem('rs_token');
+    localStorage.removeItem('refreshToken');
+    logout();
+    throw err;
+  }
+}
+
+async function getValidToken() {
+  let currentToken = token || localStorage.getItem('rs_token');
+  
+  if (!currentToken) {
+    throw new Error('No access token. Please log in.');
+  }
+
+  if (isTokenExpired(currentToken)) {
+    console.log('Token expired, refreshing...');
+    currentToken = await refreshAccessToken();
+  }
+
+  return currentToken;
+}
+
 // ── API HELPER ──
 async function api(path, method = 'GET', body = null) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
-  if (body) opts.body = JSON.stringify(body);
-  const resp = await fetch(path, opts);
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
-  return data;
+  try {
+    const validToken = await getValidToken();
+    
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (validToken) opts.headers['Authorization'] = `Bearer ${validToken}`;
+    if (body) opts.body = JSON.stringify(body);
+    
+    let resp = await fetch(path, opts);
+    
+    // If we got a 401, try to refresh and retry once
+    if (resp.status === 401) {
+      console.log('401 received, attempting refresh and retry...');
+      try {
+        const newToken = await refreshAccessToken();
+        opts.headers['Authorization'] = `Bearer ${newToken}`;
+        resp = await fetch(path, opts);
+      } catch (err) {
+        console.error('Refresh + retry failed:', err);
+        showAuth('login');
+        throw err;
+      }
+    }
+    
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+    return data;
+  } catch (err) {
+    throw err;
+  }
 }
 
 // ── UTILS ──
@@ -2123,6 +3577,7 @@ function switchSettingsTab(tab, btn) {
   
   // Load data when tab is opened
   if (tab === 'creators') loadCreators();
+  else if (tab === 'groups') loadGroups();
   else if (tab === 'configs') loadConfigs();
   else if (tab === 'account') loadAccountData();
 }
@@ -2514,11 +3969,384 @@ function editConfig(configId) {
   // TODO: Implement edit flow
 }
 
+// ──── GROUPS ────
+async function loadGroups() {
+  try {
+    const res = await fetch('/api/groups', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    displayGroupsList(data.groups);
+  } catch (e) {
+    console.error('Load groups error:', e.message);
+    document.getElementById('groups-list').innerHTML = '<div class="empty-state">Failed to load groups</div>';
+  }
+}
+
+function displayGroupsList(groups) {
+  const list = document.getElementById('groups-list');
+  const pageList = document.getElementById('groups-page-list');
+  
+  if (!groups || groups.length === 0) {
+    const emptyMsg = '<div class="empty-state">No groups yet. Create one to start!</div>';
+    if (list) list.innerHTML = emptyMsg;
+    if (pageList) pageList.innerHTML = emptyMsg;
+    return;
+  }
+
+  const html = groups.map(g => `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div style="flex:1;cursor:pointer" onclick="editGroup('${g.id}')">
+        <div style="font-weight:600;margin-bottom:4px">${escapeHtml(g.name)}</div>
+        <div style="font-size:12px;color:var(--text3)">${g.memberCount} creator${g.memberCount !== 1 ? 's' : ''} ${g.lastScannedAt ? '• Last scanned ' + new Date(g.lastScannedAt).toLocaleDateString() : ''}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" style="font-size:12px;padding:6px 12px" onclick="editGroup('${g.id}')">Edit</button>
+        <button class="danger-btn" style="font-size:12px;padding:6px 12px" onclick="deleteGroup('${g.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+
+  if (list) list.innerHTML = html;
+  if (pageList) pageList.innerHTML = html;
+}
+
+function showCreateGroupModal() {
+  const modal = document.getElementById('create-group-modal') || createGroupModal();
+  modal.style.display = 'flex';
+}
+
+function createGroupModal() {
+  if (document.getElementById('create-group-modal')) return document.getElementById('create-group-modal');
+  
+  const modal = document.createElement('div');
+  modal.id = 'create-group-modal';
+  modal.className = 'modal';
+  modal.style.cssText = 'display:flex';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
+    <div class="modal-content">
+      <div class="modal-header"><h2>Create Group</h2></div>
+      <input class="form-input" id="group-name-input" type="text" placeholder="Group name (e.g., 'Fitness Creators')" style="margin-bottom:12px" />
+      <textarea class="form-input" id="group-desc-input" placeholder="Description (optional)" style="margin-bottom:12px;height:80px"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="document.getElementById('create-group-modal').style.display='none'">Cancel</button>
+        <button class="auth-btn" onclick="createGroup()">Create</button>
+      </div>
+      <div id="group-create-msg" style="margin-top:12px;font-size:12px;display:none"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+async function createGroup() {
+  const name = document.getElementById('group-name-input').value.trim();
+  const desc = document.getElementById('group-desc-input').value.trim();
+  
+  if (!name) {
+    showMsg('group-create-msg', 'Group name required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/groups', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      },
+      body: JSON.stringify({ name, description: desc || null })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    const group = await res.json();
+    document.getElementById('create-group-modal').style.display = 'none';
+    document.getElementById('group-name-input').value = '';
+    document.getElementById('group-desc-input').value = '';
+    loadGroups();
+    editGroup(group.id);
+  } catch (e) {
+    showMsg('group-create-msg', 'Error: ' + e.message, 'error');
+  }
+}
+
+async function editGroup(groupId) {
+  try {
+    const res = await fetch(`/api/groups/${groupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const group = await res.json();
+
+    const modal = document.getElementById('edit-group-modal') || createEditGroupModal();
+    modal.style.display = 'flex';
+    
+    document.getElementById('edit-group-id').value = group.id;
+    document.getElementById('edit-group-name').value = group.name;
+    document.getElementById('edit-group-desc').value = group.description || '';
+    
+    displayGroupMembers(group.members || []);
+  } catch (e) {
+    console.error('Edit group error:', e.message);
+  }
+}
+
+function createEditGroupModal() {
+  if (document.getElementById('edit-group-modal')) return document.getElementById('edit-group-modal');
+  
+  const modal = document.createElement('div');
+  modal.id = 'edit-group-modal';
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
+    <div class="modal-content" style="max-width:600px">
+      <div class="modal-header"><h2>Edit Group</h2></div>
+      <input class="form-input" id="edit-group-id" type="hidden" />
+      
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-weight:500;margin-bottom:6px">Group Name</label>
+        <input class="form-input" id="edit-group-name" type="text" />
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-weight:500;margin-bottom:6px">Description</label>
+        <textarea class="form-input" id="edit-group-desc" style="height:60px"></textarea>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-weight:500;margin-bottom:6px">Members (Max 20)</label>
+        <div id="group-members-list" style="display:grid;gap:8px;margin-bottom:12px"></div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Add Manual</label>
+            <select id="add-member-platform" class="form-input" style="margin-bottom:4px">
+              <option value="tiktok">TikTok</option>
+              <option value="youtube">YouTube</option>
+              <option value="instagram">Instagram</option>
+              <option value="twitch">Twitch</option>
+            </select>
+            <input class="form-input" id="add-member-handle" type="text" placeholder="Handle (e.g., johndoe)" style="margin-bottom:4px" />
+            <button class="btn-ghost" style="width:100%;font-size:12px;padding:6px" onclick="addGroupMember()">Add</button>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Paste List</label>
+            <textarea id="add-members-bulk" class="form-input" placeholder="tiktok:user1&#10;youtube:user2" style="margin-bottom:4px;height:76px;font-size:11px;font-family:var(--mono)"></textarea>
+            <button class="btn-ghost" style="width:100%;font-size:12px;padding:6px" onclick="addGroupMembersBulk()">Import</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="document.getElementById('edit-group-modal').style.display='none'">Cancel</button>
+        <button class="auth-btn" onclick="saveGroupChanges()">Save</button>
+      </div>
+      <div id="group-edit-msg" style="margin-top:12px;font-size:12px;display:none"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function displayGroupMembers(members) {
+  const list = document.getElementById('group-members-list');
+  if (!members || members.length === 0) {
+    list.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:12px;color:var(--text3);font-size:12px">No members yet</div>';
+    return;
+  }
+
+  list.innerHTML = members.map(m => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:4px;font-size:12px">
+      <span>${m.platform} • <strong>${escapeHtml(m.handle)}</strong></span>
+      <button class="danger-btn" style="font-size:10px;padding:3px 8px" onclick="removeGroupMember('${m.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+async function addGroupMember() {
+  const platform = document.getElementById('add-member-platform').value;
+  const handle = document.getElementById('add-member-handle').value.trim();
+  
+  if (!handle) {
+    alert('Enter a handle');
+    return;
+  }
+
+  const groupId = document.getElementById('edit-group-id').value;
+  
+  try {
+    const res = await fetch(`/api/groups/${groupId}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      },
+      body: JSON.stringify({ members: [{ platform, handle }] })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    document.getElementById('add-member-handle').value = '';
+    
+    // Reload group
+    const groupRes = await fetch(`/api/groups/${groupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    const group = await groupRes.json();
+    displayGroupMembers(group.members || []);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function addGroupMembersBulk() {
+  const text = document.getElementById('add-members-bulk').value.trim();
+  if (!text) {
+    alert('Paste creator list');
+    return;
+  }
+
+  const groupId = document.getElementById('edit-group-id').value;
+  const lines = text.split('\n').filter(l => l.trim());
+  const members = [];
+
+  for (const line of lines) {
+    const parts = line.trim().split(/[:\s]+/);
+    if (parts.length >= 2) {
+      const platform = parts[0].toLowerCase();
+      const handle = parts.slice(1).join(' ');
+      if (['tiktok', 'youtube', 'instagram', 'twitch'].includes(platform)) {
+        members.push({ platform, handle });
+      }
+    }
+  }
+
+  if (members.length === 0) {
+    alert('No valid creators found. Use format: platform:handle (e.g., tiktok:johndoe)');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/groups/${groupId}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      },
+      body: JSON.stringify({ members })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    document.getElementById('add-members-bulk').value = '';
+    
+    // Reload group
+    const groupRes = await fetch(`/api/groups/${groupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    const group = await groupRes.json();
+    displayGroupMembers(group.members || []);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function removeGroupMember(memberId) {
+  if (!confirm('Remove this creator?')) return;
+
+  const groupId = document.getElementById('edit-group-id').value;
+  
+  try {
+    const res = await fetch(`/api/groups/${groupId}/members/${memberId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    
+    // Reload group
+    const groupRes = await fetch(`/api/groups/${groupId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+    const group = await groupRes.json();
+    displayGroupMembers(group.members || []);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function saveGroupChanges() {
+  const groupId = document.getElementById('edit-group-id').value;
+  const name = document.getElementById('edit-group-name').value.trim();
+  const description = document.getElementById('edit-group-desc').value.trim();
+
+  if (!name) {
+    showMsg('group-edit-msg', 'Group name required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/groups/${groupId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      },
+      body: JSON.stringify({ name, description: description || null })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    document.getElementById('edit-group-modal').style.display = 'none';
+    loadGroups();
+  } catch (e) {
+    showMsg('group-edit-msg', 'Error: ' + e.message, 'error');
+  }
+}
+
+async function deleteGroup(groupId) {
+  if (!confirm('Delete this group and all its members?')) return;
+
+  try {
+    const res = await fetch(`/api/groups/${groupId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    loadGroups();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// Load groups when visiting groups page or settings
+function loadGroupsUI() {
+  loadGroups();
+}
+
 function showMsg(elementId, msg, type) {
   const el = document.getElementById(elementId);
-  el.textContent = msg;
-  el.className = type === 'error' ? 'form-error-msg' : 'form-success';
-  el.style.display = 'block';
+  if (el) {
+    el.textContent = msg;
+    el.className = type === 'error' ? 'form-error-msg' : 'form-success';
+    el.style.display = 'block';
+  }
 }
 
 init();
