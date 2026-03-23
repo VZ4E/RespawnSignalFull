@@ -1157,6 +1157,173 @@ input[type="password"] {
   color: var(--text2);
 }
 
+/* ── Phase 7 additional: Automation page polish ── */
+
+/* Scan all creators button and queue action buttons: consistent blue */
+#page-automation .run-btn,
+#page-automation button.run-btn {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+#page-automation .run-btn:hover {
+  background: var(--accent-dark);
+}
+
+/* Credit cost estimate hint text */
+#page-automation p[style*="font-size:11px"],
+#page-automation .card p {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* ── Phase 8: Groups page polish ── */
+
+/* Groups page new group button: filled blue */
+#page-groups .run-btn {
+  background: var(--accent);
+  color: white;
+}
+
+/* ── Phase 9: Credits page usage history ── */
+
+/* Platform color dots in usage rows */
+.uh-platform-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Phase 10: Account page log out ── */
+
+/* Log Out / danger button text normalize */
+.danger-btn {
+  text-transform: none;
+}
+
+/* ── Phase 11: Settings page add creator/group buttons ── */
+
+/* All run-btn in settings: blue */
+#page-settings .run-btn,
+#settings-creators-tab .run-btn,
+#settings-groups-tab .run-btn,
+#settings-configs-tab .run-btn {
+  background: var(--accent);
+  color: white;
+}
+#page-settings .run-btn:hover,
+#settings-creators-tab .run-btn:hover,
+#settings-groups-tab .run-btn:hover,
+#settings-configs-tab .run-btn:hover {
+  background: var(--accent-dark);
+}
+
+/* Creator/config cards: clean hover */
+.creator-card,
+.config-card {
+  transition: all 0.15s;
+  border-radius: 12px;
+}
+.creator-card:hover,
+.config-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px var(--accent-dim);
+  background: var(--surface);
+}
+
+/* Creator name / config name: consistent */
+.creator-name,
+.config-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Creator/config action buttons */
+.creator-actions button,
+.config-actions button {
+  font-family: var(--sans);
+  font-size: 12px;
+  border-radius: 7px;
+  transition: all 0.13s;
+}
+
+/* ── Phase 12-15: Final polish ── */
+
+/* Fix input height to only affect scanner inputs, not auth */
+.page input[type="text"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Prevent height override on form-inputs with explicit padding */
+.form-input {
+  height: auto;
+  min-height: 38px;
+}
+.form-input[type="email"],
+.form-input[type="password"],
+.form-input[type="text"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Remove the overly broad input height rule above */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  height: auto;
+  min-height: 40px;
+}
+
+/* Apply consistent transition to interactive elements */
+button,
+.nav-item,
+.history-item,
+.deal-card,
+.bml-item,
+.video-item {
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
+/* Accessibility: ensure focus styles are visible */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Result count pill consistency */
+.results-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Upgrade prompt: clean look */
+.upgrade-prompt {
+  border-radius: 12px;
+  padding: 32px;
+}
+.upgrade-prompt h3 {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.upgrade-prompt p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
 </style>
 </head>
 <body>
