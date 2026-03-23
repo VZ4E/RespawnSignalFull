@@ -76,19 +76,20 @@ router.post('/', authMiddleware, async (req, res) => {
       console.log(`[Scan] Fetching Twitch videos for ${username}`);
       
       try {
-        const twitchResp = await fetch(
-          `https://twitch-scraper2.p.rapidapi.com/api/channels/videos?channel=${encodeURIComponent(username)}&limit=${safeRange}`,
-          {
-            headers: {
-              'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-              'x-rapidapi-host': 'twitch-scraper2.p.rapidapi.com',
-            },
-          }
-        );
+        const twitchUrl = `https://twitch-scraper2.p.rapidapi.com/api/channels/videos?channel=${encodeURIComponent(username)}&limit=${safeRange}`;
+        console.log(`[Scan] Twitch API URL: ${twitchUrl}`);
+        console.log(`[Scan] Using RapidAPI key: ${process.env.RAPIDAPI_KEY ? process.env.RAPIDAPI_KEY.substring(0, 10) + '...' : 'NOT SET'}`);
+        
+        const twitchResp = await fetch(twitchUrl, {
+          headers: {
+            'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+            'x-rapidapi-host': 'twitch-scraper2.p.rapidapi.com',
+          },
+        });
         
         console.log(`[Scan] Twitch API response status: ${twitchResp.status}`);
         const twitchData = await twitchResp.json();
-        console.log(`[Scan] Twitch API response:`, JSON.stringify(twitchData).substring(0, 500));
+        console.log(`[Scan] Twitch API full response:`, JSON.stringify(twitchData));
 
         let items = [];
         if (Array.isArray(twitchData?.data)) {
