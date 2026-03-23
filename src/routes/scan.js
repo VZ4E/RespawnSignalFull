@@ -92,7 +92,10 @@ router.post('/', authMiddleware, async (req, res) => {
         console.log(`[Scan] Twitch API full response:`, JSON.stringify(twitchData));
 
         let items = [];
-        if (Array.isArray(twitchData?.data)) {
+        if (Array.isArray(twitchData?.data?.user?.videos)) {
+          console.log(`[Scan] Found videos in twitchData.data.user.videos`);
+          items = twitchData.data.user.videos;
+        } else if (Array.isArray(twitchData?.data)) {
           console.log(`[Scan] Found videos in twitchData.data`);
           items = twitchData.data;
         } else if (Array.isArray(twitchData?.videos)) {
@@ -170,8 +173,9 @@ router.post('/', authMiddleware, async (req, res) => {
 
   for (let i = 0; i < videos.length; i++) {
     const v = videos[i];
-    const videoId = v.video_id || v.id || v.aweme_id;
-    const title = v.title || v.desc || `Video ${i + 1}`;
+    // Handle both Twitch (node.id) and TikTok (video_id, id, aweme_id) formats
+    const videoId = v.node?.id || v.video_id || v.id || v.aweme_id;
+    const title = v.node?.title || v.title || v.desc || `Video ${i + 1}`;
 
     let transcript = '';
     let transcribed = false;
