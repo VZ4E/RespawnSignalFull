@@ -183,22 +183,55 @@ router.post('/', authMiddleware, async (req, res) => {
         videoUrl = `https://www.tiktok.com/@${username}/video/${videoId}`;
       }
 
-      const tr = await fetch('https://api.transcript24.com/transcribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.TRANSCRIPT24_TOKEN}`,
-        },
-        body: JSON.stringify({ url: videoUrl }),
-      });
-      const td = await tr.json();
-      if (td?.caption && Array.isArray(td.caption)) {
-        transcript = td.caption.map(c => c.text).join(' ');
-        totalCredits += td.taskCredits || 1;
-        transcribed = true;
+      // Use TranscriptHQ for Twitch, Transcript24 for TikTok
+      if (platform === 'twitch') {
+        console.log(`[Transcribe] Fetching Twitch VOD transcript via TranscriptHQ for ${videoId}`);
+        const tr = await fetch('https://api.transcripthq.com/v1/transcribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': process.env.TRANSCRIPTHQ_KEY,
+          },
+          body: JSON.stringify({ url: videoUrl }),
+        });
+        const td = await tr.json();
+        console.log(`[Transcribe] TranscriptHQ response status: ${tr.status}`);
+        
+        if (td?.transcript) {
+          transcript = td.transcript;
+          totalCredits += td.taskCredits || 1;
+          transcribed = true;
+          console.log(`[Transcribe] ✓ Transcribed via TranscriptHQ: ${transcript.length} chars`);
+        } else if (td?.text) {
+          transcript = td.text;
+          totalCredits += 1;
+          transcribed = true;
+        } else if (td?.caption && Array.isArray(td.caption)) {
+          transcript = td.caption.map(c => c.text).join(' ');
+          totalCredits += td.taskCredits || 1;
+          transcribed = true;
+        } else {
+          console.error(`[Transcribe] TranscriptHQ returned unexpected format:`, JSON.stringify(td).substring(0, 200));
+        }
+      } else {
+        // Use Transcript24 for TikTok
+        const tr = await fetch('https://api.transcript24.com/transcribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.TRANSCRIPT24_TOKEN}`,
+          },
+          body: JSON.stringify({ url: videoUrl }),
+        });
+        const td = await tr.json();
+        if (td?.caption && Array.isArray(td.caption)) {
+          transcript = td.caption.map(c => c.text).join(' ');
+          totalCredits += td.taskCredits || 1;
+          transcribed = true;
+        }
       }
     } catch (err) {
-      console.error(`Transcript24 failed for video ${videoId}:`, err.message);
+      console.error(`Transcription failed for video ${videoId}:`, err.message);
     }
 
     if (!transcript) {
@@ -476,31 +509,53 @@ router.post('/manual-analyze', authMiddleware, async (req, res) => {
   if (transcript.includes('tiktok.com') || transcript.includes('twitch.tv')) {
     try {
       let videoId;
+      let istwitch = false;
       if (transcript.includes('tiktok.com')) {
         const urlMatch = transcript.match(/\/video\/(\d+)/);
         videoId = urlMatch ? urlMatch[1] : null;
       } else if (transcript.includes('twitch.tv')) {
         const urlMatch = transcript.match(/\/videos\/(\d+)/);
         videoId = urlMatch ? urlMatch[1] : null;
+        istwitch = true;
       }
 
       if (videoId) {
-        // Try to fetch transcript via Transcript24
+        // Try to fetch transcript via TranscriptHQ (Twitch) or Transcript24 (TikTok)
         try {
-          const tr = await fetch('https://api.transcript24.com/transcribe', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${process.env.TRANSCRIPT24_TOKEN}`,
-            },
-            body: JSON.stringify({ url: transcript }),
-          });
-          const td = await tr.json();
-          if (td?.caption && Array.isArray(td.caption)) {
-            transcript = td.caption.map(c => c.text).join(' ');
+          if (istwitch) {
+            console.log(`[Manual] Fetching Twitch transcript via TranscriptHQ for ${videoId}`);
+            const tr = await fetch('https://api.transcripthq.com/v1/transcribe', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': process.env.TRANSCRIPTHQ_KEY,
+              },
+              body: JSON.stringify({ url: transcript }),
+            });
+            const td = await tr.json();
+            if (td?.transcript) {
+              transcript = td.transcript;
+            } else if (td?.text) {
+              transcript = td.text;
+            } else if (td?.caption && Array.isArray(td.caption)) {
+              transcript = td.caption.map(c => c.text).join(' ');
+            }
+          } else {
+            const tr = await fetch('https://api.transcript24.com/transcribe', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${process.env.TRANSCRIPT24_TOKEN}`,
+              },
+              body: JSON.stringify({ url: transcript }),
+            });
+            const td = await tr.json();
+            if (td?.caption && Array.isArray(td.caption)) {
+              transcript = td.caption.map(c => c.text).join(' ');
+            }
           }
         } catch (txErr) {
-          console.error('Transcript24 failed for manual URL:', txErr.message);
+          console.error('Transcription failed for manual URL:', txErr.message);
           // Fall through to analysis with URL text only
         }
       }
