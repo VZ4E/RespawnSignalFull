@@ -1670,7 +1670,7 @@ textarea:focus-visible {
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
       <div class="nav-item" onclick="navTo('groups',this)">Groups</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
-      <div class="nav-item" onclick="navTo('pricing',this)" style="color:var(--accent);font-weight:600">Pricing</div>
+      <div class="nav-item" onclick="navTo('pricing',this)">Pricing</div>
       <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
       <div class="nav-item" onclick="navTo('account',this)">Account</div>
     </nav>
@@ -3585,6 +3585,12 @@ async function refreshAccount() {
 
 // ── PRICING PAGE ──
 async function renderPricingPage() {
+  // Refresh user data to ensure plan is in sync
+  try {
+    const me = await api('/api/auth/me');
+    currentUser = me;
+  } catch(_) {}
+  
   if (!currentUser) return;
   const plan = currentUser.plan || 'none';
   const credits = currentUser.credits_remaining || 0;
