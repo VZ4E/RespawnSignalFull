@@ -2219,8 +2219,8 @@ function applyPlanLimits() {
         <h3>Choose a plan to start scanning</h3>
         <p>Get access to TikTok brand deal detection, scan history, and more.</p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="btn-primary" style="padding:12px 24px" onclick="startCheckout('pro')">Pro — $29/mo</button>
-          <button class="btn-primary" style="padding:12px 24px;background:var(--text)" onclick="startCheckout('max')">Max — $79/mo</button>
+          <button class="btn-primary" style="padding:12px 24px" onclick="startCheckout('starter')">Starter — $299/mo</button>
+          <button class="btn-primary" style="padding:12px 24px;background:var(--text)" onclick="startCheckout('pro')">Pro — $599/mo</button>
         </div>
       </div>`;
     return;
@@ -2232,11 +2232,11 @@ function applyPlanLimits() {
 
   // Automation
   const autoEl = document.getElementById('automation-content');
-  if (plan === 'pro') {
+  if (plan === 'starter') {
     autoEl.innerHTML = `<div class="upgrade-prompt">
-      <h3>Upgrade to Max</h3>
-      <p>Bulk automation is available on the Max and Enterprise plans. Scan dozens of creators at once with a single queue.</p>
-      <button class="btn-primary" onclick="startCheckout('max')">Upgrade to Max — $79/mo</button>
+      <h3>Upgrade to Pro or Agency</h3>
+      <p>Bulk automation is available on the Pro and Agency plans. Scan dozens of creators at once with a single queue.</p>
+      <button class="btn-primary" onclick="startCheckout('pro')">Upgrade to Pro — $599/mo</button>
     </div>`;
   } else {
     autoEl.innerHTML = automationHTML();
@@ -3148,8 +3148,8 @@ function renderDealsPage() {
 // ── CREDITS ──
 function updateCreditsUI() {
   if (!currentUser) return;
-  const plan = currentUser.plan || 'pro';
-  const total = PLAN_CREDITS[plan] || 300;
+  const plan = currentUser.plan || 'starter';
+  const total = PLAN_CREDITS[plan] || 1000;
   const remaining = currentUser.credits_remaining || 0;
   const pct = Math.min(100, (remaining / total) * 100);
   document.getElementById('sb-bar').style.width = pct + '%';
@@ -3160,8 +3160,8 @@ function updateCreditsUI() {
 
 function renderCreditsPage() {
   if (!currentUser) return;
-  const plan = currentUser.plan || 'pro';
-  const total = PLAN_CREDITS[plan] || 300;
+  const plan = currentUser.plan || 'starter';
+  const total = PLAN_CREDITS[plan] || 1000;
   const remaining = currentUser.credits_remaining || 0;
   const pct = Math.min(100, (remaining / total) * 100);
   document.getElementById('cbc-num').textContent = remaining;
@@ -3459,9 +3459,9 @@ async function openBillingPortal() {
 }
 
 function showUpgradeModal() {
-  // Simple upgrade flow — send to checkout for max
-  if (confirm('Upgrade to Max for $79/mo?\n\n✓ 1,000 credits/month\n✓ Scan last 30 videos\n✓ Bulk automation\n\nYou\'ll be redirected to Stripe to complete payment.')) {
-    startCheckout('max');
+  // Simple upgrade flow — send to checkout for pro
+  if (confirm('Upgrade to Pro for $599/mo?\n\n✓ 2,500 credits/month\n✓ All platforms\n✓ Priority processing\n✓ Campaign history + reporting\n✓ Slack/webhook notifications\n\nYou\'ll be redirected to Stripe to complete payment.')) {
+    startCheckout('pro');
   }
 }
 
