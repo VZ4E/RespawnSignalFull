@@ -1986,6 +1986,7 @@ textarea:focus-visible {
         <button class="settings-tab active" onclick="switchSettingsTab('creators',this)">Creators</button>
         <button class="settings-tab" onclick="switchSettingsTab('groups',this)">Groups</button>
         <button class="settings-tab" onclick="switchSettingsTab('configs',this)">Scan Configs</button>
+        <button class="settings-tab" onclick="switchSettingsTab('notifications',this)">Notifications</button>
         <button class="settings-tab" onclick="switchSettingsTab('account',this)">Account</button>
       </div>
 
@@ -2011,6 +2012,48 @@ textarea:focus-visible {
           <button class="run-btn" onclick="showAddConfigModal()">+ New Scan Config</button>
         </div>
         <div id="configs-list" style="display:grid;gap:12px"></div>
+      </div>
+
+      <!-- NOTIFICATIONS TAB -->
+      <div id="settings-notifications-tab" class="settings-content" style="display:none">
+        <div class="card">
+          <div style="margin-bottom:24px">
+            <h3 style="margin-bottom:12px;font-size:14px;font-weight:600">Slack Notifications</h3>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Get alerts when scans complete, deals are found, or credits are low.</p>
+            
+            <label style="display:block;margin-bottom:8px">
+              <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px">Slack Webhook URL</div>
+              <input class="form-input" id="slack-webhook" type="text" placeholder="https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXX" style="width:100%;font-family:var(--mono);font-size:11px" />
+              <div style="font-size:10px;color:var(--text3);margin-top:4px">
+                Get this from <a href="https://api.slack.com/apps" target="_blank" style="color:var(--accent)">api.slack.com/apps</a> → Incoming Webhooks
+              </div>
+            </label>
+            
+            <button class="btn-ghost" style="font-size:12px;padding:6px 12px;margin-top:8px" onclick="testSlackWebhook()">🧪 Test Connection</button>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:24px">
+            <h3 style="margin-bottom:12px;font-size:14px;font-weight:600">Notification Preferences</h3>
+            
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer">
+              <input type="checkbox" id="notify-on-deals" />
+              <span style="font-size:13px">Notify when scan completes with deals</span>
+            </label>
+            
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer">
+              <input type="checkbox" id="notify-every-deal" />
+              <span style="font-size:13px">Notify on every deal (not just scans)</span>
+            </label>
+            
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="notify-low-credits" />
+              <span style="font-size:13px">Notify when credits are running low</span>
+            </label>
+          </div>
+
+          <button class="run-btn" style="width:100%;margin-top:12px" onclick="saveNotificationSettings()">Save Preferences</button>
+          <div id="notification-settings-msg" style="font-size:12px;margin-top:8px;text-align:center;display:none"></div>
+        </div>
       </div>
 
       <!-- ACCOUNT TAB -->
@@ -2375,6 +2418,62 @@ async function logout() {
   localStorage.removeItem('rs_token');
   localStorage.removeItem('refreshToken');
   showLanding();
+}
+
+// ── NOTIFICATIONS ──
+async function loadNotificationSettings() {
+  try {
+    const prefs = await api('/api/notifications/preferences');
+    document.getElementById('slack-webhook').value = prefs.slack_webhook_url || '';
+    document.getElementById('notify-on-deals').checked = prefs.notification_on_deals !== false;
+    document.getElementById('notify-every-deal').checked = prefs.notification_on_every_deal === true;
+    document.getElementById('notify-low-credits').checked = prefs.notification_on_low_credits !== false;
+  } catch (err) {
+    console.error('Failed to load notification settings:', err);
+  }
+}
+
+async function saveNotificationSettings() {
+  try {
+    const msg = document.getElementById('notification-settings-msg');
+    msg.style.display = 'block';
+    msg.textContent = 'Saving...';
+    msg.style.color = 'var(--text2)';
+    
+    await api('/api/notifications/preferences', 'POST', {
+      slack_webhook_url: document.getElementById('slack-webhook').value,
+      notification_on_deals: document.getElementById('notify-on-deals').checked,
+      notification_on_every_deal: document.getElementById('notify-every-deal').checked,
+      notification_on_low_credits: document.getElementById('notify-low-credits').checked,
+    });
+    
+    msg.textContent = '✓ Settings saved!';
+    msg.style.color = 'var(--green)';
+    setTimeout(() => msg.style.display = 'none', 3000);
+  } catch (err) {
+    const msg = document.getElementById('notification-settings-msg');
+    msg.style.display = 'block';
+    msg.textContent = '✗ ' + (err.message || 'Failed to save settings');
+    msg.style.color = 'var(--red)';
+  }
+}
+
+async function testSlackWebhook() {
+  try {
+    const webhookUrl = document.getElementById('slack-webhook').value;
+    if (!webhookUrl) {
+      alert('Please enter a Slack webhook URL first');
+      return;
+    }
+    
+    await api('/api/notifications/test-slack', 'POST', {
+      slack_webhook_url: webhookUrl,
+    });
+    
+    alert('✓ Test message sent to your Slack workspace!');
+  } catch (err) {
+    alert('✗ Failed to send test message:\n' + err.message);
+  }
 }
 
 // ── UTILITIES ––
@@ -4008,6 +4107,7 @@ function switchSettingsTab(tab, btn) {
   if (tab === 'creators') loadCreators();
   else if (tab === 'groups') loadGroups();
   else if (tab === 'configs') loadConfigs();
+  else if (tab === 'notifications') loadNotificationSettings();
   else if (tab === 'account') loadAccountData();
 }
 

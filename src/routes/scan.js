@@ -391,6 +391,27 @@ TRANSCRIPTS:\n${text}`;
     console.log(`[Scan] ✓ Saved ${platform} scan for ${username} with ${deals.length} deals`);
   }
 
+  // Send notifications (non-blocking)
+  try {
+    // Notify if deals found
+    if (deals && deals.length > 0) {
+      notifyOnScanComplete(dbUser.id, username, platform, deals, null).catch(err => {
+        console.error('[Notifications] Scan complete notification failed:', err.message);
+      });
+    }
+
+    // Warn if credits running low
+    const remainingAfter = dbUser.credits_remaining - creditsToDeduct;
+    if (remainingAfter < 100 && remainingAfter > 0) {
+      notifyOnLowCredits(dbUser.id, remainingAfter).catch(err => {
+        console.error('[Notifications] Low credits notification failed:', err.message);
+      });
+    }
+  } catch (notifErr) {
+    console.error('[Notifications] Error sending notifications:', notifErr.message);
+    // Don't fail the scan if notifications fail
+  }
+
   return res.json({
     videos: withTranscripts,
     deals,
