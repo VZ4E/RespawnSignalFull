@@ -3,6 +3,7 @@ const router = express.Router();
 const fetch = require('node-fetch');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
+const { notifyOnScanComplete, notifyOnLowCredits } = require('../services/notificationService');
 
 // POST /api/scan
 router.post('/', authMiddleware, async (req, res) => {
