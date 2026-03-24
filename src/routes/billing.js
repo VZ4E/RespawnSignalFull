@@ -173,6 +173,42 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   res.json({ received: true });
 });
 
+// POST /api/billing/reset-credits — Admin endpoint to manually reset credits
+router.post('/reset-credits', async (req, res) => {
+  const { stripe_customer_id, plan } = req.body;
+  if (!stripe_customer_id || !plan) {
+    return res.status(400).json({ error: 'stripe_customer_id and plan required' });
+  }
+
+  const PLAN_CREDITS = { starter: 1000, pro: 2500, agency: 5000, enterprise: 9999 };
+  const credits = PLAN_CREDITS[plan];
+  if (!credits) {
+    return res.status(400).json({ error: 'Invalid plan' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        credits_remaining: credits,
+        credits_reset_at: new Date().toISOString(),
+      })
+      .eq('stripe_customer_id', stripe_customer_id)
+      .select();
+
+    if (error) return res.status(500).json({ error: error.message });
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'No user found with that stripe_customer_id' });
+    }
+
+    console.log(`[Reset Credits] Updated ${data[0].email} to ${credits} credits`);
+    return res.json({ success: true, user: data[0], credits_reset: credits });
+  } catch (err) {
+    console.error('[Reset Credits] Error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/billing/contact-enterprise
 router.post('/contact-enterprise', async (req, res) => {
   const { name, email, company, message } = req.body;
