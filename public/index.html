@@ -521,6 +521,75 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
   border-radius:10px;
 }
 /* ── END ONBOARDING ─────────────────────────────────────── */
+
+/* ── PRICING PAGE ────────────────────────────────────────── */
+.pricing-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.pricing-card:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+  transform: translateY(-2px);
+}
+.plan-badge {
+  background: var(--accent);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.plan-btn {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+.plan-btn:hover {
+  background: var(--border);
+  border-color: var(--text2);
+}
+.plan-btn-accent {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
+.plan-btn-accent:hover {
+  background: rgba(90, 160, 232, 0.9) !important;
+}
+.topup-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+}
+.topup-card:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+  transform: translateY(-2px);
+}
+.topup-card:active {
+  transform: translateY(0);
+}
+/* ── END PRICING PAGE ────────────────────────────────────── */
 </style>
 
 <!-- ══════════════════════════════════════════════════════
@@ -1601,6 +1670,7 @@ textarea:focus-visible {
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
       <div class="nav-item" onclick="navTo('groups',this)">Groups</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
+      <div class="nav-item" onclick="navTo('pricing',this)" style="color:var(--accent);font-weight:600">Pricing</div>
       <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
       <div class="nav-item" onclick="navTo('account',this)">Account</div>
     </nav>
@@ -1799,6 +1869,114 @@ textarea:focus-visible {
       </div>
     </div>
 
+    <!-- PRICING -->
+    <div class="page" id="page-pricing">
+      <div class="sec-head"><h1>Subscription & Billing</h1><p>Choose your plan, upgrade, or buy credits.</p></div>
+      
+      <div style="background:var(--surface2);border-radius:12px;padding:24px;margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:4px">Current Plan</div>
+            <div style="font-size:24px;font-weight:700" id="pricing-current-plan">—</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px;color:var(--text2);margin-bottom:4px">Available Credits</div>
+            <div style="font-size:24px;font-weight:700" id="pricing-credits">—</div>
+          </div>
+        </div>
+        <div style="height:8px;background:var(--surface);border-radius:4px;overflow:hidden;margin-bottom:12px">
+          <div id="pricing-credit-bar" style="height:100%;background:var(--accent);transition:width 0.3s ease"></div>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">Credits reset monthly on your subscription renewal date</div>
+      </div>
+
+      <!-- PLAN SELECTOR -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">Choose Your Plan</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+          <!-- STARTER -->
+          <div class="pricing-card" id="plan-starter">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+              <div>
+                <div style="font-size:18px;font-weight:700">Starter</div>
+                <div style="font-size:28px;font-weight:700;margin-top:4px">$299<span style="font-size:16px;color:var(--text2)">/mo</span></div>
+              </div>
+              <div class="plan-badge" id="badge-starter" style="display:none">Current</div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Great for individuals exploring brand deals</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;font-size:13px">
+              <div><span style="color:var(--accent)">✓</span> 1,000 credits/month</div>
+              <div><span style="color:var(--accent)">✓</span> Scan up to 30 videos</div>
+              <div><span style="color:var(--text3)">✗</span> Bulk automation</div>
+              <div><span style="color:var(--text3)">✗</span> Team seats</div>
+            </div>
+            <button class="plan-btn" id="btn-starter" onclick="selectPlan('starter')" style="width:100%;padding:10px">Select Plan</button>
+          </div>
+
+          <!-- PRO -->
+          <div class="pricing-card" id="plan-pro" style="border:2px solid var(--accent)">
+            <div style="background:var(--accent);color:white;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;display:inline-block;margin-bottom:12px">MOST POPULAR</div>
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+              <div>
+                <div style="font-size:18px;font-weight:700">Pro</div>
+                <div style="font-size:28px;font-weight:700;margin-top:4px">$599<span style="font-size:16px;color:var(--text2)">/mo</span></div>
+              </div>
+              <div class="plan-badge" id="badge-pro" style="display:none">Current</div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Perfect for agencies and power users</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;font-size:13px">
+              <div><span style="color:var(--accent)">✓</span> 2,500 credits/month</div>
+              <div><span style="color:var(--accent)">✓</span> Scan up to 30 videos</div>
+              <div><span style="color:var(--accent)">✓</span> Bulk automation</div>
+              <div><span style="color:var(--accent)">✓</span> Campaign history</div>
+            </div>
+            <button class="plan-btn plan-btn-accent" id="btn-pro" onclick="selectPlan('pro')" style="width:100%;padding:10px">Select Plan</button>
+          </div>
+
+          <!-- AGENCY -->
+          <div class="pricing-card" id="plan-agency">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+              <div>
+                <div style="font-size:18px;font-weight:700">Agency</div>
+                <div style="font-size:28px;font-weight:700;margin-top:4px">$999<span style="font-size:16px;color:var(--text2)">/mo</span></div>
+              </div>
+              <div class="plan-badge" id="badge-agency" style="display:none">Current</div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px">For large teams managing multiple clients</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;font-size:13px">
+              <div><span style="color:var(--accent)">✓</span> 5,000 credits/month</div>
+              <div><span style="color:var(--accent)">✓</span> Scan up to 30 videos</div>
+              <div><span style="color:var(--accent)">✓</span> Bulk automation</div>
+              <div><span style="color:var(--accent)">✓</span> Team seats (up to 5)</div>
+            </div>
+            <button class="plan-btn" id="btn-agency" onclick="selectPlan('agency')" style="width:100%;padding:10px">Select Plan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP-UP CREDITS -->
+      <div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">Buy Additional Credits</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+          <button class="topup-card" onclick="selectTopup('topup_500')">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">500 Credits</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:12px">$119</div>
+            <div style="font-size:12px;color:var(--text3)">$0.24 per credit</div>
+          </button>
+          <button class="topup-card" onclick="selectTopup('topup_1500')">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">1,500 Credits</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:12px">$299</div>
+            <div style="font-size:12px;color:var(--text3)">$0.20 per credit</div>
+          </button>
+          <button class="topup-card" onclick="selectTopup('topup_3000')">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">3,000 Credits</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:12px">$499</div>
+            <div style="font-size:12px;color:var(--text3)">$0.17 per credit</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="sec-head"><h1>Settings</h1><p>Manage creators, scan configs, and account preferences.</p></div>
@@ -1987,7 +2165,7 @@ const STRIPE_PRICES = {
 
 const PLAN_MAX_RANGE = { none: 0, starter: 30, pro: 30, agency: 30, enterprise: 30 };
 const PLAN_CREDITS = { none: 0, starter: 1000, pro: 2500, agency: 5000, enterprise: 9999 };
-const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', credits:'Credits', settings:'Settings', account:'Account' };
+const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', credits:'Credits', pricing:'Pricing & Billing', settings:'Settings', account:'Account' };
 
 // ── INIT ──
 async function init() {
@@ -2257,6 +2435,7 @@ function navTo(id, el) {
   if (id === 'deals') loadHistory();
   if (id === 'credits') loadHistory();
   if (id === 'groups') loadGroupsUI();
+  if (id === 'pricing') renderPricingPage();
   if (id === 'account') refreshAccount();
 }
 
@@ -3404,6 +3583,79 @@ async function refreshAccount() {
   }
 }
 
+// ── PRICING PAGE ──
+async function renderPricingPage() {
+  if (!currentUser) return;
+  const plan = currentUser.plan || 'none';
+  const credits = currentUser.credits_remaining || 0;
+  const totalCredits = PLAN_CREDITS[plan] || 1000;
+  
+  // Update current plan display
+  const planNames = { none: 'None', starter: 'Starter', pro: 'Pro', agency: 'Agency' };
+  document.getElementById('pricing-current-plan').textContent = planNames[plan] || 'None';
+  document.getElementById('pricing-credits').textContent = credits.toLocaleString();
+  
+  const pct = Math.min(100, (credits / totalCredits) * 100);
+  document.getElementById('pricing-credit-bar').style.width = pct + '%';
+  
+  // Show current plan badges
+  ['starter', 'pro', 'agency'].forEach(p => {
+    const badge = document.getElementById(`badge-${p}`);
+    const btn = document.getElementById(`btn-${p}`);
+    if (p === plan) {
+      badge.style.display = 'inline-block';
+      btn.textContent = 'Current Plan';
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'default';
+    } else {
+      badge.style.display = 'none';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+  });
+}
+
+async function selectPlan(planName) {
+  if (!currentUser) { showAuth('login'); return; }
+  if (currentUser.plan === planName) {
+    alert('You are already on the ' + planName.toUpperCase() + ' plan.');
+    return;
+  }
+  
+  const confirmation = confirm(`Switch to ${planName.toUpperCase()} for $${planName === 'starter' ? '299' : planName === 'pro' ? '599' : '999'}/month?\n\nYou'll be redirected to Stripe to complete payment.`);
+  if (!confirmation) return;
+  
+  try {
+    await startCheckout(planName);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function selectTopup(packId) {
+  if (!currentUser) { showAuth('login'); return; }
+  
+  const packInfo = {
+    topup_500: { credits: 500, price: '$119' },
+    topup_1500: { credits: 1500, price: '$299' },
+    topup_3000: { credits: 3000, price: '$499' },
+  };
+  
+  const info = packInfo[packId];
+  if (!info) return;
+  
+  const confirmation = confirm(`Buy ${info.credits} credits for ${info.price}?\n\nYou'll be redirected to Stripe to complete payment.`);
+  if (!confirmation) return;
+  
+  try {
+    await startCheckout(packId);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
 // ── ACCOUNT ACTIONS ──
 async function sendResetFromAccount() {
   if (!currentUser?.email) return;
@@ -3468,7 +3720,18 @@ function showUpgradeModal() {
 // Handle billing success/cancel redirects
 if (window.location.search.includes('billing=success')) {
   window.history.replaceState(null, '', '/');
-  setTimeout(() => alert('🎉 Subscription activated! Your credits have been updated.'), 500);
+  setTimeout(async () => {
+    // Refresh user data after successful purchase
+    try {
+      const me = await api('/api/auth/me');
+      currentUser = me;
+      updateCreditsUI();
+      renderPricingPage();
+      alert('🎉 Subscription activated! Your credits have been updated.');
+    } catch(e) {
+      alert('✓ Payment successful! Refreshing your account...');
+    }
+  }, 500);
 }
 
 // ── ENTERPRISE FORM ──

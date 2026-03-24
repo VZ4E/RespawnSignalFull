@@ -32,9 +32,13 @@ router.post('/create-checkout', authMiddleware, async (req, res) => {
       await supabase.from('users').update({ stripe_customer_id: customerId }).eq('id', req.dbUser.id);
     }
 
+    // Determine if this is a subscription (plan) or one-time payment (top-up)
+    const isTopup = plan.startsWith('topup_');
+    const mode = isTopup ? 'payment' : 'subscription';
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      mode: 'subscription',
+      mode,
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.APP_URL || 'http://localhost:3000'}/?billing=success`,
@@ -91,21 +95,45 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
-        if (session.mode !== 'subscription') break;
-        // Map price to plan
+        
+        // Get line items to determine plan/topup
         const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
         const priceId = lineItems.data[0]?.price?.id;
-        const plan = Object.entries(PLAN_PRICE_MAP).find(([,v]) => v === priceId)?.[0];
-        if (!plan) break;
-        await supabase.from('users')
-          .update({
-            plan,
-            stripe_subscription_id: session.subscription,
-            credits_remaining: PLAN_CREDIT_MAP[plan] || 300,
-            credits_reset_at: new Date().toISOString(),
-          })
-          .eq('stripe_customer_id', session.customer);
-        console.log(`Plan updated to ${plan} for customer ${session.customer}`);
+        const itemType = Object.entries(PLAN_PRICE_MAP).find(([,v]) => v === priceId)?.[0];
+        if (!itemType) break;
+        
+        // Handle subscription plans
+        if (session.mode === 'subscription') {
+          await supabase.from('users')
+            .update({
+              plan: itemType,
+              stripe_subscription_id: session.subscription,
+              credits_remaining: PLAN_CREDIT_MAP[itemType],
+              credits_reset_at: new Date().toISOString(),
+            })
+            .eq('stripe_customer_id', session.customer);
+          console.log(`Subscription updated to ${itemType} for customer ${session.customer}`);
+        }
+        
+        // Handle one-time top-up purchases
+        if (session.mode === 'payment' && itemType.startsWith('topup_')) {
+          const creditsToAdd = PLAN_CREDIT_MAP[itemType];
+          // Get current user
+          const { data: user } = await supabase
+            .from('users')
+            .select('credits_remaining')
+            .eq('stripe_customer_id', session.customer)
+            .single();
+          
+          if (user) {
+            await supabase.from('users')
+              .update({
+                credits_remaining: (user.credits_remaining || 0) + creditsToAdd,
+              })
+              .eq('stripe_customer_id', session.customer);
+            console.log(`Top-up of ${creditsToAdd} credits added for customer ${session.customer}`);
+          }
+        }
         break;
       }
 
