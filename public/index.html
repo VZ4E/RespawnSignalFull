@@ -1429,53 +1429,89 @@ textarea:focus-visible {
     <div class="pricing-sub">No hidden fees. Credits reset monthly.</div>
     <div class="pricing-grid">
 
-      <!-- PRO -->
+      <!-- STARTER -->
       <div class="plan-card">
-        <div class="plan-name">Pro</div>
-        <div class="plan-price">$29<span>/mo</span></div>
-        <div class="plan-desc">For individual researchers and marketers.</div>
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">$299<span>/mo</span></div>
+        <div class="plan-desc">Perfect to get started.</div>
         <ul class="plan-features">
-          <li><span class="feat-check">✓</span> 300 credits / month</li>
-          <li><span class="feat-check">✓</span> Scan last 14 videos</li>
-          <li><span class="feat-check">✓</span> Full scan history (30 days)</li>
-          <li><span class="feat-check">✓</span> Brand deal leaderboard</li>
-          <li><span class="feat-x">✗</span> Bulk automation</li>
-          <li><span class="feat-x">✗</span> Multi-seat</li>
+          <li><span class="feat-check">✓</span> 1,000 video scans per month</li>
+          <li><span class="feat-check">✓</span> TikTok + YouTube + Instagram</li>
+          <li><span class="feat-check">✓</span> Brand deal detection via AI</li>
+          <li><span class="feat-check">✓</span> CSV export</li>
         </ul>
-        <button class="plan-btn plan-btn-outline" onclick="startCheckout('pro')">Get Started</button>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono)">+$0.25/credit overage</div>
+        <button class="plan-btn plan-btn-outline" onclick="startCheckout('starter')">Get Started</button>
       </div>
 
-      <!-- MAX -->
+      <!-- PRO (FEATURED) -->
       <div class="plan-card featured">
         <div class="plan-badge">Most Popular</div>
-        <div class="plan-name">Max</div>
-        <div class="plan-price">$79<span>/mo</span></div>
-        <div class="plan-desc">For power users and small agencies.</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$599<span>/mo</span></div>
+        <div class="plan-desc">For growing teams.</div>
         <ul class="plan-features">
-          <li><span class="feat-check">✓</span> 1,000 credits / month</li>
-          <li><span class="feat-check">✓</span> Scan last 30 videos</li>
-          <li><span class="feat-check">✓</span> Unlimited scan history</li>
-          <li><span class="feat-check">✓</span> Brand deal leaderboard</li>
-          <li><span class="feat-check">✓</span> Bulk automation queue</li>
-          <li><span class="feat-x">✗</span> Multi-seat</li>
+          <li><span class="feat-check">✓</span> 2,500 video scans per month</li>
+          <li><span class="feat-check">✓</span> All platforms included</li>
+          <li><span class="feat-check">✓</span> Priority processing</li>
+          <li><span class="feat-check">✓</span> Campaign history + reporting</li>
+          <li><span class="feat-check">✓</span> Slack/webhook notifications</li>
         </ul>
-        <button class="plan-btn plan-btn-accent" onclick="startCheckout('max')">Get Started</button>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono)">+$0.22/credit overage</div>
+        <button class="plan-btn plan-btn-accent" onclick="startCheckout('pro')">Get Started</button>
       </div>
 
-      <!-- ENTERPRISE -->
+      <!-- AGENCY -->
       <div class="plan-card">
-        <div class="plan-name">Enterprise</div>
-        <div class="plan-price" style="font-size:32px;margin-top:8px">Contact Us</div>
-        <div class="plan-desc">For agencies managing multiple clients and teams.</div>
+        <div class="plan-name">Agency</div>
+        <div class="plan-price">$999<span>/mo</span></div>
+        <div class="plan-desc">For agencies and enterprises.</div>
         <ul class="plan-features">
-          <li><span class="feat-check">✓</span> Custom credits</li>
-          <li><span class="feat-check">✓</span> Unlimited scan range</li>
-          <li><span class="feat-check">✓</span> Unlimited history</li>
-          <li><span class="feat-check">✓</span> Bulk automation</li>
-          <li><span class="feat-check">✓</span> Multi-seat access</li>
-          <li><span class="feat-check">✓</span> Custom onboarding</li>
+          <li><span class="feat-check">✓</span> 5,000 video scans per month</li>
+          <li><span class="feat-check">✓</span> Multi-user seats (up to 5)</li>
+          <li><span class="feat-check">✓</span> White-label ready</li>
+          <li><span class="feat-check">✓</span> Dedicated support</li>
+          <li><span class="feat-check">✓</span> Custom integrations</li>
         </ul>
-        <button class="plan-btn plan-btn-outline" onclick="document.getElementById('enterprise-form').scrollIntoView({behavior:'smooth'})">Contact Us</button>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono)">+$0.18/credit overage</div>
+        <button class="plan-btn plan-btn-outline" onclick="startCheckout('agency')">Get Started</button>
+      </div>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div style="text-align:center;margin-top:48px;padding-top:48px;border-top:1px solid var(--border)">
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Enterprise</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:24px">For very large teams and custom requirements.</div>
+      <button class="btn-primary" onclick="document.getElementById('enterprise-form').scrollIntoView({behavior:'smooth'})">Contact Us</button>
+    </div>
+
+    <!-- CREDIT EXPLAINER -->
+    <div style="text-align:center;margin-top:48px;padding:24px;background:var(--surface2);border-radius:12px;font-size:13px;color:var(--text2);line-height:1.6">
+      <strong>How credits work:</strong> 1 credit = 1 video scanned. A typical campaign run (20 creators × 30 videos) uses 600 credits. All unused credits expire at the end of the billing period.
+    </div>
+
+    <!-- TOP-UP PACKS -->
+    <div style="margin-top:48px">
+      <div style="text-align:center;font-size:18px;font-weight:700;color:var(--text);margin-bottom:24px">Need more credits?</div>
+      <div class="pricing-grid">
+        <div class="plan-card">
+          <div class="plan-name" style="font-size:14px">500 Credits</div>
+          <div class="plan-price">$119<span style="font-size:14px">/pack</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">$0.24 per credit</div>
+          <button class="plan-btn plan-btn-accent" onclick="startCheckout('topup_500')">Buy Now</button>
+        </div>
+        <div class="plan-card">
+          <div class="plan-name" style="font-size:14px">1,500 Credits</div>
+          <div class="plan-price">$299<span style="font-size:14px">/pack</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">$0.20 per credit</div>
+          <button class="plan-btn plan-btn-accent" onclick="startCheckout('topup_1500')">Buy Now</button>
+        </div>
+        <div class="plan-card">
+          <div class="plan-name" style="font-size:14px">3,000 Credits</div>
+          <div class="plan-price">$499<span style="font-size:14px">/pack</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">$0.17 per credit</div>
+          <button class="plan-btn plan-btn-accent" onclick="startCheckout('topup_3000')">Buy Now</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1939,8 +1975,18 @@ let scanHistory = [];
 let scanRange = 3;
 let autoRange = 3;
 
-const PLAN_MAX_RANGE = { none: 0, pro: 14, max: 30, enterprise: 30 };
-const PLAN_CREDITS = { none: 0, pro: 300, max: 1000, enterprise: 9999 };
+// ── PRICING CONFIGURATION ──
+const STRIPE_PRICES = {
+  starter: 'price_1TEP9mBVOMJTwlq1LnkpaaXH',
+  pro: 'price_1TEP9nBVOMJTwlq1AsNSiqCd',
+  agency: 'price_1TEP9nBVOMJTwlq1Ta0wBwjd',
+  topup_500: 'price_1TEP9oBVOMJTwlq1UIoVwhTv',
+  topup_1500: 'price_1TEP9oBVOMJTwlq11ED5EViJ',
+  topup_3000: 'price_1TEP9oBVOMJTwlq1wgfx5Fov'
+};
+
+const PLAN_MAX_RANGE = { none: 0, starter: 30, pro: 30, agency: 30, enterprise: 30 };
+const PLAN_CREDITS = { none: 0, starter: 1000, pro: 2500, agency: 5000, enterprise: 9999 };
 const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', credits:'Credits', settings:'Settings', account:'Account' };
 
 // ── INIT ──
@@ -3345,12 +3391,14 @@ async function refreshAccount() {
   document.getElementById('acct-email-display').textContent = currentUser.email || '—';
   document.getElementById('acct-plan').textContent = plan.toUpperCase();
 
-  // Show correct button based on plan
+  // Show correct button based on plan (new tier structure)
   const upgradeEl = document.getElementById('acct-upgrade-btn');
   if (plan === 'none') {
-    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('pro')">Choose a Plan</button>`;
+    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('starter')">Choose a Plan</button>`;
+  } else if (plan === 'starter') {
+    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('pro')">Upgrade to Pro</button>`;
   } else if (plan === 'pro') {
-    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('max')">Upgrade to Max</button>`;
+    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('agency')">Upgrade to Agency</button>`;
   } else {
     upgradeEl.innerHTML = `<span style="font-family:var(--mono);font-size:11px;color:var(--green)">✓ Active</span>`;
   }
