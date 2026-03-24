@@ -2,8 +2,9 @@ const { supabase } = require('../supabase');
 
 const PLAN_DEFAULTS = {
   none: { credits: 0, maxRange: 0, automation: false, unlimitedHistory: false },
-  pro: { credits: 300, maxRange: 14, automation: false, unlimitedHistory: false },
-  max: { credits: 1000, maxRange: 30, automation: true, unlimitedHistory: true },
+  starter: { credits: 1000, maxRange: 30, automation: false, unlimitedHistory: false },
+  pro: { credits: 2500, maxRange: 30, automation: true, unlimitedHistory: true },
+  agency: { credits: 5000, maxRange: 30, automation: true, unlimitedHistory: true },
   enterprise: { credits: 9999, maxRange: 30, automation: true, unlimitedHistory: true },
 };
 
@@ -49,7 +50,7 @@ async function authMiddleware(req, res, next) {
     if (!dbUser) return res.status(500).json({ error: 'Failed to load user profile' });
 
     req.dbUser = dbUser;
-    req.planConfig = PLAN_DEFAULTS[dbUser.plan] || PLAN_DEFAULTS.pro;
+    req.planConfig = PLAN_DEFAULTS[dbUser.plan] || PLAN_DEFAULTS.starter;
     next();
   } catch (err) {
     console.error('Auth middleware exception:', err.message);

@@ -7,8 +7,12 @@ const { authMiddleware, PLAN_DEFAULTS } = require('../middleware/auth');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const PLAN_PRICE_MAP = {
-  pro: process.env.STRIPE_PRO_PRICE_ID,
-  max: process.env.STRIPE_MAX_PRICE_ID,
+  starter: process.env.STRIPE_STARTER_PRICE || 'price_1TEP9mBVOMJTwlq1LnkpaaXH',
+  pro: process.env.STRIPE_PRO_PRICE || 'price_1TEP9nBVOMJTwlq1AsNSiqCd',
+  agency: process.env.STRIPE_AGENCY_PRICE || 'price_1TEP9nBVOMJTwlq1Ta0wBwjd',
+  topup_500: process.env.STRIPE_TOPUP_500 || 'price_1TEP9oBVOMJTwlq1UIoVwhTv',
+  topup_1500: process.env.STRIPE_TOPUP_1500 || 'price_1TEP9oBVOMJTwlq11ED5EViJ',
+  topup_3000: process.env.STRIPE_TOPUP_3000 || 'price_1TEP9oBVOMJTwlq1wgfx5Fov',
 };
 
 // POST /api/billing/create-checkout
@@ -73,7 +77,15 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     return res.status(400).json({ error: 'Webhook signature verification failed' });
   }
 
-  const PLAN_CREDIT_MAP = { pro: 300, max: 1000 };
+  // Updated credit amounts for new pricing tiers
+  const PLAN_CREDIT_MAP = {
+    starter: 1000,
+    pro: 2500,
+    agency: 5000,
+    topup_500: 500,
+    topup_1500: 1500,
+    topup_3000: 3000,
+  };
 
   try {
     switch (event.type) {
