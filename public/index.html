@@ -3587,14 +3587,23 @@ async function refreshAccount() {
 async function renderPricingPage() {
   // Refresh user data to ensure plan is in sync
   try {
+    console.log('[Pricing] Fetching fresh user data...');
     const me = await api('/api/auth/me');
+    console.log('[Pricing] Got user data:', { plan: me.plan, credits: me.credits_remaining });
     currentUser = me;
-  } catch(_) {}
+  } catch(err) {
+    console.error('[Pricing] Failed to fetch user data:', err);
+    // Fall through and use stale currentUser
+  }
   
-  if (!currentUser) return;
+  if (!currentUser) {
+    console.warn('[Pricing] No currentUser available');
+    return;
+  }
   const plan = currentUser.plan || 'none';
   const credits = currentUser.credits_remaining || 0;
   const totalCredits = PLAN_CREDITS[plan] || 1000;
+  console.log('[Pricing] Rendering with plan:', plan, 'credits:', credits);
   
   // Update current plan display
   const planNames = { none: 'None', starter: 'Starter', pro: 'Pro', agency: 'Agency' };

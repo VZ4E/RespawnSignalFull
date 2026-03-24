@@ -79,8 +79,26 @@ router.post('/logout', authMiddleware, async (req, res) => {
 
 // GET /api/auth/me
 router.get('/me', authMiddleware, async (req, res) => {
-  const { email, plan, credits_remaining, created_at } = req.dbUser;
-  return res.json({ email, plan, credits_remaining, created_at });
+  // Always fetch fresh from DB instead of using cached req.dbUser
+  const { data: freshUser, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', req.user.email)
+    .single();
+  
+  if (error) {
+    console.error('[/api/auth/me] Fresh fetch error:', error.message);
+    // Fall back to middleware-loaded user
+    const { email, plan, credits_remaining, created_at } = req.dbUser;
+    return res.json({ email, plan, credits_remaining, created_at });
+  }
+  
+  if (freshUser) {
+    const { email, plan, credits_remaining, created_at } = freshUser;
+    return res.json({ email, plan, credits_remaining, created_at });
+  }
+  
+  return res.status(500).json({ error: 'User not found' });
 });
 
 // POST /api/auth/refresh — refresh access token using refresh token
