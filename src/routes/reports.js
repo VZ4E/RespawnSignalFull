@@ -10,20 +10,34 @@ router.get('/debug/scans', authMiddleware, async (req, res) => {
     console.log(`[Reports Debug] User ID: ${req.user.id}`);
     
     // Raw query all scans for this user
-    const { data: allScans, error } = await supabase
+    const { data: allScans, error: scansError } = await supabase
       .from('scans')
       .select('*')
-      .eq('user_id', req.user.id)
-      .limit(5);
+      .eq('user_id', req.user.id);
     
-    console.log(`[Reports Debug] Query error:`, error);
-    console.log(`[Reports Debug] All scans:`, allScans);
+    console.log(`[Reports Debug] Scans query error:`, scansError);
+    console.log(`[Reports Debug] All scans (${allScans?.length || 0}):`, allScans);
+    
+    // Also check the creators query that's failing
+    const { data: creators, error: creatorsError } = await supabase
+      .from('scans')
+      .select('username, platform')
+      .eq('user_id', req.user.id)
+      .order('username');
+    
+    console.log(`[Reports Debug] Creators query error:`, creatorsError);
+    console.log(`[Reports Debug] Creators result (${creators?.length || 0}):`, creators);
     
     res.json({ 
       user_id: req.user.id,
       scans_count: allScans?.length || 0,
-      scans: allScans || [],
-      error: error?.message 
+      all_scans: allScans || [],
+      creators_count: creators?.length || 0,
+      creators: creators || [],
+      errors: {
+        scans: scansError?.message,
+        creators: creatorsError?.message
+      }
     });
   } catch (err) {
     console.error('[Reports Debug] Error:', err);
