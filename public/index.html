@@ -5140,6 +5140,8 @@ function resetOnboarding() {
 // ── REPORTS ──
 async function loadReportsUI() {
   try {
+    console.log('[Reports UI] Loading reports UI...');
+    
     // Set current month as default
     const now = new Date();
     document.getElementById('report-month').value = now.getMonth();
@@ -5157,12 +5159,18 @@ async function loadReportsUI() {
     }
 
     // Load creators list
-    const creators = await api('/api/reports/creators');
+    console.log('[Reports UI] Fetching creators...');
+    const response = await api('/api/reports/creators');
+    console.log('[Reports UI] Creators response:', response);
+    
+    const creators = response?.creators || [];
     const creatorsList = document.getElementById('reports-creators-list');
     creatorsList.innerHTML = '';
     
-    if (creators.creators && creators.creators.length > 0) {
-      creators.creators.forEach(({ creator_handle, platform }) => {
+    console.log('[Reports UI] Found', creators.length, 'creators');
+    
+    if (creators && creators.length > 0) {
+      creators.forEach(({ creator_handle, platform }) => {
         const label = document.createElement('label');
         label.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:4px;transition:background 0.2s';
         label.innerHTML = `
@@ -5178,10 +5186,14 @@ async function loadReportsUI() {
     }
 
     // Load report history
-    const history = await api('/api/reports/history');
+    console.log('[Reports UI] Fetching report history...');
+    const historyResponse = await api('/api/reports/history');
+    console.log('[Reports UI] History response:', historyResponse);
+    
+    const history = historyResponse?.reports || [];
     const historyEl = document.getElementById('reports-history');
-    if (history.reports && history.reports.length > 0) {
-      historyEl.innerHTML = history.reports.slice(0, 10).map(r => {
+    if (history && history.length > 0) {
+      historyEl.innerHTML = history.slice(0, 10).map(r => {
         const date = new Date(r.created_at).toLocaleDateString();
         const status = r.status === 'sent' ? '✅' : '❌';
         return `<div style="padding:8px;border-radius:4px;background:var(--bg2)">
@@ -5196,9 +5208,11 @@ async function loadReportsUI() {
     if (currentUser && currentUser.email) {
       document.getElementById('report-email').value = currentUser.email;
     }
+    
+    console.log('[Reports UI] ✓ Reports UI loaded successfully');
   } catch (err) {
-    console.error('Failed to load reports UI:', err);
-    document.getElementById('reports-creators-list').innerHTML = `<p style="color:var(--red)">Error loading creators</p>`;
+    console.error('[Reports UI] Failed to load reports UI:', err);
+    document.getElementById('reports-creators-list').innerHTML = `<p style="color:var(--red)">Error: ${err.message}</p>`;
   }
 }
 
