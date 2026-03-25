@@ -4,6 +4,33 @@ const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
 const { generateCreatorReport, generateAndEmailReport, generateBulkReports } = require('../services/reportService');
 
+// TEST endpoint - debug what's in database
+router.get('/debug/scans', authMiddleware, async (req, res) => {
+  try {
+    console.log(`[Reports Debug] User ID: ${req.user.id}`);
+    
+    // Raw query all scans for this user
+    const { data: allScans, error } = await supabase
+      .from('scans')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .limit(5);
+    
+    console.log(`[Reports Debug] Query error:`, error);
+    console.log(`[Reports Debug] All scans:`, allScans);
+    
+    res.json({ 
+      user_id: req.user.id,
+      scans_count: allScans?.length || 0,
+      scans: allScans || [],
+      error: error?.message 
+    });
+  } catch (err) {
+    console.error('[Reports Debug] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/reports/preview - Preview a report without sending
 router.get('/preview', authMiddleware, async (req, res) => {
   try {
