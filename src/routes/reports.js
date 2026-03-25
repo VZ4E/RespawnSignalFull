@@ -7,13 +7,13 @@ const { generateCreatorReport, generateAndEmailReport, generateBulkReports } = r
 // TEST endpoint - debug what's in database
 router.get('/debug/scans', authMiddleware, async (req, res) => {
   try {
-    console.log(`[Reports Debug] User ID: ${req.user.id}`);
+    console.log(`[Reports Debug] User ID: ${req.dbUser.id}`);
     
     // Raw query all scans for this user
     const { data: allScans, error: scansError } = await supabase
       .from('scans')
       .select('*')
-      .eq('user_id', req.user.id);
+      .eq('user_id', req.dbUser.id);
     
     console.log(`[Reports Debug] Scans query error:`, scansError);
     console.log(`[Reports Debug] All scans (${allScans?.length || 0}):`, allScans);
@@ -22,7 +22,7 @@ router.get('/debug/scans', authMiddleware, async (req, res) => {
     const { data: creators, error: creatorsError } = await supabase
       .from('scans')
       .select('username, platform')
-      .eq('user_id', req.user.id)
+      .eq('user_id', req.dbUser.id)
       .order('username');
     
     console.log(`[Reports Debug] Creators query error:`, creatorsError);
@@ -75,7 +75,7 @@ router.post('/send', authMiddleware, async (req, res) => {
     const { data: user } = await supabase
       .from('users')
       .select('email')
-      .eq('id', req.user.id)
+      .eq('id', req.dbUser.id)
       .maybeSingle();
 
     if (!user) {
@@ -108,7 +108,7 @@ router.post('/send-bulk', authMiddleware, async (req, res) => {
     console.log(`[Reports] Sending bulk reports to ${email}`);
 
     // Run async in background
-    generateBulkReports(req.user.id, email, { month, year }).catch((err) => {
+    generateBulkReports(req.dbUser.id, email, { month, year }).catch((err) => {
       console.error('[Reports] Bulk send background error:', err.message);
     });
 
@@ -125,7 +125,7 @@ router.get('/history', authMiddleware, async (req, res) => {
     const { data: logs, error } = await supabase
       .from('reports_log')
       .select('*')
-      .eq('user_id', req.user.id)
+      .eq('user_id', req.dbUser.id)
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -146,7 +146,7 @@ router.get('/creators', authMiddleware, async (req, res) => {
     const { data: creators, error } = await supabase
       .from('scans')
       .select('username, platform')
-      .eq('user_id', req.user.id)
+      .eq('user_id', req.dbUser.id)
       .order('username');
 
     if (error) {
@@ -154,7 +154,7 @@ router.get('/creators', authMiddleware, async (req, res) => {
       throw error;
     }
 
-    console.log(`[Reports] Found ${creators?.length || 0} scan records for user ${req.user.id}:`, creators);
+    console.log(`[Reports] Found ${creators?.length || 0} scan records for user ${req.dbUser.id}:`, creators);
 
     // Deduplicate
     const unique = [];
