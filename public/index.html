@@ -5169,20 +5169,30 @@ async function loadReportsUI() {
     
     console.log('[Reports UI] Found', creators.length, 'creators');
     
-    if (creators && creators.length > 0) {
+    if (!creators || creators.length === 0) {
+      console.log('[Reports UI] No creators, showing message');
+      creatorsList.innerHTML = '<p style="color:var(--text2);font-size:12px">No creators yet. Scan some first!</p>';
+    } else {
+      console.log('[Reports UI] Adding', creators.length, 'creators to UI');
+      let html = '';
       creators.forEach(({ creator_handle, platform }) => {
-        const label = document.createElement('label');
-        label.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:4px;transition:background 0.2s';
-        label.innerHTML = `
-          <input type="checkbox" class="report-creator-checkbox" value="${creator_handle}-${platform}" data-creator="${creator_handle}" data-platform="${platform}" />
-          <span style="font-size:13px">@${creator_handle} (${platform.toUpperCase()})</span>
+        console.log('[Reports UI] Adding creator:', creator_handle, platform);
+        html += `
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:4px;transition:background 0.2s;margin-bottom:4px">
+            <input type="checkbox" class="report-creator-checkbox" value="${creator_handle}-${platform}" data-creator="${creator_handle}" data-platform="${platform}" />
+            <span style="font-size:13px">@${creator_handle} (${platform.toUpperCase()})</span>
+          </label>
         `;
+      });
+      creatorsList.innerHTML = html;
+      
+      // Add event listeners for hover
+      document.querySelectorAll('#reports-creators-list label').forEach(label => {
         label.onmouseover = () => label.style.background = 'var(--border)';
         label.onmouseout = () => label.style.background = 'transparent';
-        creatorsList.appendChild(label);
       });
-    } else {
-      creatorsList.innerHTML = '<p style="color:var(--text2);font-size:12px">No creators yet. Scan some first!</p>';
+      
+      console.log('[Reports UI] ✓ All creators added to UI');
     }
 
     // Load report history
