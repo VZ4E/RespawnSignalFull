@@ -20,7 +20,7 @@ async function generateCreatorReport(userId, creatorHandle, platform = 'tiktok',
       .from('deals')
       .select('*')
       .eq('user_id', userId)
-      .eq('creator_handle', creatorHandle.toLowerCase())
+      .eq('username', creatorHandle.toLowerCase())
       .eq('platform', platform)
       .gte('created_at', start.toISOString())
       .lte('created_at', end.toISOString())
@@ -33,7 +33,7 @@ async function generateCreatorReport(userId, creatorHandle, platform = 'tiktok',
       .from('scans')
       .select('*')
       .eq('user_id', userId)
-      .eq('creator_handle', creatorHandle.toLowerCase())
+      .eq('username', creatorHandle.toLowerCase())
       .eq('platform', platform)
       .gte('created_at', start.toISOString())
       .lte('created_at', end.toISOString());
@@ -140,19 +140,19 @@ async function generateBulkReports(userId, email, options = {}) {
     // Get all unique creators
     const { data: creators, error } = await supabase
       .from('scans')
-      .select('creator_handle, platform')
+      .select('username, platform')
       .eq('user_id', userId)
-      .order('creator_handle');
+      .order('username');
 
     if (error) throw error;
 
     // Deduplicate
     const unique = [];
     const seen = new Set();
-    (creators || []).forEach(({ creator_handle, platform }) => {
-      const key = `${creator_handle}-${platform}`;
+    (creators || []).forEach(({ username, platform }) => {
+      const key = `${username}-${platform}`;
       if (!seen.has(key)) {
-        unique.push({ creator_handle, platform });
+        unique.push({ creator_handle: username, platform });
         seen.add(key);
       }
     });

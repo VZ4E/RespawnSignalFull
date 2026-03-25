@@ -102,19 +102,19 @@ router.get('/creators', authMiddleware, async (req, res) => {
   try {
     const { data: creators, error } = await supabase
       .from('scans')
-      .select('creator_handle, platform')
+      .select('username, platform')
       .eq('user_id', req.user.id)
-      .order('creator_handle');
+      .order('username');
 
     if (error) throw error;
 
     // Deduplicate
     const unique = [];
     const seen = new Set();
-    (creators || []).forEach(({ creator_handle, platform }) => {
-      const key = `${creator_handle}-${platform}`;
+    (creators || []).forEach(({ username, platform }) => {
+      const key = `${username}-${platform}`;
       if (!seen.has(key)) {
-        unique.push({ creator_handle, platform });
+        unique.push({ creator_handle: username, platform });
         seen.add(key);
       }
     });
