@@ -5161,22 +5161,26 @@ async function loadReportsUI() {
     // Load creators list
     console.log('[Reports UI] Fetching creators...');
     const response = await api('/api/reports/creators');
-    console.log('[Reports UI] Creators response:', response);
+    console.log('[Reports UI] Full response:', JSON.stringify(response));
+    console.log('[Reports UI] Response type:', typeof response);
+    console.log('[Reports UI] Has creators property:', 'creators' in response);
     
-    const creators = response?.creators || [];
+    const creators = Array.isArray(response?.creators) ? response.creators : [];
+    console.log('[Reports UI] Creators array:', creators);
+    console.log('[Reports UI] Creators length:', creators.length);
+    
     const creatorsList = document.getElementById('reports-creators-list');
+    if (!creatorsList) {
+      console.error('[Reports UI] Could not find creators list element!');
+      return;
+    }
     creatorsList.innerHTML = '';
     
-    console.log('[Reports UI] Found', creators.length, 'creators');
-    
-    if (!creators || creators.length === 0) {
-      console.log('[Reports UI] No creators, showing message');
-      creatorsList.innerHTML = '<p style="color:var(--text2);font-size:12px">No creators yet. Scan some first!</p>';
-    } else {
-      console.log('[Reports UI] Adding', creators.length, 'creators to UI');
+    if (creators.length > 0) {
+      console.log('[Reports UI] Rendering', creators.length, 'creators');
       let html = '';
-      creators.forEach(({ creator_handle, platform }) => {
-        console.log('[Reports UI] Adding creator:', creator_handle, platform);
+      creators.forEach(({ creator_handle, platform }, i) => {
+        console.log(`[Reports UI] Creator ${i}:`, creator_handle, platform);
         html += `
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:4px;transition:background 0.2s;margin-bottom:4px">
             <input type="checkbox" class="report-creator-checkbox" value="${creator_handle}-${platform}" data-creator="${creator_handle}" data-platform="${platform}" />
@@ -5184,6 +5188,7 @@ async function loadReportsUI() {
           </label>
         `;
       });
+      console.log('[Reports UI] HTML to insert:', html);
       creatorsList.innerHTML = html;
       
       // Add event listeners for hover
@@ -5192,7 +5197,10 @@ async function loadReportsUI() {
         label.onmouseout = () => label.style.background = 'transparent';
       });
       
-      console.log('[Reports UI] ✓ All creators added to UI');
+      console.log('[Reports UI] ✓ Rendered', creators.length, 'creators');
+    } else {
+      console.log('[Reports UI] No creators found');
+      creatorsList.innerHTML = '<p style="color:var(--text2);font-size:12px">No creators yet. Scan some first!</p>';
     }
 
     // Load report history
