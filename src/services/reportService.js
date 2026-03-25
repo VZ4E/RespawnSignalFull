@@ -13,22 +13,9 @@ async function generateCreatorReport(userId, creatorHandle, platform = 'tiktok',
   try {
     console.log(`[Report] Generating report for ${creatorHandle} (${platform})`);
 
-    // Get all deals for this creator in the date range
+    // Get all scans for this creator in the date range
     const { start, end } = getDateRange(options.month, options.year);
 
-    const { data: deals, error: dealsError } = await supabase
-      .from('deals')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('username', creatorHandle.toLowerCase())
-      .eq('platform', platform)
-      .gte('created_at', start.toISOString())
-      .lte('created_at', end.toISOString())
-      .order('created_at', { ascending: false });
-
-    if (dealsError) throw dealsError;
-
-    // Get all scans for this creator in the date range
     const { data: scans, error: scansError } = await supabase
       .from('scans')
       .select('*')
@@ -40,9 +27,24 @@ async function generateCreatorReport(userId, creatorHandle, platform = 'tiktok',
 
     if (scansError) throw scansError;
 
+    // Extract deals from scans (deals are stored as JSON in scans.deals column)
+    const allDeals = [];
+    const dealsByDate = [];
+    (scans || []).forEach((scan) => {
+      const scanDeals = scan.deals || [];
+      scanDeals.forEach((deal) => {
+        allDeals.push(deal);
+        dealsByDate.push({
+          ...deal,
+          scanned_at: scan.created_at,
+          scan_id: scan.id,
+        });
+      });
+    });
+
     // Aggregate brand data
     const brandMap = {};
-    (deals || []).forEach((deal) => {
+    allDeals.forEach((deal) => {
       const brands = deal.brands || [];
       brands.forEach((brand) => {
         if (!brandMap[brand]) {
@@ -60,9 +62,9 @@ async function generateCreatorReport(userId, creatorHandle, platform = 'tiktok',
     const reportData = {
       creatorName: `@${creatorHandle}`,
       platform,
-      totalDeals: deals?.length || 0,
+      totalDeals: allDeals.length,
       scanCount: scans?.length || 0,
-      dealHistory: deals || [],
+      dealHistory: dealsByDate,
       topBrands,
       dateRange: {
         start: start.toLocaleDateString(),
