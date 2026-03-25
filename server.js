@@ -13,6 +13,7 @@ const creatorRoutes = require('./src/routes/creators');
 const configRoutes = require('./src/routes/configs');
 const groupsRoutes = require('./src/routes/groups');
 const notificationsRoutes = require('./src/routes/notifications');
+const reportsRoutes = require('./src/routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +42,7 @@ app.use('/api/creators', creatorRoutes);
 app.use('/api/configs', configRoutes);
 app.use('/api/groups', groupsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/reports', reportsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Respawn Signal' }));
 app.get('/auth/callback', (req, res) => res.redirect('/?oauth=1'));
