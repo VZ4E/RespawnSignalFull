@@ -17,7 +17,7 @@ router.get('/preferences', authMiddleware, async (req, res) => {
       .from('users')
       .select('slack_webhook_url, notification_on_deals, notification_on_every_deal, notification_on_low_credits')
       .eq('id', req.user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Supabase query error:', error);
