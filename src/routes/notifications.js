@@ -58,7 +58,6 @@ router.post('/preferences', authMiddleware, async (req, res) => {
         notification_on_deals: notification_on_deals !== false,
         notification_on_every_deal: notification_on_every_deal === true,
         notification_on_low_credits: notification_on_low_credits !== false,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', req.user.id);
 
