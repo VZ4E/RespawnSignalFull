@@ -46,6 +46,13 @@ router.post('/preferences', authMiddleware, async (req, res) => {
       return res.status(500).json({ error: 'Database client not initialized' });
     }
 
+    console.log(`[Notifications] Saving preferences for user ${req.user.id}:`, {
+      slack_webhook_url: slack_webhook_url ? '***' : 'null',
+      notification_on_deals,
+      notification_on_every_deal,
+      notification_on_low_credits,
+    });
+
     // Validate Slack webhook URL if provided
     if (slack_webhook_url && !slack_webhook_url.startsWith('https://hooks.slack.com/')) {
       return res.status(400).json({ error: 'Invalid Slack webhook URL' });
@@ -62,13 +69,14 @@ router.post('/preferences', authMiddleware, async (req, res) => {
       .eq('id', req.user.id);
 
     if (error) {
-      console.error('Supabase update error:', error);
+      console.error('[Notifications] Supabase update error:', error);
       throw error;
     }
 
+    console.log(`[Notifications] ✓ Preferences saved for user ${req.user.id}`);
     res.json({ success: true, message: 'Preferences saved' });
   } catch (err) {
-    console.error('POST /api/notifications/preferences error:', err);
+    console.error('[Notifications] POST /api/notifications/preferences error:', err);
     res.status(500).json({ error: 'Failed to save preferences: ' + err.message });
   }
 });
