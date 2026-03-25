@@ -4098,17 +4098,34 @@ let currentConfigId = null;
 let selectedCreatorsForConfig = [];
 
 function switchSettingsTab(tab, btn) {
-  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.settings-content').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('settings-'+tab+'-tab').classList.add('active');
-  
-  // Load data when tab is opened
-  if (tab === 'creators') loadCreators();
-  else if (tab === 'groups') loadGroups();
-  else if (tab === 'configs') loadConfigs();
-  else if (tab === 'notifications') loadNotificationSettings();
-  else if (tab === 'account') loadAccountData();
+  try {
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.settings-content').forEach(c => {
+      c.classList.remove('active');
+      c.style.display = 'none';
+    });
+    btn.classList.add('active');
+    const tabEl = document.getElementById('settings-'+tab+'-tab');
+    if (tabEl) {
+      tabEl.classList.add('active');
+      tabEl.style.display = 'block';
+    }
+    
+    // Load data when tab is opened
+    if (tab === 'creators') {
+      if (typeof loadCreators === 'function') loadCreators();
+    } else if (tab === 'groups') {
+      if (typeof loadGroups === 'function') loadGroups();
+    } else if (tab === 'configs') {
+      if (typeof loadConfigs === 'function') loadConfigs();
+    } else if (tab === 'notifications') {
+      if (typeof loadNotificationSettings === 'function') loadNotificationSettings();
+    } else if (tab === 'account') {
+      if (typeof loadAccountData === 'function') loadAccountData();
+    }
+  } catch (err) {
+    console.error('Error in switchSettingsTab:', err);
+  }
 }
 
 function showAddCreatorModal() {
