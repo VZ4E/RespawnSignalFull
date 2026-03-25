@@ -100,13 +100,20 @@ router.get('/history', authMiddleware, async (req, res) => {
 // GET /api/reports/creators - Get list of creators user monitors
 router.get('/creators', authMiddleware, async (req, res) => {
   try {
+    console.log(`[Reports] Fetching creators for user ${req.user.id}`);
+    
     const { data: creators, error } = await supabase
       .from('scans')
       .select('username, platform')
       .eq('user_id', req.user.id)
       .order('username');
 
-    if (error) throw error;
+    if (error) {
+      console.error('[Reports] Query error:', error);
+      throw error;
+    }
+
+    console.log(`[Reports] Found ${creators?.length || 0} scan records for user ${req.user.id}:`, creators);
 
     // Deduplicate
     const unique = [];
@@ -119,6 +126,7 @@ router.get('/creators', authMiddleware, async (req, res) => {
       }
     });
 
+    console.log(`[Reports] Returning ${unique.length} unique creators`);
     res.json({ creators: unique });
   } catch (err) {
     console.error('[Reports] Creators list error:', err);
