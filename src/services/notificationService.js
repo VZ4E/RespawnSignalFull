@@ -114,7 +114,7 @@ async function notifyOnScanComplete(userId, creatorHandle, platform, deals = [],
       .from('users')
       .select('slack_webhook_url, email, notification_on_deals')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!user) return;
 
@@ -155,7 +155,7 @@ async function notifyOnDealFound(userId, deal, creatorHandle, platform) {
       .from('users')
       .select('slack_webhook_url, notification_on_every_deal')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!user?.slack_webhook_url || !user.notification_on_every_deal) return;
 
@@ -180,7 +180,7 @@ async function notifyOnLowCredits(userId, creditsRemaining, creditsLimit = 100) 
       .from('users')
       .select('slack_webhook_url, email, plan')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!user) return;
 
@@ -204,7 +204,7 @@ async function notifyOnGroupScanComplete(userId, groupName, results) {
       .from('users')
       .select('slack_webhook_url')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!user?.slack_webhook_url) return;
 
