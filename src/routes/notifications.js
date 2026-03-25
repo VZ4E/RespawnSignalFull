@@ -6,13 +6,23 @@ const { authMiddleware } = require('../middleware/auth');
 // GET /api/notifications/preferences - Get user's notification settings
 router.get('/preferences', authMiddleware, async (req, res) => {
   try {
+    if (!supabase) {
+      console.error('Supabase client is undefined!');
+      console.error('SUPABASE_URL:', !!process.env.SUPABASE_URL);
+      console.error('SUPABASE_SERVICE_KEY:', !!process.env.SUPABASE_SERVICE_KEY);
+      return res.status(500).json({ error: 'Database client not initialized' });
+    }
+
     const { data: user, error } = await supabase
       .from('users')
       .select('slack_webhook_url, notification_on_deals, notification_on_every_deal, notification_on_low_credits')
       .eq('id', req.user.id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase query error:', error);
+      throw error;
+    }
 
     res.json({
       slack_webhook_url: user?.slack_webhook_url || '',
@@ -22,7 +32,7 @@ router.get('/preferences', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('GET /api/notifications/preferences error:', err);
-    res.status(500).json({ error: 'Failed to fetch preferences' });
+    res.status(500).json({ error: 'Failed to fetch preferences: ' + err.message });
   }
 });
 
@@ -31,6 +41,11 @@ router.post('/preferences', authMiddleware, async (req, res) => {
   const { slack_webhook_url, notification_on_deals, notification_on_every_deal, notification_on_low_credits } = req.body;
 
   try {
+    if (!supabase) {
+      console.error('Supabase client is undefined!');
+      return res.status(500).json({ error: 'Database client not initialized' });
+    }
+
     // Validate Slack webhook URL if provided
     if (slack_webhook_url && !slack_webhook_url.startsWith('https://hooks.slack.com/')) {
       return res.status(400).json({ error: 'Invalid Slack webhook URL' });
@@ -47,12 +62,15 @@ router.post('/preferences', authMiddleware, async (req, res) => {
       })
       .eq('id', req.user.id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase update error:', error);
+      throw error;
+    }
 
     res.json({ success: true, message: 'Preferences saved' });
   } catch (err) {
     console.error('POST /api/notifications/preferences error:', err);
-    res.status(500).json({ error: 'Failed to save preferences' });
+    res.status(500).json({ error: 'Failed to save preferences: ' + err.message });
   }
 });
 
