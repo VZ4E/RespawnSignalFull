@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service - RespawnSignal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface2: #f1f5f9;
+      --border: #e2e8f0;
+      --accent: #5AA0E8;
+      --red: #dc2626;
+      --red-dim: rgba(220,38,38,0.08);
+      --text: #0f172a;
+      --text2: #475569;
+      --text3: #94a3b8;
+      --sans: 'Sora', sans-serif;
+      --serif: 'Instrument Serif', serif;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+    
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 48px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    
+    .logo span {
+      color: var(--accent);
+    }
+    
+    nav a {
+      color: var(--text2);
+      text-decoration: none;
+      margin-left: 24px;
+      transition: color 0.3s;
+    }
+    
+    nav a:hover {
+      color: var(--accent);
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 60px 48px;
+    }
+    
+    h1 {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 42px;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    
+    .last-updated {
+      color: var(--text3);
+      font-size: 13px;
+      margin-bottom: 40px;
+    }
+    
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    
+    p {
+      margin-bottom: 16px;
+      color: var(--text2);
+      line-height: 1.8;
+    }
+    
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+    
+    li {
+      margin-bottom: 8px;
+      color: var(--text2);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: var(--surface2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    th {
+      background: var(--surface2);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .highlight {
+      background: var(--red-dim);
+      padding: 16px;
+      border-left: 4px solid var(--red);
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    .contact-info {
+      background: var(--surface2);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    
+    footer {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 60px 48px 30px;
+      margin-top: 100px;
+      text-align: center;
+    }
+    
+    footer p {
+      color: #b0b0b0;
+      margin-bottom: 8px;
+    }
+    
+    footer a {
+      color: #b0b0b0;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    footer a:hover {
+      color: #fff;
+    }
+    
+    @media (max-width: 768px) {
+      header {
+        padding: 16px 24px;
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      nav {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      
+      nav a {
+        margin-left: 0;
+      }
+      
+      .container {
+        padding: 40px 24px;
+      }
+      
+      h1 {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Respawn<span>Signal</span></div>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/refund-policy">Refund Policy</a>
+      <a href="/settings">Settings</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1>Terms of Service</h1>
+    <p class="last-updated"><strong>Last Updated:</strong> March 26, 2026 | <strong>Effective Date:</strong> March 26, 2026</p>
+
+    <h2>1. Acceptance of Terms</h2>
+    <p>By accessing and using RespawnSignal (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use the Service. Creating an account constitutes your acceptance of these terms.</p>
+
+    <h2>2. Business Information</h2>
+    <div class="contact-info">
+      <p><strong>Service Provider:</strong> RespawnSignal LLC</p>
+      <p><strong>State of Registration:</strong> New York, USA</p>
+      <p><strong>Website:</strong> respawnmedia.co</p>
+      <p><strong>Contact Email:</strong> <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a></p>
+    </div>
+
+    <h2>3. Description of Service</h2>
+    <p>RespawnSignal is a TikTok brand deal scanner SaaS platform that:</p>
+    <ul>
+      <li>Analyzes public TikTok creator profiles for brand deal indicators and sponsored content</li>
+      <li>Detects potential paid partnerships using AI analysis</li>
+      <li>Provides insights into creator monetization patterns</li>
+      <li>Offers multiple subscription tiers (Pro, Max) with varying feature access</li>
+    </ul>
+    <p>The Service is designed for marketing professionals, agencies, and brand representatives to identify potential creator partnerships.</p>
+
+    <h2>4. Account Eligibility & Registration</h2>
+    
+    <h3>4.1 Age Requirement</h3>
+    <p>You must be at least <strong>18 years old</strong> to create an account.</p>
+
+    <h3>4.2 Account Accuracy</h3>
+    <p>You agree to provide accurate, current, and complete information during registration and maintain the accuracy of this information.</p>
+
+    <h3>4.3 One Account Per User</h3>
+    <p>You may not create multiple accounts. One email = one account.</p>
+
+    <h3>4.4 Account Security</h3>
+    <p>You are responsible for:</p>
+    <ul>
+      <li>Keeping your password confidential</li>
+      <li>Maintaining the security of your account</li>
+      <li>All activity that occurs under your account</li>
+    </ul>
+    <p>Notify us immediately of unauthorized access at <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a>.</p>
+
+    <h2>5. Subscription & Billing Terms</h2>
+    
+    <h3>5.1 Subscription Plans</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th>Price</th>
+          <th>Billing</th>
+          <th>Features</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Pro</strong></td>
+          <td>$29/month</td>
+          <td>Monthly subscription</td>
+          <td>Base brand deal scanning</td>
+        </tr>
+        <tr>
+          <td><strong>Max</strong></td>
+          <td>$79/month</td>
+          <td>Monthly subscription</td>
+          <td>Advanced AI analysis + priority support</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>5.2 Billing Cycle</h3>
+    <ul>
+      <li>Subscriptions renew automatically on the same date each month</li>
+      <li>We will notify you of upcoming renewals via email</li>
+      <li>Payment is collected via Stripe</li>
+    </ul>
+
+    <h3>5.3 Payment Method</h3>
+    <p>By providing a payment method, you authorize RespawnSignal to charge it for your subscription. You agree that:</p>
+    <ul>
+      <li>Charges will continue until you cancel</li>
+      <li>Failed payments may result in account suspension</li>
+      <li>We will attempt to retry failed payments up to 3 times before suspension</li>
+    </ul>
+
+    <h3>5.4 Failed Payments</h3>
+    <p>If a payment fails:</p>
+    <ol>
+      <li>We will attempt to retry within 7 days</li>
+      <li>If retries fail, your account will be suspended</li>
+      <li>Service is restored upon successful payment</li>
+    </ol>
+
+    <h3>5.5 Refund Policy</h3>
+    <ul>
+      <li><strong>7-Day Money Back Guarantee:</strong> If you're unsatisfied, request a refund within 7 days of your first charge for a full refund (less processing fees).</li>
+      <li><strong>No Refunds on Credits:</strong> One-time credit pack purchases (if applicable) are non-refundable once purchased.</li>
+      <li><strong>Cancellation:</strong> Canceling your subscription does not entitle you to a refund for the current billing period. You retain access until the end of your billing cycle.</li>
+      <li><strong>Chargebacks:</strong> Disputing charges via your bank may result in account termination.</li>
+    </ul>
+    <p>To request a refund, email <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a> within 7 days of your first charge.</p>
+
+    <h2>6. Acceptable Use Policy</h2>
+    <p>You agree <strong>not</strong> to use RespawnSignal to:</p>
+    
+    <h3>6.1 Prohibited Conduct</h3>
+    <ul>
+      <li>Violate any laws, regulations, or third-party rights</li>
+      <li>Harass, threaten, defame, or abuse any creator or individual</li>
+      <li>Use results to violate TikTok's, YouTube's, or Instagram's Terms of Service</li>
+      <li>Engage in competitive analysis that violates competitor ToS</li>
+      <li>Resell or redistribute our AI analysis results</li>
+      <li>Reverse-engineer or attempt to extract our AI models</li>
+      <li>Scrape or automate access to our platform beyond intended features</li>
+      <li>Create fake accounts or impersonate others</li>
+      <li>Spam, phish, or engage in social engineering</li>
+      <li>Upload malware, viruses, or malicious code</li>
+    </ul>
+
+    <h3>6.2 Creator Data Responsibility</h3>
+    <p>You are solely responsible for how you use brand deal detection results:</p>
+    <ul>
+      <li>You must comply with platform terms when contacting creators</li>
+      <li>You may not use results to harass or exploit creators</li>
+      <li>You must obtain consent before using a creator's data in commercial projects</li>
+      <li>We are not liable for your misuse of our results</li>
+    </ul>
+
+    <h2>7. AI Accuracy Disclaimer</h2>
+    <div class="highlight">
+      <strong>IMPORTANT:</strong> RespawnSignal's brand deal detection is powered by AI and is not 100% accurate.
+    </div>
+    <ul>
+      <li>Results may contain <strong>false positives</strong> (incorrectly flagging creators as having deals)</li>
+      <li>Results may contain <strong>false negatives</strong> (missing actual brand deals)</li>
+      <li>Always verify detected deals independently via the creator's profile or other sources</li>
+      <li>RespawnSignal is a <strong>research tool</strong>, not a source of truth</li>
+    </ul>
+    <p><strong>We are not liable for:</strong></p>
+    <ul>
+      <li>Inaccurate detection results</li>
+      <li>Missed opportunities due to false negatives</li>
+      <li>Wasted time or resources based on false positives</li>
+    </ul>
+
+    <h2>8. Intellectual Property Rights</h2>
+    
+    <h3>8.1 Our IP</h3>
+    <ul>
+      <li>RespawnSignal, our platform, logo, and all software are owned by RespawnSignal LLC</li>
+      <li>You have no ownership or rights to the platform itself</li>
+      <li>Use of the Service does not grant you a license to our IP</li>
+    </ul>
+
+    <h3>8.2 Your Content</h3>
+    <ul>
+      <li>You own all data and content you upload to RespawnSignal (creator lists, notes, etc.)</li>
+      <li>By using the Service, you grant us a license to use your data to operate, improve, and train our AI models (optional—you can opt-out)</li>
+    </ul>
+
+    <h3>8.3 Third-Party Content</h3>
+    <p>TikTok, YouTube, and Instagram data belongs to those platforms. You are not licensed to resell this data, violate platform terms, or claim ownership of third-party creators' intellectual property.</p>
+
+    <h2>9. Account Suspension & Termination</h2>
+    
+    <h3>9.1 Suspension</h3>
+    <p>We may suspend your account immediately if you:</p>
+    <ul>
+      <li>Violate this ToS or our Acceptable Use Policy</li>
+      <li>Engage in fraud or unauthorized access</li>
+      <li>Fail to pay your subscription after 30 days</li>
+      <li>Violate third-party platform terms through our Service</li>
+    </ul>
+
+    <h3>9.2 Termination</h3>
+    <p>We may terminate your account with <strong>30 days' notice</strong> for:</p>
+    <ul>
+      <li>Violation of our policies</li>
+      <li>Non-payment after suspension periods</li>
+      <li>User request</li>
+      <li>Closure of our Service (we will provide 30 days' notice)</li>
+    </ul>
+
+    <h3>9.3 Upon Termination</h3>
+    <ul>
+      <li>Your access to all features is removed</li>
+      <li>We may delete your data after 30 days (in accordance with our Privacy Policy)</li>
+      <li>You forfeit any remaining credits or subscription balance</li>
+      <li>Refunds are not issued upon termination for violations</li>
+    </ul>
+
+    <h2>10. Limitation of Liability</h2>
+    
+    <h3>10.1 Liability Cap</h3>
+    <p>To the maximum extent permitted by law, RespawnSignal's total liability to you for all claims, damages, and losses shall not exceed <strong>the amount you paid to RespawnSignal in the 3 months preceding the claim</strong>.</p>
+
+    <h3>10.2 Exclusions</h3>
+    <p>We are not liable for:</p>
+    <ul>
+      <li>Indirect, incidental, special, or consequential damages</li>
+      <li>Lost profits, revenue, data, or business opportunities</li>
+      <li>Third-party claims or actions</li>
+      <li>Inaccuracy of AI results</li>
+      <li>Service downtime or interruptions</li>
+      <li>Loss due to your violation of third-party terms</li>
+    </ul>
+
+    <h3>10.3 "AS IS" Disclaimer</h3>
+    <p>The Service is provided <strong>"AS IS"</strong> without warranties of any kind. We do not guarantee uninterrupted service, error-free operation, accurate results, or security against all threats.</p>
+
+    <h2>11. Indemnification</h2>
+    <p>You agree to indemnify and hold harmless RespawnSignal LLC, its officers, employees, and agents from any claims, damages, losses, or expenses (including legal fees) arising from:</p>
+    <ul>
+      <li>Your violation of this ToS or applicable laws</li>
+      <li>Your misuse of the Service</li>
+      <li>Your use of AI results in violation of third-party terms</li>
+      <li>Any action you take based on our results</li>
+    </ul>
+
+    <h2>12. Disclaimer of Warranties</h2>
+    <p>Except as expressly stated, RespawnSignal provides no warranties of any kind, including warranties of merchantability, fitness for a particular purpose, non-infringement, or accuracy.</p>
+
+    <h2>13. Governing Law & Jurisdiction</h2>
+    
+    <h3>13.1 Governing Law</h3>
+    <p>These Terms are governed by the laws of <strong>New York</strong>, USA, without regard to conflict of law principles.</p>
+
+    <h3>13.2 Jurisdiction</h3>
+    <p>You agree that any legal action or proceeding related to this ToS shall be brought exclusively in the state and federal courts of New York. You consent to the personal jurisdiction of these courts.</p>
+
+    <h3>13.3 Class Action Waiver</h3>
+    <p>You waive the right to participate in class action lawsuits against us. All disputes must be resolved individually.</p>
+
+    <h2>14. Contact & Support</h2>
+    <p>For questions, disputes, or support:</p>
+    <div class="contact-info">
+      <p><strong>RespawnSignal LLC</strong></p>
+      <p>New York, USA</p>
+      <p>📧 <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a></p>
+      <p>📧 <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a></p>
+    </div>
+
+    <p style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text3); font-size: 12px;">
+      © 2026 RespawnSignal LLC. All rights reserved.
+    </p>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 RespawnSignal LLC. All rights reserved.</p>
+    <p>Based in New York, USA</p>
+    <p>Questions? Email us at <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a></p>
+  </footer>
+</body>
+</html>

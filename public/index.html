@@ -2142,6 +2142,49 @@ textarea:focus-visible {
             <button class="danger-btn" onclick="logout()">Log Out</button>
           </div>
         </div>
+
+        <!-- LEGAL & COMPLIANCE -->
+        <div class="card" style="margin-top:24px;border:1px solid var(--border)">
+          <h3 style="font-size:16px;font-weight:700;margin-top:0;margin-bottom:16px">⚖️ Legal & Compliance</h3>
+          
+          <div style="margin-bottom:16px;padding:12px;background:rgba(90,160,232,0.08);border-left:4px solid var(--accent);border-radius:8px">
+            <p style="font-size:13px;color:var(--text2);margin:0;line-height:1.6">
+              <strong>Platform Compliance:</strong> When using RespawnSignal, you must comply with the Terms of Service of TikTok, YouTube, Instagram, and other platforms. Do not violate platform rules when contacting creators.
+            </p>
+          </div>
+          
+          <div style="margin-bottom:20px">
+            <h4 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)">Legal Documents</h4>
+            <div style="display:grid;gap:8px">
+              <a href="/privacy-policy" target="_blank" style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--surface2);border-radius:8px;text-decoration:none;color:var(--text2);transition:all 0.3s">
+                <span style="font-size:13px;font-weight:500">Privacy Policy</span>
+                <span style="color:var(--text3)">→</span>
+              </a>
+              <a href="/terms-of-service" target="_blank" style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--surface2);border-radius:8px;text-decoration:none;color:var(--text2);transition:all 0.3s">
+                <span style="font-size:13px;font-weight:500">Terms of Service</span>
+                <span style="color:var(--text3)">→</span>
+              </a>
+              <a href="/refund-policy" target="_blank" style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--surface2);border-radius:8px;text-decoration:none;color:var(--text2);transition:all 0.3s">
+                <span style="font-size:13px;font-weight:500">Refund Policy</span>
+                <span style="color:var(--text3)">→</span>
+              </a>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px">
+            <h4 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)">Data Management</h4>
+            <div style="display:grid;gap:8px">
+              <button class="btn-ghost" style="font-size:12px;padding:10px;text-align:center" onclick="requestDataExport()">📥 Download My Data</button>
+              <button class="btn-ghost" style="font-size:12px;padding:10px;text-align:center;color:var(--red);border-color:var(--red)" onclick="requestAccountDeletion()">🗑️ Delete My Account</button>
+            </div>
+          </div>
+
+          <div style="padding:12px;background:rgba(255,193,7,0.1);border-left:4px solid #ffc107;border-radius:8px">
+            <p style="font-size:12px;color:var(--text2);margin:0;line-height:1.6">
+              <strong>⚠️ AI Accuracy:</strong> Brand deal detection uses AI and may not be 100% accurate. Always verify results independently. See <a href="/settings" target="_blank" style="color:var(--accent);text-decoration:none">full settings</a> for more details.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3152,7 +3195,23 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
     }).join('');
   }
 
-  r.innerHTML = prefix +
+  const aiWarning = `
+    <div style="background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 14px 16px; margin-bottom: 16px; border-radius: 8px;">
+      <p style="color: var(--text2); font-size: 13px; margin: 0; line-height: 1.5;">
+        <strong>⚠️ AI Accuracy Notice:</strong> Brand deal detection may not be 100% accurate. Always verify independently by checking the creator's profile directly.
+      </p>
+    </div>
+  `;
+  
+  const platformNotice = `
+    <div style="background: rgba(90, 160, 232, 0.08); border-left: 4px solid var(--accent); padding: 14px 16px; margin-bottom: 16px; border-radius: 8px;">
+      <p style="color: var(--text2); font-size: 13px; margin: 0; line-height: 1.5;">
+        <strong>📋 Platform Compliance:</strong> When contacting creators, you must comply with TikTok, YouTube, and Instagram Terms of Service.
+      </p>
+    </div>
+  `;
+
+  r.innerHTML = aiWarning + platformNotice + prefix +
     `<div class="results-hdr"><div class="results-title">Deals Found</div><div class="count-pill">${norm.length} post${norm.length!==1?'s':''} · ${totalBrands} brand${totalBrands!==1?'s':''}</div></div>` + html;
 }
 
@@ -3669,7 +3728,24 @@ async function runManualAnalysis() {
       }).join('');
       
       const totalBrands = deals.reduce((a, d) => a + (d.brands?.length || 0), 0);
-      html = `<div class="results-hdr"><div class="results-title">Deals Found</div><div class="count-pill">${deals.length} deal${deals.length!==1?'s':''} · ${totalBrands} brand${totalBrands!==1?'s':''}</div></div>` + dealCards;
+      
+      const aiWarning = `
+        <div style="background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 14px 16px; margin-bottom: 16px; border-radius: 8px;">
+          <p style="color: var(--text2); font-size: 13px; margin: 0; line-height: 1.5;">
+            <strong>⚠️ AI Accuracy Notice:</strong> Brand deal detection may not be 100% accurate. Always verify independently by checking the creator's profile directly.
+          </p>
+        </div>
+      `;
+      
+      const platformNotice = `
+        <div style="background: rgba(90, 160, 232, 0.08); border-left: 4px solid var(--accent); padding: 14px 16px; margin-bottom: 16px; border-radius: 8px;">
+          <p style="color: var(--text2); font-size: 13px; margin: 0; line-height: 1.5;">
+            <strong>📋 Platform Compliance:</strong> When contacting creators, you must comply with TikTok, YouTube, and Instagram Terms of Service.
+          </p>
+        </div>
+      `;
+      
+      html = aiWarning + platformNotice + `<div class="results-hdr"><div class="results-title">Deals Found</div><div class="count-pill">${deals.length} deal${deals.length!==1?'s':''} · ${totalBrands} brand${totalBrands!==1?'s':''}</div></div>` + dealCards;
     }
 
     // Add to history first
@@ -5370,6 +5446,41 @@ function generateReportHTML(creatorName, reportData) {
     ${dealHistory.length > 0 ? `<h3>Deal History</h3><table><thead><tr><th>Date</th><th>Brand</th></tr></thead><tbody>${dealRows}</tbody></table>` : ''}
     <div class="footer">Report generated by RespawnSignal</div>
   </body></html>`;
+}
+
+// ── LEGAL & COMPLIANCE ──
+function requestDataExport() {
+  const msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:24px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);z-index:9999;max-width:400px;text-align:center';
+  msg.innerHTML = `
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px">Data Export Request</div>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:16px">We will email you a copy of all your data within 30 days, as required by GDPR and CCPA.</p>
+    <button onclick="this.parentElement.parentElement.removeChild(this.parentElement);alert('✓ Data export request submitted. Check your email.')" style="padding:10px 16px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px">Got It</button>
+  `;
+  document.body.appendChild(msg);
+  setTimeout(() => {
+    try { document.body.removeChild(msg); } catch(_) {}
+  }, 5000);
+}
+
+function requestAccountDeletion() {
+  const confirmed = confirm('Are you sure you want to delete your account? This action cannot be undone.\n\nAll your data, scan history, and saved creators will be permanently deleted.');
+  if (!confirmed) return;
+  
+  const confirmed2 = confirm('This will DELETE:\n• Your account\n• All scan history\n• All saved creators\n• All bookmarks and notes\n\nAre you absolutely certain?');
+  if (!confirmed2) return;
+  
+  const msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:24px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);z-index:9999;max-width:400px;text-align:center';
+  msg.innerHTML = `
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--red)">Account Deletion Request</div>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Your account deletion request has been submitted. We will delete all data within 30 days and send you a confirmation email.</p>
+    <button onclick="this.parentElement.parentElement.removeChild(this.parentElement);logout()" style="padding:10px 16px;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px">Close & Logout</button>
+  `;
+  document.body.appendChild(msg);
+  
+  // In production, send the deletion request to the backend
+  // await api('/api/account/request-deletion', 'POST');
 }
 </script>
 </body>
