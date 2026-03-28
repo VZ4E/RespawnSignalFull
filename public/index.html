@@ -1820,6 +1820,7 @@ textarea:focus-visible {
       <div class="nav-sec" style="margin-top:6px">Tools</div>
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
       <div class="nav-item" onclick="navTo('groups',this)">Groups</div>
+      <div class="nav-item" onclick="navTo('agency-search',this)">Agency Search</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
       <div class="nav-item" onclick="navTo('pricing',this)">Pricing</div>
       <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
@@ -1968,6 +1969,20 @@ textarea:focus-visible {
         <button class="run-btn" onclick="showCreateGroupModal()">+ New Group</button>
       </div>
       <div id="groups-page-list" style="display:grid;gap:12px"></div>
+    </div>
+
+    <!-- AGENCY SEARCH -->
+    <div class="page" id="page-agency-search">
+      <div class="sec-head"><h1>Agency Search</h1><p>Find and track creators from agency rosters.</p></div>
+      <div style="margin-bottom:20px">
+        <button class="run-btn" onclick="showAgencySearchModal()">+ Find Agency</button>
+      </div>
+      <div id="agency-search-loading" style="text-align:center;padding:40px;display:none">
+        <div style="font-family:var(--mono);color:var(--text3);margin-bottom:16px">Loading agencies...</div>
+        <div class="spinner"></div>
+      </div>
+      <div id="agency-search-error" style="padding:12px;background:var(--red-dim);border:1px solid var(--red);border-radius:4px;color:var(--red);font-size:13px;display:none;margin-bottom:16px"></div>
+      <div id="agency-search-list" style="display:grid;gap:12px"></div>
     </div>
 
     <!-- CREDITS -->
@@ -2428,6 +2443,69 @@ textarea:focus-visible {
           <button class="run-btn" onclick="submitAddPlatform()">Add Platform</button>
         </div>
       </div>
+    <!-- AGENCY SEARCH MODAL -->
+    <div id="agency-search-modal" class="modal" style="display:none">
+      <div class="modal-backdrop" onclick="closeModal('agency-search-modal')"></div>
+      <div class="modal-content" style="max-width:600px">
+        <div class="modal-header">
+          <h2 id="agency-modal-title">Find Agency Creators</h2>
+          <button class="modal-close" onclick="closeModal('agency-search-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <!-- STEP 1: Enter URL -->
+          <div id="agency-step-1" style="display:block">
+            <div style="margin-bottom:12px">
+              <label style="display:block;margin-bottom:6px">
+                <div style="font-size:12px;font-weight:600;color:var(--text2)">Agency Website URL</div>
+              </label>
+              <input class="form-input" id="agency-url-input" type="text" placeholder="https://example-agency.com" style="width:100%;padding:10px" />
+            </div>
+            <div id="agency-step1-msg" style="font-size:12px;color:var(--text3);margin-top:8px"></div>
+          </div>
+
+          <!-- STEP 2: Results (shown after scrape) -->
+          <div id="agency-step-2" style="display:none">
+            <div style="margin-bottom:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Detected Creators</div>
+              <div id="agency-creators-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;padding:0"></div>
+            </div>
+            <div id="agency-step2-msg" style="font-size:12px;color:var(--text3);margin-top:8px"></div>
+          </div>
+
+          <!-- STEP 3: Confirm & Save -->
+          <div id="agency-step-3" style="display:none">
+            <div style="margin-bottom:12px">
+              <label style="display:block;margin-bottom:6px">
+                <div style="font-size:12px;font-weight:600;color:var(--text2)">Agency Name</div>
+              </label>
+              <input class="form-input" id="agency-name-input" type="text" placeholder="Agency Name" style="width:100%;padding:10px" />
+            </div>
+            <div style="margin-bottom:12px">
+              <label style="display:block;margin-bottom:6px">
+                <div style="font-size:12px;font-weight:600;color:var(--text2)">Agency Domain</div>
+              </label>
+              <input class="form-input" id="agency-domain-input" type="text" placeholder="example.com" style="width:100%;padding:10px" />
+            </div>
+            <div id="agency-step3-msg" style="font-size:12px;color:var(--text3);margin-top:8px"></div>
+          </div>
+
+          <!-- Loading spinner -->
+          <div id="agency-loading" style="display:none;text-align:center;padding:20px">
+            <div style="font-family:var(--mono);color:var(--text3);margin-bottom:12px">Processing...</div>
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Error message -->
+          <div id="agency-error-msg" style="display:none;padding:12px;background:var(--red-dim);border:1px solid var(--red);border-radius:4px;color:var(--red);font-size:12px;margin-bottom:12px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" id="agency-btn-back" onclick="agencyBackStep()" style="display:none">Back</button>
+          <button class="btn-ghost" onclick="closeModal('agency-search-modal')">Cancel</button>
+          <button class="run-btn" id="agency-btn-action" onclick="agencyNextStep()">Find Creators</button>
+        </div>
+      </div>
+    </div>
+
     </div>
   </div>
 </div>
@@ -2453,6 +2531,11 @@ let scanHistory = [];
 let scanRange = 3;
 let autoRange = 3;
 
+// ── AGENCY SEARCH STATE ──
+let agencySearchStep = 1;
+let agencySearchData = { url: '', creators: [], agencyName: '', agencyDomain: '' };
+let agencySearchList = [];
+
 // ── PRICING CONFIGURATION ──
 const STRIPE_PRICES = {
   starter: 'price_1TEP9mBVOMJTwlq1LnkpaaXH',
@@ -2465,7 +2548,7 @@ const STRIPE_PRICES = {
 
 const PLAN_MAX_RANGE = { none: 0, starter: 30, pro: 30, agency: 30, enterprise: 30 };
 const PLAN_CREDITS = { none: 0, starter: 1000, pro: 2500, agency: 5000, enterprise: 9999 };
-const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', credits:'Credits', pricing:'Pricing & Billing', settings:'Settings', account:'Account' };
+const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', 'agency-search':'Agency Search', credits:'Credits', pricing:'Pricing & Billing', settings:'Settings', account:'Account' };
 
 // ── INIT ──
 async function init() {
@@ -2791,6 +2874,7 @@ function navTo(id, el) {
   if (id === 'deals') loadHistory();
   if (id === 'credits') loadHistory();
   if (id === 'groups') loadGroupsUI();
+  if (id === 'agency-search') loadAgencySearchList();
   if (id === 'pricing') renderPricingPage();
   if (id === 'account') refreshAccount();
 }
@@ -5184,6 +5268,295 @@ function showMsg(elementId, msg, type) {
     el.textContent = msg;
     el.className = type === 'error' ? 'form-error-msg' : 'form-success';
     el.style.display = 'block';
+  }
+}
+
+// ── AGENCY SEARCH ──────────────────────────────────────────────────────────────
+
+function showAgencySearchModal() {
+  agencySearchStep = 1;
+  agencySearchData = { url: '', creators: [], agencyName: '', agencyDomain: '' };
+  document.getElementById('agency-url-input').value = '';
+  document.getElementById('agency-name-input').value = '';
+  document.getElementById('agency-domain-input').value = '';
+  document.getElementById('agency-search-modal').style.display = 'flex';
+  document.getElementById('agency-error-msg').style.display = 'none';
+  renderAgencySearchStep();
+}
+
+function renderAgencySearchStep() {
+  const step1 = document.getElementById('agency-step-1');
+  const step2 = document.getElementById('agency-step-2');
+  const step3 = document.getElementById('agency-step-3');
+  const btnBack = document.getElementById('agency-btn-back');
+  const btnAction = document.getElementById('agency-btn-action');
+  
+  // Hide all steps
+  step1.style.display = 'none';
+  step2.style.display = 'none';
+  step3.style.display = 'none';
+  
+  if (agencySearchStep === 1) {
+    step1.style.display = 'block';
+    btnBack.style.display = 'none';
+    btnAction.textContent = 'Find Creators';
+    document.getElementById('agency-modal-title').textContent = 'Find Agency Creators';
+  } else if (agencySearchStep === 2) {
+    step2.style.display = 'block';
+    btnBack.style.display = 'inline-block';
+    btnAction.textContent = 'Continue';
+    document.getElementById('agency-modal-title').textContent = 'Select Creators';
+  } else if (agencySearchStep === 3) {
+    step3.style.display = 'block';
+    btnBack.style.display = 'inline-block';
+    btnAction.textContent = 'Save & Scan Now';
+    document.getElementById('agency-modal-title').textContent = 'Save Agency';
+  }
+}
+
+function agencyBackStep() {
+  if (agencySearchStep > 1) {
+    agencySearchStep--;
+    renderAgencySearchStep();
+  }
+}
+
+async function agencyNextStep() {
+  try {
+    if (agencySearchStep === 1) {
+      await agencyPerformScrape();
+    } else if (agencySearchStep === 2) {
+      agencySearchStep = 3;
+      renderAgencySearchStep();
+    } else if (agencySearchStep === 3) {
+      await agencyPerformSave();
+    }
+  } catch (e) {
+    console.error('[Agency Search Error]', e);
+    const errEl = document.getElementById('agency-error-msg');
+    errEl.textContent = e.message || 'An error occurred';
+    errEl.style.display = 'block';
+  }
+}
+
+async function agencyPerformScrape() {
+  const url = document.getElementById('agency-url-input').value.trim();
+  if (!url) {
+    showMsg('agency-step1-msg', 'Please enter a URL', 'error');
+    return;
+  }
+
+  const loading = document.getElementById('agency-loading');
+  const step1 = document.getElementById('agency-step-1');
+  const errEl = document.getElementById('agency-error-msg');
+  
+  loading.style.display = 'block';
+  step1.style.display = 'none';
+  errEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/agency-search/scrape', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      },
+      body: JSON.stringify({ url })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to scrape agency');
+    }
+
+    const data = await res.json();
+    agencySearchData.url = url;
+    agencySearchData.creators = data.creators || [];
+
+    loading.style.display = 'none';
+    agencySearchStep = 2;
+    renderAgencySearchStep();
+    renderAgencyCreatorsList();
+  } catch (e) {
+    loading.style.display = 'none';
+    step1.style.display = 'block';
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    console.error('[Agency Scrape Error]', e);
+  }
+}
+
+function renderAgencyCreatorsList() {
+  const listEl = document.getElementById('agency-creators-list');
+  if (!agencySearchData.creators || agencySearchData.creators.length === 0) {
+    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">No creators found</div>';
+    return;
+  }
+
+  listEl.innerHTML = agencySearchData.creators.map((creator, idx) => `
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer" onclick="toggleCreatorSelection(${idx})">
+      <input type="checkbox" id="creator-check-${idx}" style="cursor:pointer" ${(creator.selected ? 'checked' : '')} />
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px;color:var(--text)">${creator.name || 'Unknown'}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${creator.handle || ''}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--mono)">${creator.platform || ''}</div>
+      </div>
+    </div>
+  `).join('');
+  
+  // Set checked state
+  agencySearchData.creators.forEach((creator, idx) => {
+    const checkbox = document.getElementById(`creator-check-${idx}`);
+    if (checkbox) checkbox.checked = creator.selected || false;
+  });
+}
+
+function toggleCreatorSelection(idx) {
+  agencySearchData.creators[idx].selected = !agencySearchData.creators[idx].selected;
+  renderAgencyCreatorsList();
+}
+
+async function agencyPerformSave() {
+  const agencyName = document.getElementById('agency-name-input').value.trim();
+  const agencyDomain = document.getElementById('agency-domain-input').value.trim();
+
+  if (!agencyName) {
+    showMsg('agency-step3-msg', 'Agency name required', 'error');
+    return;
+  }
+
+  const selectedCreators = agencySearchData.creators.filter(c => c.selected);
+  if (selectedCreators.length === 0) {
+    showMsg('agency-step3-msg', 'Select at least one creator', 'error');
+    return;
+  }
+
+  const loading = document.getElementById('agency-loading');
+  const step3 = document.getElementById('agency-step-3');
+  const errEl = document.getElementById('agency-error-msg');
+
+  loading.style.display = 'block';
+  step3.style.display = 'none';
+  errEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/agency-search/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      },
+      body: JSON.stringify({
+        agencyName,
+        agencyDomain,
+        creators: selectedCreators.map(c => ({ name: c.name, handle: c.handle, platform: c.platform }))
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to save agency');
+    }
+
+    loading.style.display = 'none';
+    document.getElementById('agency-search-modal').style.display = 'none';
+    loadAgencySearchList();
+  } catch (e) {
+    loading.style.display = 'none';
+    step3.style.display = 'block';
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    console.error('[Agency Save Error]', e);
+  }
+}
+
+async function loadAgencySearchList() {
+  const loadingEl = document.getElementById('agency-search-loading');
+  const listEl = document.getElementById('agency-search-list');
+  const errorEl = document.getElementById('agency-search-error');
+
+  loadingEl.style.display = 'block';
+  listEl.style.display = 'none';
+  errorEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/agency-search/list', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to load agencies');
+    }
+
+    const agencies = await res.json();
+    agencySearchList = agencies;
+
+    loadingEl.style.display = 'none';
+    
+    if (!agencies || agencies.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">No agencies yet. Create one to get started.</div>';
+    } else {
+      listEl.innerHTML = agencies.map(agency => `
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div style="flex:1">
+              <div style="font-size:16px;font-weight:700;color:var(--text)">${agency.agencyName}</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:4px;font-family:var(--mono)">${agency.agencyDomain || 'No domain'}</div>
+            </div>
+            <button class="btn-ghost" style="font-size:12px;padding:6px 12px;color:var(--red)" onclick="deleteAgency('${agency.id}')">Delete</button>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px"><strong>${agency.creators ? agency.creators.length : 0}</strong> creators</div>
+          ${agency.creators && agency.creators.length > 0 ? `
+            <table style="width:100%;font-size:12px;border-collapse:collapse">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border);text-align:left">
+                  <th style="padding:8px 0;font-weight:600;color:var(--text)">Creator</th>
+                  <th style="padding:8px 0;font-weight:600;color:var(--text)">Handle</th>
+                  <th style="padding:8px 0;font-weight:600;color:var(--text)">Platform</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${agency.creators.map(creator => `
+                  <tr style="border-bottom:1px solid var(--border-2)">
+                    <td style="padding:8px 0;color:var(--text)">${creator.name}</td>
+                    <td style="padding:8px 0;color:var(--text2);font-family:var(--mono)">${creator.handle}</td>
+                    <td style="padding:8px 0;color:var(--text2)">${creator.platform}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+    listEl.style.display = 'block';
+  } catch (e) {
+    loadingEl.style.display = 'none';
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+    console.error('[Agency Load Error]', e);
+  }
+}
+
+async function deleteAgency(agencyId) {
+  if (!confirm('Delete this agency? This cannot be undone.')) return;
+
+  try {
+    const res = await fetch(`/api/agency-search/${agencyId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to delete agency');
+    }
+
+    loadAgencySearchList();
+  } catch (e) {
+    alert('Error deleting agency: ' + e.message);
+    console.error('[Agency Delete Error]', e);
   }
 }
 
