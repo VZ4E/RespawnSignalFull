@@ -1597,6 +1597,157 @@ textarea:focus-visible {
     <div class="form-success" id="ent-success">✓ Received! We'll be in touch within 24 hours.</div>
     <div class="form-error-msg" id="ent-error"></div>
   </div>
+
+  <!-- FOOTER -->
+  <footer class="respawn-footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>RespawnSignal</h4>
+          <p>TikTok brand deal scanner for creators, agencies, and brands.</p>
+        </div>
+        <div class="footer-section">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="/privacy-policy">Privacy Policy</a></li>
+            <li><a href="/terms-of-service">Terms of Service</a></li>
+            <li><a href="/refund-policy">Refund Policy</a></li>
+            <li><a href="mailto:legal@respawnmedia.co">Contact Legal</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="mailto:support@respawnmedia.co">Contact Support</a></li>
+            <li><a href="/pricing">Pricing</a></li>
+            <li><a href="/">Home</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="#" onclick="document.getElementById('enterprise-form').scrollIntoView({behavior:'smooth'});return false">Enterprise</a></li>
+            <li><a href="mailto:support@respawnmedia.co">Contact Us</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 RespawnSignal LLC. All rights reserved.</p>
+        <p>New York, USA</p>
+      </div>
+    </div>
+  </footer>
+
+  <style>
+    /* ── FOOTER STYLES ── */
+    .respawn-footer {
+      background: linear-gradient(135deg, #0f172a 0%, #1a2f4a 100%);
+      color: #fff;
+      padding: 60px 20px 30px;
+      margin-top: 100px;
+      font-family: var(--sans);
+      border-top: 1px solid rgba(90, 160, 232, 0.2);
+    }
+
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-section h4 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: var(--sans);
+    }
+
+    .footer-section p {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.65);
+      margin: 0;
+    }
+
+    .footer-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .footer-section ul li {
+      margin-bottom: 12px;
+    }
+
+    .footer-section a {
+      color: rgba(255, 255, 255, 0.65);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.3s ease;
+    }
+
+    .footer-section a:hover {
+      color: var(--accent);
+    }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 30px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 12px;
+    }
+
+    .footer-bottom p {
+      margin: 6px 0;
+    }
+
+    .footer-bottom a {
+      color: rgba(255, 255, 255, 0.65);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer-bottom a:hover {
+      color: var(--accent);
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      .respawn-footer {
+        padding: 40px 16px 20px;
+        margin-top: 60px;
+      }
+
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      .footer-section h4 {
+        font-size: 13px;
+      }
+
+      .footer-section p,
+      .footer-section a {
+        font-size: 12px;
+      }
+
+      .footer-bottom {
+        text-align: center;
+      }
+    }
+  </style>
 </div>
 
 <!-- ═══════════════════════════════ AUTH ═══════════════════════════════ -->
