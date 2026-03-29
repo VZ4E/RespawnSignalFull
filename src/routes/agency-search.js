@@ -169,45 +169,50 @@ router.post('/verify', async (req, res) => {
 
 /**
  * POST /api/agency-search/save
- * Save an agency and its tracked creators
+ * Save an agency and its tracked creators to Supabase
  * 
  * Body: { agencyName, agencyDomain, creators: [{ handle, platforms, followerCount }] }
  * Returns: { agencyId, creatorIds }
  */
 router.post('/save', async (req, res) => {
   const { agencyName, agencyDomain, creators } = req.body;
+  const userId = req.user.id;
 
   if (!agencyName || !agencyDomain || !Array.isArray(creators)) {
     return res.status(400).json({ error: 'agencyName, agencyDomain, and creators are required' });
   }
 
   try {
+    console.log(`[Agency Save] Saving agency "${agencyName}" for user ${userId}`);
+
     // Insert agency
     const { data: agency, error: agencyError } = await supabase
       .from('agencies')
       .insert([
         {
-          user_id: req.user.id,
+          user_id: userId,
           name: agencyName.trim(),
-          domain: agencyDomain.trim(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          domain: agencyDomain.trim()
         }
       ])
       .select()
       .single();
 
-    if (agencyError) throw agencyError;
+    if (agencyError) {
+      console.error('[Agency Save] Agency insert error:', agencyError);
+      throw agencyError;
+    }
+
+    console.log(`[Agency Save] Created agency with ID: ${agency.id}`);
 
     // Insert creators (linked to agency)
     const creatorRows = creators.map(c => ({
       agency_id: agency.id,
-      creator_handle: c.handle.trim(),
-      platforms: c.platforms || [],
+      user_id: userId,
+      creator_handle: c.handle.trim().toLowerCase(),
+      platform: c.platforms && c.platforms.length > 0 ? c.platforms[0] : 'tiktok',
       follower_count: c.followerCount || 0,
-      tracked: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      status: 'active'
     }));
 
     const { data: agencyCreators, error: creatorsError } = await supabase
@@ -215,11 +220,17 @@ router.post('/save', async (req, res) => {
       .insert(creatorRows)
       .select();
 
-    if (creatorsError) throw creatorsError;
+    if (creatorsError) {
+      console.error('[Agency Save] Creators insert error:', creatorsError);
+      // Delete the agency if creators insert fails
+      await supabase.from('agencies').delete().eq('id', agency.id);
+      throw creatorsError;
+    }
 
     console.log(`[Agency Save] Saved agency "${agencyName}" with ${agencyCreators.length} creators`);
 
     res.status(201).json({
+      success: true,
       agencyId: agency.id,
       agencyName: agency.name,
       agencyDomain: agency.domain,
@@ -227,7 +238,7 @@ router.post('/save', async (req, res) => {
       creators: agencyCreators.map(c => ({
         id: c.id,
         handle: c.creator_handle,
-        platforms: c.platforms,
+        platform: c.platform,
         followerCount: c.follower_count
       }))
     });
@@ -242,75 +253,126 @@ router.post('/save', async (req, res) => {
  * List all agencies and their creators for the authenticated user
  */
 router.get('/list', async (req, res) => {
+  const userId = req.user.id;
+
   try {
+    console.log(`[Agency List] Fetching agencies for user ${userId}`);
+
     const { data: agencies, error } = await supabase
       .from('agencies')
       .select(`
         id,
         name,
         domain,
+        website_url,
+        industry,
         created_at,
         updated_at,
+        last_scan_at,
         agency_creators(
           id,
           creator_handle,
-          platforms,
+          platform,
           follower_count,
-          tracked,
+          engagement_rate,
+          status,
           created_at
         )
       `)
-      .eq('user_id', req.user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[Agency List] Query error:', error);
+      throw error;
+    }
+
+    console.log(`[Agency List] Found ${agencies?.length || 0} agencies`);
 
     res.json({
-      agencies: agencies.map(a => ({
+      success: true,
+      count: agencies?.length || 0,
+      agencies: (agencies || []).map(a => ({
         id: a.id,
         name: a.name,
         domain: a.domain,
+        website_url: a.website_url,
+        industry: a.industry,
         creatorCount: a.agency_creators?.length || 0,
-        trackedCount: a.agency_creators?.filter(c => c.tracked).length || 0,
-        creators: a.agency_creators || [],
+        creators: (a.agency_creators || []).map(c => ({
+          id: c.id,
+          handle: c.creator_handle,
+          platform: c.platform,
+          followerCount: c.follower_count,
+          engagementRate: c.engagement_rate,
+          status: c.status,
+          createdAt: c.created_at
+        })),
         createdAt: a.created_at,
-        updatedAt: a.updated_at
+        updatedAt: a.updated_at,
+        lastScanAt: a.last_scan_at
       }))
     });
   } catch (err) {
     console.error('[Agency List] Error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch agencies' });
+    res.status(500).json({ error: 'Failed to fetch agencies', details: err.message });
   }
 });
 
 /**
  * DELETE /api/agency-search/:agencyId
- * Delete an agency and all associated creators
+ * Delete an agency and all associated creators from Supabase
  */
 router.delete('/:agencyId', async (req, res) => {
   const { agencyId } = req.params;
+  const userId = req.user.id;
 
   try {
-    // Delete all creators for this agency first
-    await supabase
+    console.log(`[Agency Delete] Deleting agency ${agencyId} for user ${userId}`);
+
+    // Verify ownership before deleting
+    const { data: agency, error: checkErr } = await supabase
+      .from('agencies')
+      .select('id, user_id')
+      .eq('id', agencyId)
+      .single();
+
+    if (checkErr || !agency) {
+      return res.status(404).json({ error: 'Agency not found' });
+    }
+
+    if (agency.user_id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized to delete this agency' });
+    }
+
+    // Delete all creators for this agency (cascade will handle this, but explicit delete is safer)
+    const { error: creatorsError } = await supabase
       .from('agency_creators')
       .delete()
       .eq('agency_id', agencyId);
 
-    // Then delete the agency
-    const { error } = await supabase
+    if (creatorsError) {
+      console.error('[Agency Delete] Creator deletion error:', creatorsError);
+      throw creatorsError;
+    }
+
+    // Delete the agency
+    const { error: agencyError } = await supabase
       .from('agencies')
       .delete()
       .eq('id', agencyId)
-      .eq('user_id', req.user.id);
+      .eq('user_id', userId);
 
-    if (error) throw error;
+    if (agencyError) {
+      console.error('[Agency Delete] Agency deletion error:', agencyError);
+      throw agencyError;
+    }
 
-    console.log(`[Agency Delete] Deleted agency ${agencyId}`);
-    res.json({ success: true, message: 'Agency deleted' });
+    console.log(`[Agency Delete] Successfully deleted agency ${agencyId}`);
+    res.json({ success: true, message: 'Agency deleted successfully' });
   } catch (err) {
     console.error('[Agency Delete] Error:', err.message);
-    res.status(500).json({ error: 'Failed to delete agency' });
+    res.status(500).json({ error: 'Failed to delete agency', details: err.message });
   }
 });
 
