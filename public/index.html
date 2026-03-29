@@ -5332,24 +5332,113 @@ async function agencySearchScrape() {
       return;
     }
 
-    // Display results as cards
-    listEl.innerHTML = data.creators.map(creator => `
-      <div class="card" style="padding:16px;border:1px solid var(--border)">
-        <div style="display:flex;justify-content:space-between;align-items:start">
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:4px">${creator.name || 'Unknown'}</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${creator.handle || ''} • ${creator.platform || ''}</div>
-            <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${creator.url || ''}</div>
+    // Group creators by niche
+    const groupedByNiche = {};
+    data.creators.forEach(creator => {
+      const niche = creator.niche || 'other';
+      if (!groupedByNiche[niche]) groupedByNiche[niche] = [];
+      groupedByNiche[niche].push(creator);
+    });
+
+    const niches = Object.keys(groupedByNiche).sort();
+    
+    // Create niche tabs
+    const tabsHtml = `
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:12px">
+        <button class="niche-tab active" onclick="filterAgencyNiche('all')" style="padding:8px 12px;border:none;background:none;cursor:pointer;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);font-size:13px">
+          All (${data.creators.length})
+        </button>
+        ${niches.map(niche => `
+          <button class="niche-tab" onclick="filterAgencyNiche('${niche}')" style="padding:8px 12px;border:none;background:none;cursor:pointer;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;font-size:13px;transition:all 0.2s">
+            ${niche.charAt(0).toUpperCase() + niche.slice(1)} (${groupedByNiche[niche].length})
+          </button>
+        `).join('')}
+      </div>
+    `;
+
+    // Create creator cards grouped by niche
+    const creatorsHtml = `
+      <div id="agency-creators-container">
+        ${niches.map(niche => `
+          <div class="niche-group" data-niche="${niche}" style="display:none">
+            <div style="font-weight:600;font-size:13px;color:var(--text3);margin-bottom:12px;margin-top:16px;text-transform:uppercase;letter-spacing:0.5px">
+              ${niche.charAt(0).toUpperCase() + niche.slice(1)} Creators (${groupedByNiche[niche].length})
+            </div>
+            ${groupedByNiche[niche].map(creator => `
+              <div class="card" style="padding:14px;border:1px solid var(--border);margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;align-items:start">
+                  <div style="flex:1">
+                    <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:2px">@${creator.handle}</div>
+                    <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${creator.name || ''}</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+                      ${creator.platforms.map(p => `<span style="font-size:10px;background:var(--surface);color:var(--text3);padding:2px 6px;border-radius:3px;font-family:var(--mono)">${p}</span>`).join('')}
+                    </div>
+                    ${creator.followerCount ? `<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${(creator.followerCount / 1000000).toFixed(1)}M followers</div>` : ''}
+                  </div>
+                  <button class="btn-ghost" style="padding:6px 12px;font-size:11px;white-space:nowrap;margin-left:8px" onclick="addCreatorToGroup('${creator.handle}')">Add</button>
+                </div>
+              </div>
+            `).join('')}
           </div>
+        `).join('')}
+        <div class="niche-group" data-niche="all" style="">
+          ${data.creators.map(creator => `
+            <div class="card" style="padding:14px;border:1px solid var(--border);margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;align-items:start">
+                <div style="flex:1">
+                  <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:2px">@${creator.handle}</div>
+                  <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${creator.name || ''}</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+                    ${creator.platforms.map(p => `<span style="font-size:10px;background:var(--surface);color:var(--text3);padding:2px 6px;border-radius:3px;font-family:var(--mono)">${p}</span>`).join('')}
+                  </div>
+                  <div style="font-size:11px;color:var(--accent);text-transform:uppercase;font-weight:600;margin-bottom:6px">${creator.niche}</div>
+                  ${creator.followerCount ? `<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${(creator.followerCount / 1000000).toFixed(1)}M followers</div>` : ''}
+                </div>
+                <button class="btn-ghost" style="padding:6px 12px;font-size:11px;white-space:nowrap;margin-left:8px" onclick="addCreatorToGroup('${creator.handle}')">Add</button>
+              </div>
+            </div>
+          `).join('')}
         </div>
       </div>
-    `).join('');
+    `;
+
+    listEl.innerHTML = tabsHtml + creatorsHtml;
+    // Show "all" tab by default
+    filterAgencyNiche('all');
 
   } catch (e) {
     loading.style.display = 'none';
     showErrorMsg('agency-search-error', e.message);
     console.error('[Agency Search Error]', e);
   }
+}
+
+function filterAgencyNiche(niche) {
+  // Update active tab styling
+  document.querySelectorAll('.niche-tab').forEach(btn => {
+    if (btn.textContent.toLowerCase().startsWith(niche.toLowerCase()) || 
+        (niche === 'all' && btn.textContent.toLowerCase().startsWith('all'))) {
+      btn.style.color = 'var(--accent)';
+      btn.style.borderBottomColor = 'var(--accent)';
+    } else {
+      btn.style.color = 'var(--text3)';
+      btn.style.borderBottomColor = 'transparent';
+    }
+  });
+
+  // Show/hide creator groups
+  document.querySelectorAll('.niche-group').forEach(group => {
+    if (group.dataset.niche === niche) {
+      group.style.display = '';
+    } else {
+      group.style.display = 'none';
+    }
+  });
+}
+
+function addCreatorToGroup(handle) {
+  alert(`Added @${handle} to your watchlist`);
+  // TODO: Implement actual group/watchlist functionality
 }
 
 function showErrorMsg(elementId, message) {

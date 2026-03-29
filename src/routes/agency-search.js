@@ -51,28 +51,34 @@ router.post('/scrape', async (req, res) => {
           },
           {
             role: 'user',
-            content: `Analyze this agency website and extract ALL creator/influencer roster information:
+            content: `Analyze this agency website THOROUGHLY and extract EVERY SINGLE creator/influencer from their complete roster:
 
 URL: ${normalizedUrl}
 
-For each creator found, provide:
-- handle: Their username/handle (without @ symbol)
-- name: Real name if available
-- platforms: Array of platforms (tiktok, youtube, instagram, twitch, etc)
-- followerCount: Approximate followers if mentioned
+IMPORTANT: Extract ALL creators listed, not just a sample. Check every page, every section, every roster list.
 
-Return ONLY a valid JSON array, no markdown, no code blocks. Example:
+For each creator, provide:
+- handle: Username/handle (without @)
+- name: Real name if available
+- platforms: Platforms they're on [tiktok, youtube, instagram, twitch, etc]
+- followerCount: Follower count if mentioned
+- niche: Content niche/category (e.g., "beauty", "gaming", "fitness", "comedy", "fashion", etc)
+
+Return ONLY valid JSON array, no markdown, no code blocks:
 [
-  {"handle":"username","name":"Real Name","platforms":["tiktok"],"followerCount":5000000},
-  {"handle":"another","name":"Person","platforms":["youtube","instagram"],"followerCount":2000000}
+  {"handle":"user1","name":"Name","platforms":["tiktok","instagram"],"followerCount":2000000,"niche":"beauty"},
+  {"handle":"user2","name":"Name","platforms":["youtube"],"followerCount":500000,"niche":"gaming"},
+  {"handle":"user3","name":"Name","platforms":["twitch","youtube"],"followerCount":1500000,"niche":"gaming"}
 ]
 
-If no creators found, return empty array: []`
+If no creators found, return: []
+
+CRITICAL: Return COMPLETE roster, not truncated results.`
           }
         ],
         temperature: 0.2,
         top_p: 0.9,
-        max_tokens: 2000
+        max_tokens: 4000
       },
       {
         headers: {
@@ -112,9 +118,10 @@ If no creators found, return empty array: []`
         name: c.name || c.handle,
         platforms: (c.platforms || []).map(p => p.toLowerCase().trim()),
         followerCount: c.followerCount || c.follower_count || 0,
+        niche: (c.niche || '').toLowerCase().trim() || 'general',
         verified: false
       }))
-      .slice(0, 50); // Limit to 50 creators per scrape
+      .slice(0, 200); // Increased from 50 to 200 creators per scrape
 
     console.log(`[Agency Scrape] Extracted ${validCreators.length} creators from ${agencyDomain}`);
 
