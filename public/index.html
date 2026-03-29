@@ -418,18 +418,8 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .creator-actions button, .config-actions button { padding:6px 12px; font-size:12px; }
 
 /* ── MODALS ── */
-/* CRITICAL FIX: Modals are children of #view-app which has display:none when not logged in.
-   We use display:grid (not flex) and visibility+opacity instead to bypass the parent's display:none.
-   Fixed positioning alone doesn't work when parent is display:none. */
-.modal { 
-  position:fixed; top:0; left:0; right:0; bottom:0; z-index:9999; 
-  display:grid; place-items:center;
-  opacity:0; visibility:hidden; pointer-events:none;
-  transition: opacity 0.2s, visibility 0.2s;
-}
-.modal.active { 
-  opacity:1; visibility:visible; pointer-events:all;
-}
+.modal { position:fixed; top:0; left:0; right:0; bottom:0; z-index:9999; display:none; align-items:center; justify-content:center; }
+.modal.active { display:flex; }
 .modal-backdrop { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); }
 .modal-content {
   position:relative; background:var(--surface); border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,0.15);
