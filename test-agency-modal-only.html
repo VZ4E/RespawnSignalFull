@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+:root {
+  --surface: #1a1a1a;
+  --text2: #999;
+  --border: #333;
+  --red-dim: rgba(255,0,0,0.1);
+  --red: #ff4444;
+}
+
+body {
+  background: #111;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* MODAL CSS - EXACT COPY FROM index.html */
+.modal { 
+  position:fixed; 
+  top:0; 
+  left:0; 
+  right:0; 
+  bottom:0; 
+  z-index:100; 
+  display:none; 
+}
+.modal.active { 
+  display:flex; 
+}
+.modal-backdrop { 
+  position:absolute; 
+  top:0; 
+  left:0; 
+  right:0; 
+  bottom:0; 
+  background:rgba(0,0,0,0.3); 
+}
+.modal-content {
+  position:relative; 
+  background:var(--surface); 
+  border-radius:14px; 
+  box-shadow:0 10px 40px rgba(0,0,0,0.15);
+  width:90%; 
+  max-width:450px; 
+  margin:auto;
+}
+.modal-header { 
+  display:flex; 
+  align-items:center; 
+  justify-content:space-between; 
+  padding:20px; 
+  border-bottom:1px solid var(--border); 
+}
+.modal-header h2 { 
+  font-size:18px; 
+  font-weight:700; 
+  margin:0; 
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 20px;
+  cursor: pointer;
+}
+.modal-body {
+  padding: 20px;
+}
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: #999;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.form-input {
+  width: 100%;
+  padding: 10px;
+  background: #222;
+  border: 1px solid var(--border);
+  color: #fff;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+</style>
+</head>
+<body>
+
+<h1>Agency Modal Test</h1>
+<p>Testing the exact HTML/CSS from the app</p>
+<button onclick="showAgencySearchModal()">+ Find Agency</button>
+
+<!-- EXACT COPY OF MODAL FROM index.html -->
+<div id="agency-search-modal" class="modal">
+  <div class="modal-backdrop" onclick="closeModal('agency-search-modal')"></div>
+  <div class="modal-content" style="max-width:600px">
+    <div class="modal-header">
+      <h2 id="agency-modal-title">Find Agency Creators</h2>
+      <button class="modal-close" onclick="closeModal('agency-search-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- STEP 1: Enter URL -->
+      <div id="agency-step-1" style="display:block">
+        <div style="margin-bottom:12px">
+          <label style="display:block;margin-bottom:6px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2)">Agency Website URL</div>
+          </label>
+          <input class="form-input" id="agency-url-input" type="text" placeholder="https://example-agency.com" style="width:100%;padding:10px" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('agency-search-modal')">Cancel</button>
+      <button style="background:#007bff;color:white;" onclick="alert('Would scrape here')">Find Creators</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let agencySearchStep = 1;
+let agencySearchData = { url: '', creators: [], agencyName: '', agencyDomain: '' };
+
+function showAgencySearchModal() {
+  console.log('showAgencySearchModal called');
+  agencySearchStep = 1;
+  agencySearchData = { url: '', creators: [], agencyName: '', agencyDomain: '' };
+  document.getElementById('agency-url-input').value = '';
+  const modal = document.getElementById('agency-search-modal');
+  console.log('Modal before:', modal.className);
+  modal.classList.add('active');
+  console.log('Modal after:', modal.className);
+  console.log('Computed display:', window.getComputedStyle(modal).display);
+}
+
+function closeModal(modalId) {
+  console.log('closeModal called for', modalId);
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('active');
+}
+
+console.log('Test page loaded. Click the button above to test the modal.');
+</script>
+
+</body>
+</html>

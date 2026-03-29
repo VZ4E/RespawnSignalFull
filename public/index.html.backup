@@ -418,8 +418,13 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .creator-actions button, .config-actions button { padding:6px 12px; font-size:12px; }
 
 /* ── MODALS ── */
-.modal { position:fixed; top:0; left:0; right:0; bottom:0; z-index:9999; display:none; align-items:center; justify-content:center; }
-.modal.active { display:flex; }
+.modal { 
+  position:fixed; top:0; left:0; right:0; bottom:0; z-index:9999; 
+  display:none; align-items:center; justify-content:center; 
+  /* Break out of parent display:none by using fixed positioning */
+  contain: layout style paint;
+}
+.modal.active { display:flex !important; }
 .modal-backdrop { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); }
 .modal-content {
   position:relative; background:var(--surface); border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,0.15);
@@ -1491,10 +1496,7 @@ textarea:focus-visible {
     <div class="hero-badge"><div class="hero-dot"></div>Now live at respawnmedia.co</div>
     <h1>Find Brand Deals.<br>Instantly.</h1>
     <p>Scan any TikTok creator's recent videos and surface every brand sponsorship, affiliate link, and paid partnership — in seconds.</p>
-    <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <button class="btn-primary" style="font-size:15px;padding:14px 32px" onclick="showAuth('signup')">Start Scanning Free</button>
-      <button class="btn-ghost" style="font-size:15px;padding:14px 32px;border:1px solid var(--accent);color:var(--accent)" onclick="showAgencySearchModal()">+ Find Agency</button>
-    </div>
+    <button class="btn-primary" style="font-size:15px;padding:14px 32px" onclick="showAuth('signup')">Start Scanning Free</button>
   </div>
 
   <div class="pricing-section">
@@ -2358,10 +2360,6 @@ textarea:focus-visible {
       </div>
     </div>
 
-    </div>
-  </div>
-</div>
-
     <!-- MODALS -->
     <div id="add-creator-modal" class="modal">
       <div class="modal-backdrop" onclick="closeModal('add-creator-modal')"></div>
@@ -2514,7 +2512,9 @@ textarea:focus-visible {
       </div>
     </div>
 
-
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
