@@ -2516,11 +2516,15 @@ textarea:focus-visible {
 // ── SUPABASE CLIENT (for OAuth only) ──
 let _sbClient = null;
 function _sb() {
-  if (!_sbClient) {
-    _sbClient = supabase.createClient(
-      'https://ehkvtwvtmvgtkqqotujo.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoa3Z0d3Z0bXZndGtxcW90dWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjEzODksImV4cCI6MjA4OTEzNzM4OX0.u7GA8thsQfpD1hdnQuocENuYaH79Y277AOm2Trg4Yz4'
-    );
+  if (!_sbClient && typeof supabase !== 'undefined') {
+    try {
+      _sbClient = supabase.createClient(
+        'https://ehkvtwvtmvgtkqqotujo.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoa3Z0d3Z0bXZndGtxcW90dWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjEzODksImV4cCI6MjA4OTEzNzM4OX0.u7GA8thsQfpD1hdnQuocENuYaH79Y277AOm2Trg4Yz4'
+      );
+    } catch(e) {
+      console.warn('[Supabase init warning]', e);
+    }
   }
   return _sbClient;
 }
@@ -6176,5 +6180,6 @@ function requestAccountDeletion() {
 
 </body>
 </html>
-< ! - -   D e p l o y   t r i g g e r :   2 0 2 6 - 0 3 - 2 9   0 4 : 0 5 : 1 5   - - >  
+< ! - -   D e p l o y   t r i g g e r :   2 0 2 6 - 0 3 - 2 9   0 4 : 0 5 : 1 5   - - > 
+ 
  
