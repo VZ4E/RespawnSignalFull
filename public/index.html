@@ -5392,7 +5392,7 @@ async function agencySearchScrape() {
                     </div>
                     ${creator.followerCount ? `<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${(creator.followerCount / 1000000).toFixed(1)}M followers</div>` : ''}
                   </div>
-                  <button class="btn-ghost" style="padding:6px 12px;font-size:11px;white-space:nowrap;margin-left:8px" onclick="addCreatorToGroup('${creator.handle}')">Add</button>
+                  <button class="btn-ghost add-creator-btn" style="padding:6px 12px;font-size:11px;white-space:nowrap;margin-left:8px" data-handle="${creator.handle}" onclick="addCreatorToGroup('${creator.handle}', event)">Add</button>
                 </div>
               </div>
             `).join('')}
@@ -5411,7 +5411,7 @@ async function agencySearchScrape() {
                   <div style="font-size:11px;color:var(--accent);text-transform:uppercase;font-weight:600;margin-bottom:6px">${creator.niche}</div>
                   ${creator.followerCount ? `<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${(creator.followerCount / 1000000).toFixed(1)}M followers</div>` : ''}
                 </div>
-                <button class="btn-ghost" style="padding:6px 12px;font-size:11px;white-space:nowrap;margin-left:8px" onclick="addCreatorToGroup('${creator.handle}')">Add</button>
+                <button class="btn-ghost add-creator-btn" style="padding:6px 12px;font-size:11px;white-space:nowrap;margin-left:8px" data-handle="${creator.handle}" onclick="addCreatorToGroup('${creator.handle}', event)">Add</button>
               </div>
             </div>
           `).join('')}
@@ -5453,14 +5453,17 @@ function filterAgencyNiche(niche) {
   });
 }
 
-async function addCreatorToGroup(handle) {
-  const loading = document.querySelector(`[onclick*="addCreatorToGroup('${handle}')"]`);
-  if (loading) {
-    loading.textContent = 'Adding...';
-    loading.disabled = true;
+async function addCreatorToGroup(handle, evt) {
+  const button = evt ? evt.target : null;
+  
+  if (button) {
+    button.textContent = 'Adding...';
+    button.disabled = true;
   }
 
   try {
+    console.log('[Watchlist] Adding creator:', handle);
+    
     const res = await fetch('/api/agency-search/add-to-watchlist', {
       method: 'POST',
       headers: {
@@ -5476,31 +5479,31 @@ async function addCreatorToGroup(handle) {
       })
     });
 
+    const data = await res.json();
+    console.log('[Watchlist] Response:', data);
+
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to add to watchlist');
+      throw new Error(data.error || 'Failed to add to watchlist');
     }
 
-    const data = await res.json();
-    
-    if (loading) {
-      loading.textContent = '✓ Added';
-      loading.style.color = 'var(--green)';
+    if (button) {
+      button.textContent = '✓ Added';
+      button.style.color = 'var(--green)';
       setTimeout(() => {
-        loading.textContent = 'Add';
-        loading.style.color = '';
-        loading.disabled = false;
+        button.textContent = 'Add';
+        button.style.color = '';
+        button.disabled = false;
       }, 2000);
     }
   } catch (e) {
     console.error('[Watchlist Error]', e);
-    if (loading) {
-      loading.textContent = 'Error';
-      loading.style.color = 'var(--red)';
+    if (button) {
+      button.textContent = 'Error';
+      button.style.color = 'var(--red)';
       setTimeout(() => {
-        loading.textContent = 'Add';
-        loading.style.color = '';
-        loading.disabled = false;
+        button.textContent = 'Add';
+        button.style.color = '';
+        button.disabled = false;
       }, 2000);
     }
   }
