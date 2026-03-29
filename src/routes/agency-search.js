@@ -345,6 +345,89 @@ router.get('/list', async (req, res) => {
 });
 
 /**
+ * POST /api/agency-search/add-to-watchlist
+ * Add a single creator to user's watchlist
+ * 
+ * Body: { handle, name, platforms, followerCount, niche }
+ * Returns: { success, creatorId }
+ */
+router.post('/add-to-watchlist', async (req, res) => {
+  const userId = req.user.id;
+  const { handle, name, platforms, followerCount, niche } = req.body;
+
+  if (!handle) {
+    return res.status(400).json({ error: 'handle is required' });
+  }
+
+  try {
+    console.log(`[Watchlist] Adding creator ${handle} to user ${userId} watchlist`);
+
+    // Create or get a "Watchlist" agency for the user
+    let { data: watchlistAgency, error: checkErr } = await supabase
+      .from('agencies')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('name', 'My Watchlist')
+      .single();
+
+    if (!watchlistAgency) {
+      // Create watchlist agency if it doesn't exist
+      const { data: newAgency, error: createErr } = await supabase
+        .from('agencies')
+        .insert({
+          user_id: userId,
+          name: 'My Watchlist',
+          domain: 'watchlist.local',
+          website_url: 'internal://watchlist',
+          industry: 'mixed'
+        })
+        .select('id')
+        .single();
+
+      if (createErr) throw createErr;
+      watchlistAgency = newAgency;
+    }
+
+    // Check if creator already exists in watchlist
+    const { data: existing } = await supabase
+      .from('agency_creators')
+      .select('id')
+      .eq('agency_id', watchlistAgency.id)
+      .eq('creator_handle', handle.toLowerCase())
+      .single();
+
+    if (existing) {
+      return res.json({ success: true, message: 'Creator already in watchlist', creatorId: existing.id });
+    }
+
+    // Add creator to watchlist
+    const { data: creator, error: insertErr } = await supabase
+      .from('agency_creators')
+      .insert({
+        agency_id: watchlistAgency.id,
+        user_id: userId,
+        creator_handle: handle.toLowerCase(),
+        platform: (platforms && platforms[0]) || 'unknown',
+        platform_url: `https://www.${platforms?.[0] || 'unknown'}.com/${handle}`,
+        follower_count: followerCount || 0,
+        engagement_rate: 0,
+        status: 'active',
+        niche: niche || 'general'
+      })
+      .select('id')
+      .single();
+
+    if (insertErr) throw insertErr;
+
+    console.log(`[Watchlist] Added creator ${handle} to watchlist`);
+    res.json({ success: true, creatorId: creator.id });
+  } catch (err) {
+    console.error('[Watchlist] Error:', err.message);
+    res.status(500).json({ error: 'Failed to add to watchlist', details: err.message });
+  }
+});
+
+/**
  * DELETE /api/agency-search/:agencyId
  * Delete an agency and all associated creators from Supabase
  */

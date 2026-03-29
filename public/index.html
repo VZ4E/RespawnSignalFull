@@ -1822,6 +1822,7 @@ textarea:focus-visible {
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
       <div class="nav-item" onclick="navTo('groups',this)">Groups</div>
       <div class="nav-item" onclick="navTo('agency-search',this)">Agency Search</div>
+      <div class="nav-item" onclick="navTo('watchlist',this)">My Watchlist</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
       <div class="nav-item" onclick="navTo('pricing',this)">Pricing</div>
       <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
@@ -1997,6 +1998,21 @@ textarea:focus-visible {
 
       <!-- Results -->
       <div id="agency-search-list" style="display:grid;gap:12px"></div>
+    </div>
+
+    <!-- MY WATCHLIST -->
+    <div class="page" id="page-watchlist">
+      <div class="sec-head"><h1>My Watchlist</h1><p>Creators you're tracking from scraped agencies.</p></div>
+      <div id="watchlist-loading" style="text-align:center;padding:40px;display:none">
+        <div style="font-family:var(--mono);color:var(--text3);margin-bottom:16px">Loading watchlist...</div>
+        <div class="spinner"></div>
+      </div>
+      <div id="watchlist-error" style="padding:12px;background:var(--red-dim);border:1px solid var(--red);border-radius:4px;color:var(--red);font-size:13px;display:none;margin-bottom:16px"></div>
+      <div id="watchlist-empty" style="padding:40px;text-align:center;color:var(--text3);display:none">
+        <p>No creators in your watchlist yet.</p>
+        <p style="font-size:12px;margin-top:8px">Search for an agency and click "Add" on creators to add them here.</p>
+      </div>
+      <div id="watchlist-container" style="display:grid;gap:12px"></div>
     </div>
 
     <!-- CREDITS -->
@@ -2568,7 +2584,7 @@ const STRIPE_PRICES = {
 
 const PLAN_MAX_RANGE = { none: 0, starter: 30, pro: 30, agency: 30, enterprise: 30 };
 const PLAN_CREDITS = { none: 0, starter: 1000, pro: 2500, agency: 5000, enterprise: 9999 };
-const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', 'agency-search':'Agency Search', credits:'Credits', pricing:'Pricing & Billing', settings:'Settings', account:'Account' };
+const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', 'agency-search':'Agency Search', watchlist:'My Watchlist', credits:'Credits', pricing:'Pricing & Billing', settings:'Settings', account:'Account' };
 
 // ── INIT ──
 async function init() {
@@ -2895,6 +2911,7 @@ function navTo(id, el) {
   if (id === 'credits') loadHistory();
   if (id === 'groups') loadGroupsUI();
   if (id === 'agency-search') loadAgencySearchList();
+  if (id === 'watchlist') loadWatchlist();
   if (id === 'pricing') renderPricingPage();
   if (id === 'account') refreshAccount();
 }
@@ -5436,9 +5453,171 @@ function filterAgencyNiche(niche) {
   });
 }
 
-function addCreatorToGroup(handle) {
-  alert(`Added @${handle} to your watchlist`);
-  // TODO: Implement actual group/watchlist functionality
+async function addCreatorToGroup(handle) {
+  const loading = document.querySelector(`[onclick*="addCreatorToGroup('${handle}')"]`);
+  if (loading) {
+    loading.textContent = 'Adding...';
+    loading.disabled = true;
+  }
+
+  try {
+    const res = await fetch('/api/agency-search/add-to-watchlist', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      },
+      body: JSON.stringify({
+        handle: handle,
+        name: handle,
+        platforms: ['unknown'],
+        followerCount: 0,
+        niche: 'general'
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to add to watchlist');
+    }
+
+    const data = await res.json();
+    
+    if (loading) {
+      loading.textContent = '✓ Added';
+      loading.style.color = 'var(--green)';
+      setTimeout(() => {
+        loading.textContent = 'Add';
+        loading.style.color = '';
+        loading.disabled = false;
+      }, 2000);
+    }
+  } catch (e) {
+    console.error('[Watchlist Error]', e);
+    if (loading) {
+      loading.textContent = 'Error';
+      loading.style.color = 'var(--red)';
+      setTimeout(() => {
+        loading.textContent = 'Add';
+        loading.style.color = '';
+        loading.disabled = false;
+      }, 2000);
+    }
+  }
+}
+
+async function loadWatchlist() {
+  const loading = document.getElementById('watchlist-loading');
+  const empty = document.getElementById('watchlist-empty');
+  const error = document.getElementById('watchlist-error');
+  const container = document.getElementById('watchlist-container');
+
+  loading.style.display = 'block';
+  empty.style.display = 'none';
+  error.style.display = 'none';
+  container.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/agency-search/list', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to load watchlist');
+    }
+
+    const data = await res.json();
+    loading.style.display = 'none';
+
+    // Find the "My Watchlist" agency
+    const watchlistAgency = data.agencies?.find(a => a.name === 'My Watchlist');
+    
+    if (!watchlistAgency || !watchlistAgency.creators || watchlistAgency.creators.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+
+    // Group creators by niche
+    const groupedByNiche = {};
+    watchlistAgency.creators.forEach(creator => {
+      const niche = creator.niche || 'general';
+      if (!groupedByNiche[niche]) groupedByNiche[niche] = [];
+      groupedByNiche[niche].push(creator);
+    });
+
+    const niches = Object.keys(groupedByNiche).sort();
+
+    // Render grouped creators
+    container.innerHTML = niches.map(niche => `
+      <div>
+        <div style="font-weight:600;font-size:13px;color:var(--text3);margin-bottom:12px;margin-top:16px;text-transform:uppercase;letter-spacing:0.5px">
+          ${niche.charAt(0).toUpperCase() + niche.slice(1)} (${groupedByNiche[niche].length})
+        </div>
+        ${groupedByNiche[niche].map(creator => `
+          <div class="card" style="padding:14px;border:1px solid var(--border);margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div style="flex:1">
+                <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:2px">@${creator.handle}</div>
+                <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${creator.platform || 'Unknown'}</div>
+                <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Added ${new Date(creator.createdAt).toLocaleDateString()}</div>
+              </div>
+              <button class="btn-ghost" style="padding:6px 12px;font-size:11px;white-space:nowrap;margin-left:8px;color:var(--red)" onclick="removeFromWatchlist('${creator.id}')">Remove</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+  } catch (e) {
+    loading.style.display = 'none';
+    error.textContent = e.message;
+    error.style.display = 'block';
+    console.error('[Watchlist Error]', e);
+  }
+}
+
+async function removeFromWatchlist(creatorId) {
+  if (!confirm('Remove this creator from your watchlist?')) return;
+  
+  try {
+    // TODO: Implement DELETE endpoint for individual creators
+    console.log('[Watchlist] Remove creator:', creatorId);
+    alert('Feature coming soon!');
+  } catch (e) {
+    console.error('[Watchlist Error]', e);
+  }
+}
+
+async function loadAgencySearchList() {
+  // Load and display saved agencies
+  try {
+    const res = await fetch('/api/agency-search/list', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to load agencies');
+
+    const data = await res.json();
+    console.log('[Agency Search] Loaded agencies:', data);
+    
+    // Filter out the "My Watchlist" agency from the list
+    const agencies = data.agencies?.filter(a => a.name !== 'My Watchlist') || [];
+    
+    if (agencies.length === 0) {
+      document.getElementById('agency-search-list').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">No saved agencies yet</div>';
+      return;
+    }
+
+    // TODO: Render saved agencies list
+  } catch (e) {
+    console.error('[Agency Search List Error]', e);
+  }
 }
 
 function showErrorMsg(elementId, message) {
