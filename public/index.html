@@ -4524,7 +4524,8 @@ function showAddConfigModal() {
 }
 
 function closeModal(modalId) {
-  document.getElementById(modalId).style.display = 'none';
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('active');
 }
 
 async function submitAddCreator() {
@@ -5279,7 +5280,7 @@ function showAgencySearchModal() {
   document.getElementById('agency-url-input').value = '';
   document.getElementById('agency-name-input').value = '';
   document.getElementById('agency-domain-input').value = '';
-  document.getElementById('agency-search-modal').style.display = 'flex';
+  document.getElementById('agency-search-modal').classList.add('active');
   document.getElementById('agency-error-msg').style.display = 'none';
   renderAgencySearchStep();
 }
