@@ -43,41 +43,43 @@ router.post('/scrape', async (req, res) => {
     const perplexityResponse = await axios.post(
       'https://api.perplexity.ai/chat/completions',
       {
-        model: 'sonar',
+        model: 'sonar-pro',
         messages: [
           {
+            role: 'system',
+            content: 'You are an expert at extracting creator and influencer information from agency websites. Extract all roster information and return as valid JSON.'
+          },
+          {
             role: 'user',
-            content: `You are analyzing an agency's website to find creator/influencer roster information.
+            content: `Analyze this agency website and extract ALL creator/influencer roster information:
 
-Visit and analyze this URL: ${normalizedUrl}
+URL: ${normalizedUrl}
 
-Extract EVERY creator, influencer, talent, or artist listed on their roster page. For each person found, provide:
-1. Their creator/username handle (as they appear on social media)
-2. Their real name (if available)
-3. Which platforms they're on (tiktok, youtube, instagram, twitch, etc.)
-4. Approximate follower count if mentioned
+For each creator found, provide:
+- handle: Their username/handle (without @ symbol)
+- name: Real name if available
+- platforms: Array of platforms (tiktok, youtube, instagram, twitch, etc)
+- followerCount: Approximate followers if mentioned
 
-Return ONLY a JSON array with NO additional text, formatted exactly like this:
+Return ONLY a valid JSON array, no markdown, no code blocks. Example:
 [
-  { "handle": "username", "name": "Real Name", "platforms": ["tiktok", "youtube"], "followerCount": 2500000 },
-  { "handle": "another_user", "name": "Another Person", "platforms": ["instagram"], "followerCount": 950000 }
+  {"handle":"username","name":"Real Name","platforms":["tiktok"],"followerCount":5000000},
+  {"handle":"another","name":"Person","platforms":["youtube","instagram"],"followerCount":2000000}
 ]
 
-If you cannot find creator information on this page, return an empty array: []
-
-IMPORTANT: Return ONLY the JSON array, no markdown, no code blocks, no explanation.`
+If no creators found, return empty array: []`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.2,
         top_p: 0.9,
-        return_citations: false,
-        search_domain_filter: [agencyDomain]
+        max_tokens: 2000
       },
       {
         headers: {
           Authorization: `Bearer ${perplexityKey}`,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 30000
       }
     );
 
@@ -125,10 +127,26 @@ IMPORTANT: Return ONLY the JSON array, no markdown, no code blocks, no explanati
     });
   } catch (err) {
     console.error('[Agency Scrape] Error:', err.message);
+    console.error('[Agency Scrape] Error details:', {
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      headers: err.response?.headers
+    });
+    
     if (err.response?.status === 429) {
       return res.status(429).json({ error: 'Rate limited by Perplexity API. Please try again in a moment.' });
     }
-    res.status(500).json({ error: 'Failed to scrape agency creators', details: err.message });
+    
+    if (err.response?.status === 401) {
+      return res.status(401).json({ error: 'Perplexity API key is invalid or expired' });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to scrape agency creators', 
+      details: err.message,
+      perplexityError: err.response?.data?.error
+    });
   }
 });
 
