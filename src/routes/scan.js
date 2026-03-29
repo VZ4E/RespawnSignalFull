@@ -3,6 +3,7 @@ const router = express.Router();
 const fetch = require('node-fetch');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
+const { notifyOnScanComplete, notifyOnLowCredits } = require('../services/notificationService');
 
 // POST /api/scan
 router.post('/', authMiddleware, async (req, res) => {
@@ -373,7 +374,7 @@ TRANSCRIPTS:\n${text}`;
     views: v.views,
   }));
   
-  const { error: insertError } = await supabase.from('scans').insert({
+  const scanData = {
     user_id: dbUser.id,
     username,
     platform: platform || 'tiktok', // ← Save platform for context
@@ -382,12 +383,39 @@ TRANSCRIPTS:\n${text}`;
     credits_used: creditsToDeduct,
     deals,
     videos: videosList,
-  });
+  };
+
+  console.log('[Scan] About to insert scan record:', JSON.stringify(scanData));
+
+  const { error: insertError, data: insertData } = await supabase.from('scans').insert(scanData);
 
   if (insertError) {
     console.error('[Scan] Insert error:', insertError.message);
+    console.error('[Scan] Insert error details:', insertError);
   } else {
-    console.log(`[Scan] ✓ Saved ${platform} scan for ${username} with ${deals.length} deals`);
+    console.log(`[Scan] ✓ Saved scan for user ${dbUser.id}, creator ${username}, platform ${platform || 'tiktok'}`);
+    console.log('[Scan] Insert response:', insertData);
+  }
+
+  // Send notifications (non-blocking)
+  try {
+    // Notify if deals found
+    if (deals && deals.length > 0) {
+      notifyOnScanComplete(dbUser.id, username, platform, deals, null).catch(err => {
+        console.error('[Notifications] Scan complete notification failed:', err.message);
+      });
+    }
+
+    // Warn if credits running low
+    const remainingAfter = dbUser.credits_remaining - creditsToDeduct;
+    if (remainingAfter < 100 && remainingAfter > 0) {
+      notifyOnLowCredits(dbUser.id, remainingAfter).catch(err => {
+        console.error('[Notifications] Low credits notification failed:', err.message);
+      });
+    }
+  } catch (notifErr) {
+    console.error('[Notifications] Error sending notifications:', notifErr.message);
+    // Don't fail the scan if notifications fail
   }
 
   return res.json({

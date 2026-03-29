@@ -1,6 +1,7 @@
 const express = require('express');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
+const { notifyOnGroupScanComplete } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -458,6 +459,49 @@ router.get('/:groupId/bulk-scans', async (req, res) => {
   } catch (err) {
     console.error('GET /api/groups/:groupId/bulk-scans error:', err.message);
     res.status(500).json({ error: 'Failed to fetch bulk scans' });
+  }
+});
+
+// POST /api/groups/:groupId/bulk-scan/:scanId/complete - Mark bulk scan complete and notify
+router.post('/:groupId/bulk-scan/:scanId/complete', async (req, res) => {
+  const { results = [], groupName = 'Bulk Scan' } = req.body;
+
+  try {
+    // Verify authorization
+    const { data: scan, error: checkErr } = await supabase
+      .from('bulk_scans')
+      .select('user_id')
+      .eq('id', req.params.scanId)
+      .eq('group_id', req.params.groupId)
+      .single();
+
+    if (checkErr || !scan || scan.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Update scan status to completed
+    const { error: updateErr } = await supabase
+      .from('bulk_scans')
+      .update({ 
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        results
+      })
+      .eq('id', req.params.scanId);
+
+    if (updateErr) throw updateErr;
+
+    // Send notification (non-blocking)
+    if (results.length > 0) {
+      notifyOnGroupScanComplete(req.user.id, groupName, results).catch(err => {
+        console.error('[Notifications] Group scan notification failed:', err.message);
+      });
+    }
+
+    res.json({ success: true, scanId: req.params.scanId });
+  } catch (err) {
+    console.error('POST /api/groups/:groupId/bulk-scan/:scanId/complete error:', err.message);
+    res.status(500).json({ error: 'Failed to complete bulk scan' });
   }
 });
 
