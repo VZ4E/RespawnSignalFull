@@ -5521,15 +5521,23 @@ async function loadWatchlist() {
   container.innerHTML = '';
 
   try {
+    const token = localStorage.getItem('rs_token');
+    if (!token) {
+      loading.style.display = 'none';
+      error.textContent = 'Please log in to view your watchlist';
+      error.style.display = 'block';
+      return;
+    }
+
     const res = await fetch('/api/agency-search/list', {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+        Authorization: `Bearer ${token}`
       }
     });
 
     if (!res.ok) {
-      throw new Error('Failed to load watchlist');
+      throw new Error(`Failed to load watchlist (${res.status})`);
     }
 
     const data = await res.json();
@@ -5576,7 +5584,7 @@ async function loadWatchlist() {
 
   } catch (e) {
     loading.style.display = 'none';
-    error.textContent = e.message;
+    error.textContent = 'Error loading watchlist: ' + e.message;
     error.style.display = 'block';
     console.error('[Watchlist Error]', e);
   }
@@ -5597,14 +5605,24 @@ async function removeFromWatchlist(creatorId) {
 async function loadAgencySearchList() {
   // Load and display saved agencies
   try {
+    const token = localStorage.getItem('rs_token');
+    if (!token) {
+      // User not logged in - just show the search interface
+      console.log('[Agency Search] User not logged in, showing search only');
+      return;
+    }
+
     const res = await fetch('/api/agency-search/list', {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('rs_token')}`
+        Authorization: `Bearer ${token}`
       }
     });
 
-    if (!res.ok) throw new Error('Failed to load agencies');
+    if (!res.ok) {
+      console.error('[Agency Search List Error]', res.status);
+      return;
+    }
 
     const data = await res.json();
     console.log('[Agency Search] Loaded agencies:', data);
