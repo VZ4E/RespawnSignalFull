@@ -301,7 +301,6 @@ router.get('/list', async (req, res) => {
           follower_count,
           engagement_rate,
           status,
-          niche,
           created_at
         )
       `)
@@ -332,7 +331,6 @@ router.get('/list', async (req, res) => {
           followerCount: c.follower_count,
           engagementRate: c.engagement_rate,
           status: c.status,
-          niche: c.niche || 'general',
           createdAt: c.created_at
         })),
         createdAt: a.created_at,
@@ -413,8 +411,7 @@ router.post('/add-to-watchlist', async (req, res) => {
         platform_url: `https://www.${platforms?.[0] || 'unknown'}.com/${handle}`,
         follower_count: followerCount || 0,
         engagement_rate: 0,
-        status: 'active',
-        niche: niche || 'general'
+        status: 'active'
       })
       .select('id')
       .single();
