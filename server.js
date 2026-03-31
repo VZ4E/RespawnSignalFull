@@ -62,6 +62,10 @@ app.get('/refund-policy', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'refund-policy.html'));
 });
 
+app.get('/cookie-policy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cookie-policy.html'));
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
