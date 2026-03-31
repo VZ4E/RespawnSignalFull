@@ -1,26 +1,27 @@
 FROM node:24-alpine
 
-WORKDIR /app
-
-# Install git and essential tools
-RUN apk add --no-cache git curl bash
-
-# Copy repo
-COPY . /app/workspace
-
 WORKDIR /app/workspace
 
-# Install dependencies
-RUN npm install -g openclaw
+# Install git and essential tools
+RUN apk add --no-cache git curl bash dcron
 
-# Setup cron for daily reports
-RUN echo "0 18 * * * cd /app/workspace && node scripts/daily-report.js >> /app/logs/daily-report.log 2>&1" | crontab -
+# Copy repo
+COPY . .
+
+# Install npm dependencies
+RUN npm install
+
+# Install OpenClaw globally
+RUN npm install -g openclaw
 
 # Create logs directory
 RUN mkdir -p /app/logs
 
+# Setup cron for daily reports
+RUN echo "0 18 * * * cd /app/workspace && node scripts/daily-report.js >> /app/logs/daily-report.log 2>&1" | crontab -
+
 # Expose port
 EXPOSE 3000
 
-# Start OpenClaw gateway
+# Start OpenClaw gateway and cron daemon
 CMD ["sh", "-c", "openclaw gateway start --port 3000 & crond -f"]
