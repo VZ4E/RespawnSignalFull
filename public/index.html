@@ -1748,6 +1748,12 @@ textarea:focus-visible {
         text-align: center;
       }
     }
+
+    /* Hide footer on auth/app views, only show on landing */
+    #view-auth .respawn-footer,
+    #view-app .respawn-footer {
+      display: none;
+    }
   </style>
 </div>
 
@@ -6385,168 +6391,7 @@ function requestAccountDeletion() {
 }
 </script>
 
-<!-- ══════════════════════════════════════════════════════════════════════
-     RESPAWN SIGNAL FOOTER
-     ══════════════════════════════════════════════════════════════════════ -->
-<footer class="respawn-footer" id="landing-footer">
-  <div class="footer-container">
-    
-    <!-- Footer Content -->
-    <div class="footer-content">
-      <div class="footer-section">
-        <h4>RespawnSignal</h4>
-        <p>TikTok brand deal scanner for creators, agencies, and brands.</p>
-      </div>
 
-      <div class="footer-section">
-        <h4>Legal</h4>
-        <ul>
-          <li><a href="/privacy-policy">Privacy Policy</a></li>
-          <li><a href="/terms-of-service">Terms of Service</a></li>
-          <li><a href="/refund-policy">Refund Policy</a></li>
-          <li><a href="mailto:legal@respawnmedia.co">Contact Legal</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-section">
-        <h4>Support</h4>
-        <ul>
-          <li><a href="mailto:support@respawnmedia.co">Contact Support</a></li>
-          <li><a href="/faq">FAQ</a></li>
-          <li><a href="/docs">Documentation</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-section">
-        <h4>Company</h4>
-        <ul>
-          <li><a href="/#">Home</a></li>
-          <li><a href="/#pricing">Pricing</a></li>
-          <li><a href="/blog">Blog</a></li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Footer Bottom -->
-    <div class="footer-bottom">
-      <p>&copy; 2026 RespawnSignal LLC. All rights reserved.</p>
-      <p>Based in New York, USA</p>
-      <p>
-        Questions? Email us at 
-        <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a>
-      </p>
-    </div>
-
-  </div>
-</footer>
-
-<!-- Footer CSS Styling -->
-<style>
-  .respawn-footer {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #fff;
-    padding: 60px 20px 30px;
-    margin-top: 100px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  }
-
-  .footer-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .footer-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 40px;
-    margin-bottom: 40px;
-  }
-
-  .footer-section h4 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .footer-section p {
-    font-size: 14px;
-    line-height: 1.6;
-    color: #b0b0b0;
-    margin: 0;
-  }
-
-  .footer-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .footer-section ul li {
-    margin-bottom: 12px;
-  }
-
-  .footer-section a {
-    color: #b0b0b0;
-    text-decoration: none;
-    font-size: 14px;
-    transition: color 0.3s ease;
-  }
-
-  .footer-section a:hover {
-    color: #fff;
-  }
-
-  .footer-bottom {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 30px;
-    text-align: center;
-    color: #888;
-    font-size: 12px;
-  }
-
-  .footer-bottom p {
-    margin: 8px 0;
-  }
-
-  .footer-bottom a {
-    color: #b0b0b0;
-    text-decoration: none;
-    transition: color 0.3s ease;
-  }
-
-  .footer-bottom a:hover {
-    color: #fff;
-  }
-
-  /* Mobile Responsiveness */
-  @media (max-width: 768px) {
-    .respawn-footer {
-      padding: 40px 16px 20px;
-    }
-
-    .footer-content {
-      grid-template-columns: 1fr;
-      gap: 30px;
-    }
-
-    .footer-section h4 {
-      font-size: 14px;
-    }
-
-    .footer-bottom {
-      text-align: center;
-    }
-  }
-
-  /* Hide footer on auth/app views, only show on landing */
-  #view-auth .respawn-footer,
-  #view-app .respawn-footer {
-    display: none;
-  }
-</style>
 
 </body>
 </html>

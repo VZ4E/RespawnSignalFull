@@ -163,6 +163,95 @@
       border-radius: 8px;
       margin: 20px 0;
     }
+
+    .contact-form-section {
+      background: var(--surface2);
+      padding: 28px;
+      border-radius: 12px;
+      margin: 28px 0;
+      border: 1px solid var(--border);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 11px 14px;
+      outline: none;
+      transition: all 0.15s;
+      box-sizing: border-box;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(90, 160, 232, 0.1);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .form-success {
+      background: rgba(5, 150, 105, 0.1);
+      border: 1px solid rgba(5, 150, 105, 0.2);
+      color: #059669;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .form-error-msg {
+      color: #dc2626;
+      font-size: 12px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 11px 18px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(90, 160, 232, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: #3b82c4;
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     
     footer {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -409,8 +498,21 @@
     <p>We may update this Privacy Policy at any time. We will notify you of material changes via email or by updating the "Last Updated" date. Continued use of the Service constitutes acceptance of the updated policy.</p>
 
     <h2>14. Contact Us</h2>
-    <p>If you have questions about this Privacy Policy or our privacy practices, contact us at:</p>
-    <div class="contact-info">
+    <p>If you have questions about this Privacy Policy or our privacy practices, contact us using the form below or reach us directly:</p>
+    
+    <div class="contact-form-section">
+      <h3 style="font-size: 18px; margin-bottom: 20px;">Send us a Message</h3>
+      <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="privacy-contact-name" placeholder="Your name" /></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="privacy-contact-email" type="email" placeholder="your@email.com" /></div>
+      <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="privacy-contact-subject" placeholder="What is this about?" /></div>
+      <div class="form-group"><label class="form-label">Message</label><textarea class="form-input form-textarea" id="privacy-contact-message" placeholder="Your message..."></textarea></div>
+      <button class="btn-primary" style="width:100%;padding:12px;font-size:14px" onclick="submitPrivacyContact()">Send Message</button>
+      <div class="form-success" id="privacy-contact-success">✓ Message sent! We'll respond within 24 hours.</div>
+      <div class="form-error-msg" id="privacy-contact-error"></div>
+    </div>
+
+    <div class="contact-info" style="margin-top: 40px;">
+      <h3 style="font-size: 16px; margin-bottom: 16px;">Direct Contact</h3>
       <p><strong>RespawnSignal LLC</strong></p>
       <p>New York, USA</p>
       <p>📧 <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a></p>
@@ -427,5 +529,60 @@
     <p>Based in New York, USA</p>
     <p>Questions? Email us at <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a></p>
   </footer>
+
+  <script>
+    async function submitPrivacyContact() {
+      const name = document.getElementById('privacy-contact-name').value.trim();
+      const email = document.getElementById('privacy-contact-email').value.trim();
+      const subject = document.getElementById('privacy-contact-subject').value.trim();
+      const message = document.getElementById('privacy-contact-message').value.trim();
+      const errEl = document.getElementById('privacy-contact-error');
+      const successEl = document.getElementById('privacy-contact-success');
+
+      if (!name || !email || !subject || !message) {
+        errEl.textContent = 'All fields are required.';
+        errEl.style.display = 'block';
+        successEl.style.display = 'none';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/billing/contact-enterprise', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            company: 'Privacy Inquiry',
+            message: `Subject: ${subject}\n\n${message}`
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send message');
+        }
+
+        successEl.style.display = 'block';
+        errEl.style.display = 'none';
+        
+        // Clear form
+        document.getElementById('privacy-contact-name').value = '';
+        document.getElementById('privacy-contact-email').value = '';
+        document.getElementById('privacy-contact-subject').value = '';
+        document.getElementById('privacy-contact-message').value = '';
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          successEl.style.display = 'none';
+        }, 5000);
+      } catch (error) {
+        errEl.textContent = error.message || 'Failed to send message. Please try again.';
+        errEl.style.display = 'block';
+        successEl.style.display = 'none';
+      }
+    }
+  </script>
 </body>
 </html>
