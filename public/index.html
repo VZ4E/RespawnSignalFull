@@ -1488,7 +1488,9 @@ textarea:focus-visible {
   </nav>
 
   <div class="land-hero">
-    <div class="hero-badge"><div class="hero-dot"></div>Now live at respawnmedia.co</div>
+    <a href="https://respawnmedia.co" target="_blank" style="text-decoration:none;cursor:pointer">
+      <div class="hero-badge"><div class="hero-dot"></div>Now live at respawnmedia.co</div>
+    </a>
     <h1>Find Brand Deals.<br>Instantly.</h1>
     <p>Scan any TikTok creator's recent videos and surface every brand sponsorship, affiliate link, and paid partnership — in seconds.</p>
     <button class="btn-primary" style="font-size:15px;padding:14px 32px" onclick="showAuth('signup')">Start Scanning Free</button>
@@ -4276,9 +4278,20 @@ async function submitEnterprise() {
 
   if (!name || !email) { errEl.textContent = 'Name and email are required.'; errEl.style.display='block'; return; }
   try {
-    await api('/api/billing/contact-enterprise', 'POST', { name, email, company, message });
+    // Use public fetch (no auth needed for enterprise inquiries)
+    const res = await fetch('/api/billing/contact-enterprise', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, company, message })
+    });
+    if (!res.ok) throw new Error('Failed to submit inquiry.');
     successEl.style.display = 'block';
     errEl.style.display = 'none';
+    // Clear form
+    document.getElementById('ent-name').value = '';
+    document.getElementById('ent-email').value = '';
+    document.getElementById('ent-company').value = '';
+    document.getElementById('ent-message').value = '';
   } catch(e) {
     errEl.textContent = e.message || 'Failed to submit. Please try again.';
     errEl.style.display = 'block';
