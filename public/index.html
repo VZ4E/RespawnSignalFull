@@ -3314,9 +3314,8 @@ async function startScan() {
   try {
     let data;
     if (platform === 'youtube') {
-      // Map scan range to YouTube scan depth (10/20/30)
-      const scanDepth = scanRange <= 10 ? 10 : scanRange <= 20 ? 20 : 30;
-      data = await api('/api/youtube/scan', 'POST', { channelInput: handle, scanDepth });
+      // Pass scanRange directly to YouTube endpoint (respects plan limits)
+      data = await api('/api/youtube/scan', 'POST', { channelInput: handle, range: scanRange });
       // Normalize YouTube brandsFound into the common deals format
       data.deals = (data.deals || []).map(d => ({
         brands: [d.brandName],
