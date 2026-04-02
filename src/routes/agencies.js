@@ -136,7 +136,6 @@ router.post('/', async (req, res) => {
       .insert({
         user_id: req.user.id,
         name,
-        url: website_url || null,
         description: description || null,
       })
       .select()
@@ -174,9 +173,12 @@ router.patch('/:id', async (req, res) => {
     }
 
     // Update
+    const updateObj = { name, description };
+    if (website_url) updateObj.url = website_url;
+    
     const { data, error } = await supabase
       .from('agencies')
-      .update({ name, url: website_url, description })
+      .update(updateObj)
       .eq('id', id)
       .select()
       .single();
