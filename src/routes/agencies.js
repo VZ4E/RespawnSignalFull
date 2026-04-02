@@ -27,25 +27,20 @@ function verifyAuth(req, res, next) {
   }
 
   try {
-    // Decode JWT (don't verify signature — Supabase handles that)
     const parts = token.split('.');
     if (parts.length !== 3) {
       return res.status(401).json({ error: 'Invalid token format' });
     }
 
     const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-    
-    // Check expiration
+
     if (payload.exp && Date.now() >= payload.exp * 1000) {
       return res.status(401).json({ error: 'Token expired' });
     }
 
-    // Extract user_id from token
-    // Service role tokens don't have sub/user_id (they have role: "service_role")
-    // Regular user tokens have sub: user_id
     const userId = payload.sub || payload.user_id;
     const isServiceRole = payload.role === 'service_role';
-    
+
     if (!userId && !isServiceRole) {
       return res.status(401).json({ error: 'Invalid token payload' });
     }
@@ -90,7 +85,6 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Fetch agency
     const { data: agency, error: agencyError } = await supabase
       .from('agencies')
       .select('*')
@@ -102,7 +96,6 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    // Fetch creators
     const { data: creators, error: creatorsError } = await supabase
       .from('agency_creators')
       .select('*')
@@ -125,10 +118,14 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, website_url, description } = req.body;
+    const { name, domain, website_url, description } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Agency name is required' });
+    }
+
+    if (!domain) {
+      return res.status(400).json({ error: 'Domain is required' });
     }
 
     const { data, error } = await supabase
@@ -136,6 +133,8 @@ router.post('/', async (req, res) => {
       .insert({
         user_id: req.user.id,
         name,
+        domain,
+        website_url: website_url || null,
         description: description || null,
       })
       .select()
@@ -158,9 +157,8 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, website_url, description } = req.body;
+    const { name, domain, website_url, description } = req.body;
 
-    // Verify ownership
     const { data: agency, error: fetchError } = await supabase
       .from('agencies')
       .select('id')
@@ -172,10 +170,12 @@ router.patch('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    // Update
-    const updateObj = { name, description };
-    if (website_url) updateObj.url = website_url;
-    
+    const updateObj = {};
+    if (name) updateObj.name = name;
+    if (domain) updateObj.domain = domain;
+    if (website_url) updateObj.website_url = website_url;
+    if (description !== undefined) updateObj.description = description;
+
     const { data, error } = await supabase
       .from('agencies')
       .update(updateObj)
@@ -201,7 +201,6 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verify ownership
     const { data: agency, error: fetchError } = await supabase
       .from('agencies')
       .select('id')
@@ -213,7 +212,6 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    // Delete (cascade handled by DB)
     const { error } = await supabase
       .from('agencies')
       .delete()
@@ -238,7 +236,6 @@ router.get('/:id/creators', async (req, res) => {
     const { id } = req.params;
     const { niche, platform } = req.query;
 
-    // Verify agency ownership
     const { data: agency, error: agencyError } = await supabase
       .from('agencies')
       .select('id')
@@ -250,7 +247,6 @@ router.get('/:id/creators', async (req, res) => {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    // Build query
     let query = supabase
       .from('agency_creators')
       .select('*')
@@ -289,7 +285,6 @@ router.post('/:id/creators/batch', async (req, res) => {
       return res.status(400).json({ error: 'Creators array is required' });
     }
 
-    // Verify agency ownership
     const { data: agency, error: agencyError } = await supabase
       .from('agencies')
       .select('id')
@@ -301,7 +296,6 @@ router.post('/:id/creators/batch', async (req, res) => {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    // Insert creators (upsert by handle to avoid duplicates)
     const creatorsWithIds = creators.map((creator) => ({
       ...creator,
       agency_id: id,
@@ -331,7 +325,6 @@ router.delete('/:id/creators/:creatorId', async (req, res) => {
   try {
     const { id, creatorId } = req.params;
 
-    // Verify creator belongs to user's agency
     const { data: creator, error: fetchError } = await supabase
       .from('agency_creators')
       .select('id')
@@ -344,7 +337,6 @@ router.delete('/:id/creators/:creatorId', async (req, res) => {
       return res.status(404).json({ error: 'Creator not found' });
     }
 
-    // Delete
     const { error } = await supabase
       .from('agency_creators')
       .delete()
