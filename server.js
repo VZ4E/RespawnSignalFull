@@ -15,6 +15,9 @@ const groupsRoutes = require('./src/routes/groups');
 const notificationsRoutes = require('./src/routes/notifications');
 const reportsRoutes = require('./src/routes/reports');
 const agencySearchRoutes = require('./src/routes/agency-search');
+const supabaseAgenciesRoutes = require('./src/routes/agencies');
+const supabaseWatchlistRoutes = require('./src/routes/watchlist');
+const supabaseGroupsRoutes = require('./src/routes/supabase-groups');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,6 +48,11 @@ app.use('/api/groups', groupsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/agency-search', agencySearchRoutes);
+
+// Supabase routes
+app.use('/api/agencies', supabaseAgenciesRoutes);
+app.use('/api/watchlist', supabaseWatchlistRoutes);
+app.use('/api/supabase-groups', supabaseGroupsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Respawn Signal' }));
 app.get('/auth/callback', (req, res) => res.redirect('/?oauth=1'));
