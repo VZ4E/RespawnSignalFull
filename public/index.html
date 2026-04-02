@@ -2550,6 +2550,8 @@ function applyPlanLimits() {
   if (!currentUser) return;
   const plan = currentUser.plan || 'none';
   const maxRange = PLAN_MAX_RANGE[plan] || 0;
+  
+  console.log('[applyPlanLimits] plan=%s, maxRange=%d, PLAN_MAX_RANGE=%o', plan, maxRange, PLAN_MAX_RANGE);
 
   // No plan — show paywall over the whole app
   if (plan === 'none') {
@@ -2567,8 +2569,10 @@ function applyPlanLimits() {
   }
   const r14 = document.getElementById('range-14');
   const r30 = document.getElementById('range-30');
+  console.log('[applyPlanLimits] r14=%o, r30=%o, will disable r14=%s, will disable r30=%s', r14, r30, maxRange < 14, maxRange < 30);
   if (maxRange < 14) r14.disabled = true;
   if (maxRange < 30) r30.disabled = true;
+  console.log('[applyPlanLimits] after: r14.disabled=%s, r30.disabled=%s', r14?.disabled, r30?.disabled);
 
   // Automation
   const autoEl = document.getElementById('automation-content');
