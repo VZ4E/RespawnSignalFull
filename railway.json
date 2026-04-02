@@ -1,8 +1,11 @@
 {
-  "build": { "builder": "NIXPACKS" },
-  "deploy": {
-    "startCommand": "node server.js",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
-  }
+    "build": {
+          "builder": "DOCKERFILE",
+          "dockerfilePath": "./Dockerfile.nathan"
+    },
+    "deploy": {
+          "startCommand": "node server.js",
+          "restartPolicyType": "ON_FAILURE",
+          "restartPolicyMaxRetries": 3
+    }
 }

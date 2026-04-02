@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - RespawnSignal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface2: #f1f5f9;
+      --border: #e2e8f0;
+      --accent: #5AA0E8;
+      --accent-dark: #3b82c4;
+      --accent-dim: rgba(90,160,232,0.08);
+      --green: #059669;
+      --green-dim: rgba(5,150,105,0.08);
+      --text: #0f172a;
+      --text2: #475569;
+      --text3: #94a3b8;
+      --sans: 'Sora', sans-serif;
+      --serif: 'Instrument Serif', serif;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+    
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 48px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    
+    .logo span {
+      color: var(--accent);
+    }
+    
+    nav a {
+      color: var(--text2);
+      text-decoration: none;
+      margin-left: 24px;
+      transition: color 0.3s;
+    }
+    
+    nav a:hover {
+      color: var(--accent);
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 60px 48px;
+    }
+    
+    h1 {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 42px;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    
+    .page-desc {
+      color: var(--text2);
+      font-size: 16px;
+      margin-bottom: 40px;
+      line-height: 1.8;
+    }
+    
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    
+    .settings-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .settings-section h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .settings-section h2::before {
+      content: attr(data-icon);
+      font-size: 20px;
+    }
+    
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+    
+    .setting-label {
+      flex: 1;
+    }
+    
+    .setting-label p {
+      color: var(--text);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .setting-label span {
+      color: var(--text3);
+      font-size: 13px;
+    }
+    
+    .setting-action {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn-link {
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 8px 16px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-link:hover {
+      background: var(--accent-dim);
+      color: var(--accent-dark);
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      color: white;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+      background: var(--accent-dark);
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--border);
+      transition: .4s;
+      border-radius: 28px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: var(--green);
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+    
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      color: var(--text);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 12px;
+    }
+    
+    .highlight-box {
+      background: var(--green-dim);
+      border-left: 4px solid var(--green);
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .highlight-box p {
+      color: var(--text);
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      color: var(--text);
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface2);
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+    
+    .checkbox-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
+    
+    .gdpr-section {
+      background: var(--surface2);
+      padding: 24px;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+    
+    .gdpr-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    
+    .gdpr-section p {
+      color: var(--text2);
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .gdpr-section ul {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+    
+    .gdpr-section li {
+      color: var(--text2);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    
+    footer {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 60px 48px 30px;
+      margin-top: 100px;
+      text-align: center;
+    }
+    
+    footer p {
+      color: #b0b0b0;
+      margin-bottom: 8px;
+    }
+    
+    footer a {
+      color: #b0b0b0;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    footer a:hover {
+      color: #fff;
+    }
+    
+    @media (max-width: 768px) {
+      header {
+        padding: 16px 24px;
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      nav {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      
+      nav a {
+        margin-left: 0;
+      }
+      
+      .container {
+        padding: 40px 24px;
+      }
+      
+      h1 {
+        font-size: 32px;
+      }
+      
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .full-width {
+        grid-column: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Respawn<span>Signal</span></div>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/terms-of-service">Terms of Service</a>
+      <a href="/refund-policy">Refund Policy</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1>Settings</h1>
+    <p class="page-desc">Manage your account preferences, privacy settings, and compliance information.</p>
+
+    <!-- Legal & Compliance Section -->
+    <div class="section-title">⚖️ Legal & Compliance</div>
+    
+    <div class="highlight-box">
+      <p>
+        <strong>Platform Compliance Notice:</strong> By using RespawnSignal, you agree to comply with the Terms of Service of TikTok, YouTube, Instagram, and any other platforms you use with our tool. Your use of creator data is subject to these platforms' policies.
+      </p>
+    </div>
+
+    <div class="settings-grid">
+      <div class="settings-section">
+        <h2 data-icon="📄">Legal Documents</h2>
+        <div class="setting-item">
+          <div class="setting-label">
+            <p>Privacy Policy</p>
+            <span>Learn how we handle your data</span>
+          </div>
+          <div class="setting-action">
+            <a href="/privacy-policy" class="btn-link">Read</a>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">
+            <p>Terms of Service</p>
+            <span>Our terms and conditions</span>
+          </div>
+          <div class="setting-action">
+            <a href="/terms-of-service" class="btn-link">Read</a>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">
+            <p>Refund Policy</p>
+            <span>Our refund and billing terms</span>
+          </div>
+          <div class="setting-action">
+            <a href="/refund-policy" class="btn-link">Read</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h2 data-icon="🔒">Privacy Preferences</h2>
+        <div class="setting-item">
+          <div class="setting-label">
+            <p>AI Training Data</p>
+            <span>Allow scan data to improve our AI</span>
+          </div>
+          <div class="setting-action">
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">
+            <p>Marketing Emails</p>
+            <span>Receive news and product updates</span>
+          </div>
+          <div class="setting-action">
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">
+            <p>Data Analytics</p>
+            <span>Help us improve by sharing usage data</span>
+          </div>
+          <div class="setting-action">
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h2 data-icon="⚠️">AI Accuracy Disclaimer</h2>
+        <p style="color: var(--text2); font-size: 14px; line-height: 1.6; margin: 0;">
+          RespawnSignal uses AI to detect brand deals on creator profiles. <strong>Results are not 100% accurate</strong> and may contain false positives or false negatives. Always verify detected deals independently before acting on them. We are not liable for inaccuracies in our results.
+        </p>
+      </div>
+
+      <div class="settings-section">
+        <h2 data-icon="🌍">Platform Compliance</h2>
+        <p style="color: var(--text2); font-size: 14px; line-height: 1.6; margin: 0;">
+          When using RespawnSignal to analyze creators, you must comply with the Terms of Service of TikTok, YouTube, Instagram, and other platforms. Do not violate platform rules when contacting creators or using scan results.
+        </p>
+      </div>
+
+      <div class="settings-section full-width">
+        <h2 data-icon="📋">Data Management</h2>
+        <div class="setting-item">
+          <div class="setting-label">
+            <p>Download My Data</p>
+            <span>Get a copy of all data we hold about you (GDPR/CCPA)</span>
+          </div>
+          <div class="setting-action">
+            <button class="btn-link" onclick="requestDataExport()">Request</button>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">
+            <p>Delete My Account</p>
+            <span>Permanently delete your account and all associated data</span>
+          </div>
+          <div class="setting-action">
+            <button class="btn-link" onclick="requestAccountDeletion()">Request Deletion</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Deletion Request Form -->
+    <div class="section-title">🗑️ Data Deletion Request</div>
+    <div class="settings-section full-width">
+      <form id="deletionForm" onsubmit="submitDeletionRequest(event)">
+        <p style="color: var(--text2); margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+          To request permanent deletion of your account and all associated data, please fill out this form. We will process your request within 30 days as required by GDPR and CCPA.
+        </p>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" required placeholder="your@email.com">
+        </div>
+
+        <div class="form-group">
+          <label for="reason">Reason for Deletion (Optional)</label>
+          <textarea id="reason" name="reason" placeholder="Tell us why you're deleting your account..."></textarea>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="confirm" name="confirm" required>
+          <label for="confirm" style="margin: 0; font-weight: 500; color: var(--text2);">
+            I understand that deleting my account will permanently remove all data, including scans, notes, and bookmarks.
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary">Submit Deletion Request</button>
+      </form>
+    </div>
+
+    <!-- GDPR & CCPA Rights -->
+    <div class="section-title">🛡️ GDPR & CCPA Rights</div>
+    <div class="settings-section full-width">
+      <div class="gdpr-section">
+        <h3>🇪🇺 GDPR (European Users)</h3>
+        <p>
+          If you are in the EU, you have the following rights under the General Data Protection Regulation:
+        </p>
+        <ul>
+          <li><strong>Right to Access:</strong> Request a copy of your personal data</li>
+          <li><strong>Right to Rectification:</strong> Correct inaccurate data</li>
+          <li><strong>Right to Erasure:</strong> Request deletion of your data ("right to be forgotten")</li>
+          <li><strong>Right to Restrict Processing:</strong> Limit how we process your data</li>
+          <li><strong>Right to Data Portability:</strong> Get your data in a portable format</li>
+          <li><strong>Right to Object:</strong> Opt-out of data processing</li>
+          <li><strong>Right to Lodge a Complaint:</strong> Contact your local data protection authority</li>
+        </ul>
+        <p>
+          To exercise any of these rights, contact us at <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a>.
+        </p>
+      </div>
+
+      <div class="gdpr-section" style="margin-top: 24px;">
+        <h3>🇺🇸 CCPA (California Users)</h3>
+        <p>
+          If you are a California resident, you have the following rights under the California Consumer Privacy Act:
+        </p>
+        <ul>
+          <li><strong>Right to Know:</strong> What personal information is collected, used, and shared</li>
+          <li><strong>Right to Delete:</strong> Request deletion of your personal information</li>
+          <li><strong>Right to Opt-Out:</strong> Opt-out of the sale or sharing of your personal information</li>
+          <li><strong>Right to Correct:</strong> Request correction of inaccurate data</li>
+          <li><strong>Right to Limit Use:</strong> Limit how your personal information is used</li>
+          <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your rights</li>
+        </ul>
+        <p>
+          To exercise any of these rights, contact us at <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a>.
+        </p>
+      </div>
+
+      <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-top: 24px;">
+        <p style="color: var(--text2); font-size: 14px; margin: 0;">
+          <strong>Response Timeline:</strong> We will respond to all requests within 30 days. If we cannot fulfill your request, we will explain why in writing.
+        </p>
+      </div>
+    </div>
+
+    <!-- Contact Support -->
+    <div class="section-title">📧 Contact Legal & Support</div>
+    <div class="settings-section full-width">
+      <div class="form-group">
+        <label for="supportEmail">Your Email</label>
+        <input type="email" id="supportEmail" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" placeholder="What's this about?">
+      </div>
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" placeholder="Describe your issue or question..."></textarea>
+      </div>
+      <button class="btn-primary" onclick="submitSupport()">Send to Legal & Support</button>
+      <p style="color: var(--text3); font-size: 13px; margin-top: 12px;">
+        You can also reach us directly: 
+        <a href="mailto:legal@respawnmedia.co" style="color: var(--accent); text-decoration: none;">legal@respawnmedia.co</a> 
+        or 
+        <a href="mailto:support@respawnmedia.co" style="color: var(--accent); text-decoration: none;">support@respawnmedia.co</a>
+      </p>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>&copy; 2026 RespawnSignal LLC. All rights reserved.</p>
+    <p>Based in New York, USA</p>
+    <p>Questions? Email us at <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a></p>
+  </footer>
+
+  <script>
+    function requestDataExport() {
+      alert('Data export request initiated. We will email you a copy of your data within 30 days.');
+      // In production, this would send a request to the backend
+    }
+
+    function requestAccountDeletion() {
+      document.getElementById('email').focus();
+      document.documentElement.scrollTo(0, document.querySelector('.section-title:nth-of-type(2)').offsetTop);
+    }
+
+    function submitDeletionRequest(event) {
+      event.preventDefault();
+      const email = document.getElementById('email').value;
+      const reason = document.getElementById('reason').value;
+      
+      // In production, this would send to the backend
+      alert(`Deletion request submitted for ${email}. We will process this within 30 days and send you a confirmation email.`);
+      
+      // Reset form
+      document.getElementById('deletionForm').reset();
+    }
+
+    function submitSupport() {
+      const email = document.getElementById('supportEmail').value;
+      const subject = document.getElementById('subject').value;
+      const message = document.getElementById('message').value;
+      
+      if (!email || !subject || !message) {
+        alert('Please fill in all fields');
+        return;
+      }
+      
+      // In production, this would send to the backend
+      alert(`Your message has been sent. We will respond within 24-48 hours.`);
+      
+      // Reset form
+      document.getElementById('supportEmail').value = '';
+      document.getElementById('subject').value = '';
+      document.getElementById('message').value = '';
+    }
+  </script>
+</body>
+</html>

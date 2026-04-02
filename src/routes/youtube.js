@@ -11,7 +11,10 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 
 // POST /api/youtube/scan
 router.post('/scan', authMiddleware, async (req, res) => {
-  const { channelInput, scanDepth = 10 } = req.body;
+  const { channelInput, scanDepth, range } = req.body;
+  
+  // Accept both scanDepth (legacy) and range (new)
+  const requestedDepth = scanDepth || range || 3;
 
   if (!channelInput || typeof channelInput !== 'string' || !channelInput.trim()) {
     return res.status(400).json({ error: 'channelInput is required' });
@@ -29,8 +32,8 @@ router.post('/scan', authMiddleware, async (req, res) => {
     return res.status(402).json({ error: 'No credits remaining.' });
   }
 
-  // Enforce scan depth by plan
-  const safeDepth = Math.min(parseInt(scanDepth) || 10, planConfig.maxRange);
+  // Enforce scan depth by plan (max range from planConfig)
+  const safeDepth = Math.min(parseInt(requestedDepth), planConfig.maxRange);
 
   // Check cache: same channel + depth within last 7 days
   const { data: existing } = await supabase
@@ -125,22 +128,26 @@ router.post('/scan', authMiddleware, async (req, res) => {
     console.error('[youtube route] Scan insert failed:', insertError);
   }
 
-  // 5. Respond with results
+  // 5. Respond with results (aligned with generic scan.js format for frontend consistency)
   return res.json({
     success: true,
     scanId: scanRecord?.id || null,
     platform: 'youtube',
     cached: false,
     channel: scanResult.channel,
-    deals: scanResult.brandsFound,
-    videos: scanResult.videos,
+    deals: scanResult.brandsFound,              // ← Matches scan.js 'deals' field
+    videos: scanResult.videos,                  // ← Matches scan.js format
+    creditsUsed,
+    creditsRemaining: dbUser.credits_remaining - creditsUsed,  // ← Added for sidebar consistency
+    analysisError: null,                        // ← Match scan.js format
+    transcriptFailures: 0,                      // ← Match scan.js format
+    // Legacy fields (for compatibility with older frontend)
     uniqueBrands: scanResult.uniqueBrands,
     totalDealsFound: scanResult.totalDealsFound,
     uniqueBrandCount: scanResult.uniqueBrandCount,
     videosAnalyzed: scanResult.videosAnalyzed,
     videosWithDeals: scanResult.videosWithDeals,
     summary: scanResult.summary,
-    creditsUsed,
   });
 });
 

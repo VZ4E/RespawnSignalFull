@@ -14,6 +14,10 @@ const configRoutes = require('./src/routes/configs');
 const groupsRoutes = require('./src/routes/groups');
 const notificationsRoutes = require('./src/routes/notifications');
 const reportsRoutes = require('./src/routes/reports');
+const agencySearchRoutes = require('./src/routes/agency-search');
+const supabaseAgenciesRoutes = require('./src/routes/agencies');
+const supabaseWatchlistRoutes = require('./src/routes/watchlist');
+const supabaseGroupsRoutes = require('./src/routes/supabase-groups');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,9 +47,32 @@ app.use('/api/configs', configRoutes);
 app.use('/api/groups', groupsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/agency-search', agencySearchRoutes);
+
+// Supabase routes
+app.use('/api/agencies', supabaseAgenciesRoutes);
+app.use('/api/watchlist', supabaseWatchlistRoutes);
+app.use('/api/supabase-groups', supabaseGroupsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Respawn Signal' }));
 app.get('/auth/callback', (req, res) => res.redirect('/?oauth=1'));
+
+// Policy pages
+app.get('/privacy-policy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'privacy-policy.html'));
+});
+
+app.get('/terms-of-service', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'terms-of-service.html'));
+});
+
+app.get('/refund-policy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'refund-policy.html'));
+});
+
+app.get('/cookie-policy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cookie-policy.html'));
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => {
@@ -53,5 +80,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Respawn Signal running on port ${PORT}`);
+  console.log(`Respawn Signal running on port ${PORT} [Agency Search Modal Fix Deployed]`);
 });
