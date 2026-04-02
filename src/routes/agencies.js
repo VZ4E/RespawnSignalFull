@@ -40,9 +40,13 @@ function verifyAuth(req, res, next) {
       return res.status(401).json({ error: 'Token expired' });
     }
 
-    // Extract user_id from token (service role has role: "service_role", users have sub: user_id)
+    // Extract user_id from token
+    // Service role tokens don't have sub/user_id (they have role: "service_role")
+    // Regular user tokens have sub: user_id
     const userId = payload.sub || payload.user_id;
-    if (!userId) {
+    const isServiceRole = payload.role === 'service_role';
+    
+    if (!userId && !isServiceRole) {
       return res.status(401).json({ error: 'Invalid token payload' });
     }
 
