@@ -1988,6 +1988,7 @@ textarea:focus-visible {
         <button class="settings-tab active" onclick="switchSettingsTab('creators',this)">Creators</button>
         <button class="settings-tab" onclick="switchSettingsTab('groups',this)">Groups</button>
         <button class="settings-tab" onclick="switchSettingsTab('configs',this)">Scan Configs</button>
+        <button class="settings-tab" onclick="switchSettingsTab('manual',this)">Manual</button>
         <button class="settings-tab" onclick="switchSettingsTab('notifications',this)">Notifications</button>
         <button class="settings-tab" onclick="switchSettingsTab('reports',this)">Reports</button>
         <button class="settings-tab" onclick="switchSettingsTab('account',this)">Account</button>
@@ -2143,6 +2144,21 @@ textarea:focus-visible {
             <div><div class="acct-lbl">Session</div><div class="acct-val" style="font-size:13px;color:var(--text2)">Sign out of your account</div></div>
             <button class="danger-btn" onclick="logout()">Log Out</button>
           </div>
+        </div>
+      </div>
+
+      <!-- MANUAL TAB -->
+      <div id="settings-manual-tab" class="settings-content" style="display:none">
+        <div class="card">
+          <div class="card-label">Manual Link Analysis</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Paste a TikTok video link or content text to analyze for brand deals.</p>
+          <textarea id="manual-input" rows="5" placeholder="https://www.tiktok.com/@username/video/123456&#10;&#10;or paste content text directly..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 14px;outline:none;margin-bottom:12px;transition:all 0.15s"></textarea>
+          <button class="run-btn" id="manual-run-btn" onclick="runManualAnalysis()">Analyze for Deals</button>
+        </div>
+        
+        <div id="manual-results" style="margin-top:16px;display:none">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:9px">Analysis Results</div>
+          <div id="manual-results-content"></div>
         </div>
       </div>
     </div>
@@ -3755,22 +3771,10 @@ function automationHTML() {
     </div>
     <button class="run-btn" id="import-run-btn" onclick="runImportList()">Scan All Creators</button>
   </div>
-
-  <div class="card" style="margin-top:16px">
-    <div class="card-label">Manual Link Analysis</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Paste a TikTok video link or content text to analyze for brand deals.</p>
-    <textarea id="manual-input" rows="5" placeholder="https://www.tiktok.com/@username/video/123456&#10;&#10;or paste content text directly..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 14px;outline:none;margin-bottom:12px;transition:all 0.15s"></textarea>
-    <button class="run-btn" id="manual-run-btn" onclick="runManualAnalysis()">Analyze for Deals</button>
-  </div>
   
   <div id="import-queue" style="margin-top:16px;display:none">
     <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:9px">Queue Progress</div>
     <div id="queue-items"></div>
-  </div>
-
-  <div id="manual-results" style="margin-top:16px;display:none">
-    <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:9px">Analysis Results</div>
-    <div id="manual-results-content"></div>
   </div>`;
 }
 
