@@ -2607,6 +2607,7 @@ function applyPlanLimits() {
     console.log('[applyPlanLimits] SAFETY CHECK: Forcing agency tier to have all ranges enabled');
     r14.disabled = false;
     r30.disabled = false;
+    console.log('[applyPlanLimits] SAFETY CHECK COMPLETE: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
   }
   
   console.log('[applyPlanLimits] FINAL STATE: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
