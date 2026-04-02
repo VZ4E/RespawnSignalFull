@@ -125,7 +125,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, url, description } = req.body;
+    const { name, website_url, description } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Agency name is required' });
@@ -136,7 +136,7 @@ router.post('/', async (req, res) => {
       .insert({
         user_id: req.user.id,
         name,
-        url: url || null,
+        url: website_url || null,
         description: description || null,
       })
       .select()
@@ -159,7 +159,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, url, description } = req.body;
+    const { name, website_url, description } = req.body;
 
     // Verify ownership
     const { data: agency, error: fetchError } = await supabase
@@ -176,7 +176,7 @@ router.patch('/:id', async (req, res) => {
     // Update
     const { data, error } = await supabase
       .from('agencies')
-      .update({ name, url, description })
+      .update({ name, url: website_url, description })
       .eq('id', id)
       .select()
       .single();
