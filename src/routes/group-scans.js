@@ -32,8 +32,16 @@ router.post('/', authMiddleware, async (req, res) => {
       .single();
 
     if (insertError) {
-      console.error('[Group Scan] Insert error:', insertError.message);
-      return res.status(500).json({ error: 'Failed to create group scan record', details: insertError.message });
+      console.error('[Group Scan] Insert error:', insertError);
+      console.error('[Group Scan] Insert error message:', insertError.message);
+      console.error('[Group Scan] Insert error code:', insertError.code);
+      console.error('[Group Scan] Full error:', JSON.stringify(insertError, null, 2));
+      return res.status(500).json({ 
+        error: 'Failed to create group scan record', 
+        details: insertError.message,
+        code: insertError.code,
+        fullError: insertError
+      });
     }
 
     console.log('[Group Scan] ✓ Created parent record with ID:', groupScanRecord.id);
