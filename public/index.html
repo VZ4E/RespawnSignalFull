@@ -1763,30 +1763,7 @@ textarea:focus-visible {
       <button class="scan-btn" id="scan-btn" onclick="startScan()">Scan for Brand Deals</button>
       <div id="group-scan-warning" style="display:none;margin-top:12px;padding:12px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:4px;font-size:12px;color:var(--amber)"></div>
       <div id="scan-results"></div>
-
-      <!-- Recent Activity Panel (Below Form) -->
-      <div id="recent-activity-panel" style="display:none;margin-top:30px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="font-size:13px;font-weight:700;margin:0">Recent Activity</h3>
-          <a href="#" onclick="navTo('history');return false" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">View All →</a>
-        </div>
-
-        <!-- Recent Scans Section -->
-        <div id="recent-scans-list" style="margin-bottom:20px">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Scans</div>
-          <div id="recent-scans-items" style="display:grid;gap:8px">
-            <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>
-          </div>
-        </div>
-
-        <!-- Recent Deals Section -->
-        <div id="recent-deals-list" style="border-top:1px solid var(--border);padding-top:16px">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Deals</div>
-          <div id="recent-deals-items" style="display:grid;gap:8px">
-            <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>
-          </div>
-        </div>
-      </div>
+      <div id="scan-summary" style="display:none"></div>
     </div>
 
     <!-- HISTORY -->
@@ -2348,7 +2325,6 @@ function showApp() {
   applyPlanLimits();
   loadHistory();
   updateCreditsUI();
-  loadRecentActivity();
   // Trigger onboarding for new users
   setTimeout(() => {
     if (!localStorage.getItem('rs_onboarding_done')) startOnboarding();
@@ -2696,71 +2672,6 @@ function setError(msg) {
 }
 
 // ── RECENT ACTIVITY PANEL ──
-async function loadRecentActivity() {
-  console.log('[Recent Activity] Loading...');
-  try {
-    const res = await fetch('/api/scan/recent', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('rs_token')}` }
-    });
-    
-    if (!res.ok) {
-      console.warn(`[Recent Activity] API returned ${res.status}`);
-      document.getElementById('recent-activity-panel').style.display = 'none';
-      return;
-    }
-    
-    const data = await res.json();
-    
-    // Handle empty response or error
-    if (!data || !data.scans || !data.deals) {
-      console.warn('[Recent Activity] No data in response', data);
-      document.getElementById('recent-activity-panel').style.display = 'none';
-      return;
-    }
-    const recentScans = data.scans || [];
-    const recentDeals = data.deals || [];
-    console.log(`[Recent Activity] Loaded ${recentScans.length} scans, ${recentDeals.length} deals`);
-    
-    // Show/hide panel
-    const panel = document.getElementById('recent-activity-panel');
-    if (recentScans.length > 0 || recentDeals.length > 0) {
-      panel.style.display = 'block';
-    } else {
-      panel.style.display = 'none';
-    }
-    
-    // Render recent scans
-    const scansHtml = recentScans.length > 0 ? recentScans.map(scan => `
-      <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="navTo('history')">
-        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:4px">
-          <div>
-            <div style="font-size:12px;font-weight:600;color:var(--text)">${escapeHtml(scan.creator_handle)}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:2px">${getPlatformIcon(scan.platform)} ${timeAgo(new Date(scan.created_at))}</div>
-          </div>
-          <span style="font-size:10px;font-weight:600;background:${scan.deals_count > 0 ? 'var(--green-dim)' : 'var(--border)'};color:${scan.deals_count > 0 ? 'var(--green)' : 'var(--text3)'};padding:2px 6px;border-radius:3px;white-space:nowrap">${scan.deals_count || 0} deal${scan.deals_count !== 1 ? 's' : ''}</span>
-        </div>
-      </div>
-    `).join('') : '<div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>';
-    
-    document.getElementById('recent-scans-items').innerHTML = scansHtml;
-    
-    // Render recent deals
-    const dealsHtml = recentDeals.length > 0 ? recentDeals.map(deal => `
-      <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all 0.13s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="navTo('history')">
-        <div style="font-size:12px;font-weight:600;color:var(--text)">${escapeHtml(deal.brand_name || deal.brands?.[0] || 'Unknown')}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${getPlatformIcon(deal.platform)} on ${escapeHtml(deal.creator_handle)} • ${timeAgo(new Date(deal.created_at))}</div>
-      </div>
-    `).join('') : '<div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>';
-    
-    document.getElementById('recent-deals-items').innerHTML = dealsHtml;
-    
-  } catch (e) {
-    console.error('[Recent Activity] Load error:', e.message);
-    // Hide panel on error
-    const panel = document.getElementById('recent-activity-panel');
-    if (panel) panel.style.display = 'none';
-  }
-}
 
 function getPlatformIcon(platform) {
   const p = (platform || '').toLowerCase();
@@ -3005,6 +2916,7 @@ async function startGroupBulkScan() {
           creator: handle,
           platform: member.platform,
           deals: deals.length,
+          credits: scanData.creditsUsed || 0,
           status: 'success'
         });
         console.log(`[Group Scan] ✓ ${handle} — ${deals.length} deals found`);
@@ -3022,39 +2934,48 @@ async function startGroupBulkScan() {
       }
     }
     
-    // Display results
-    const resultHtml = `
+    // Build post-scan summary
+    const totalDeals = results.reduce((s, r) => s + r.deals, 0);
+    const totalCredits = results.reduce((s, r) => s + (r.credits || 0), 0);
+
+    const summaryEl = document.getElementById('scan-summary');
+    summaryEl.style.display = 'block';
+    summaryEl.innerHTML = `
       <div class="card" style="margin-top:16px">
-        <div class="card-label">Bulk Scan Complete — ${group.name}</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
-          Scanned ${successCount + failedCount} creators (${failedCount} failed)
+        <div class="card-label" style="margin-bottom:12px">Bulk Scan Complete — ${escapeHtml(group.name)}</div>
+        <div style="display:flex;gap:24px;margin-bottom:16px">
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:700;color:var(--text)">${successCount}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Creators Scanned</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:700;color:${totalDeals > 0 ? 'var(--green)' : 'var(--text)'}">${totalDeals}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Deals Found</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:700;color:var(--text)">${totalCredits}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Credits Used</div>
+          </div>
+          ${failedCount > 0 ? `<div style="text-align:center">
+            <div style="font-size:22px;font-weight:700;color:var(--red)">${failedCount}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Failed</div>
+          </div>` : ''}
         </div>
-        <div style="display:grid;gap:8px">
+        <div style="display:grid;gap:6px;margin-bottom:14px">
           ${results.map(r => `
-            <div style="display:flex;justify-content:space-between;padding:8px;background:${r.status === 'success' ? 'var(--green-dim)' : 'var(--red-dim)'};border-radius:4px;border:1px solid ${r.status === 'success' ? 'var(--green)' : 'var(--red)'};font-size:11px">
-              <span><strong>${escapeHtml(r.creator)}</strong> • ${r.platform}</span>
-              <span>${r.deals} deal${r.deals !== 1 ? 's' : ''}</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:${r.status === 'success' ? 'var(--green-dim)' : 'var(--red-dim)'};border-radius:4px;border:1px solid ${r.status === 'success' ? 'var(--green)' : 'var(--red)'};font-size:11px">
+              <span><strong>${escapeHtml(r.creator)}</strong> <span style="color:var(--text3)">• ${escapeHtml(r.platform)}</span></span>
+              <span style="color:${r.status === 'success' ? (r.deals > 0 ? 'var(--green)' : 'var(--text2)') : 'var(--red)'};font-weight:600">${r.status === 'success' ? `${r.deals} deal${r.deals !== 1 ? 's' : ''}` : 'failed'}</span>
             </div>
           `).join('')}
         </div>
+        <button class="btn-ghost" style="font-size:12px;padding:6px 14px" onclick="navTo('history', document.querySelector('.nav-item[onclick*=history]'))">View in Scan History →</button>
       </div>
     `;
-    
-    document.getElementById('scan-results').innerHTML = resultHtml;
-    setStatus(`Bulk scan complete! Found ${successCount} creators with deals`);
-    
-    // Refresh recent activity — wait a bit for DB to sync
-    console.log('[Group Scan] Waiting 2s before refreshing activity feed...');
-    setTimeout(() => {
-      console.log('[Group Scan] Refreshing activity feed now');
-      loadRecentActivity();
-      
-      // Also refresh scan history if user is viewing it
-      if (currentPage === 'history') {
-        console.log('[Group Scan] Refreshing Scan History');
-        loadHistory();
-      }
-    }, 2000);
+    document.getElementById('scan-results').innerHTML = '';
+
+    // Refresh scan history after DB syncs
+    setTimeout(() => loadHistory(), 2000);
     
   } catch (e) {
     console.error('[Group Scan] Error:', e);
@@ -3145,9 +3066,6 @@ async function startScan() {
     const me = await api('/api/auth/me');
     currentUser = me;
     updateCreditsUI();
-    
-    // Refresh recent activity
-    loadRecentActivity();
   } catch(e) {
     setError(e.message || 'Scan failed.');
   }
