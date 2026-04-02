@@ -42,7 +42,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
   // Check for existing scan (same username + range) — return cached, no credit deduction
   // BUT: Skip cache for group scans (groupId param means this is a bulk scan, always run fresh)
-  const { groupId } = req.body;
+  const { groupId, groupScanId } = req.body;
   
   if (!groupId) {
     const { data: existing } = await supabase
@@ -384,6 +384,12 @@ TRANSCRIPTS:\n${text}`;
     deals,
     videos: videosList,
   };
+  
+  // Link to parent group scan if this is part of a group scan
+  if (groupScanId) {
+    scanData.group_scan_id = groupScanId;
+    console.log('[Scan] Linking scan to group_scan_id:', groupScanId);
+  }
 
   console.log('[Scan] About to insert scan record:', JSON.stringify(scanData));
 

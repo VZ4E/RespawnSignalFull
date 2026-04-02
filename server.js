@@ -18,6 +18,7 @@ const agencySearchRoutes = require('./src/routes/agency-search');
 const supabaseAgenciesRoutes = require('./src/routes/agencies');
 const supabaseWatchlistRoutes = require('./src/routes/watchlist');
 const supabaseGroupsRoutes = require('./src/routes/supabase-groups');
+const groupScansRoutes = require('./src/routes/group-scans');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,6 +46,7 @@ app.use('/api/twitch', scanLimiter, twitchRoutes);
 app.use('/api/creators', creatorRoutes);
 app.use('/api/configs', configRoutes);
 app.use('/api/groups', groupsRoutes);
+app.use('/api/group-scans', groupScansRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/agency-search', agencySearchRoutes);

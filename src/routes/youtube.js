@@ -11,7 +11,7 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 
 // POST /api/youtube/scan
 router.post('/scan', authMiddleware, async (req, res) => {
-  const { channelInput, scanDepth, range } = req.body;
+  const { channelInput, scanDepth, range, groupScanId } = req.body;
   
   // Accept both scanDepth (legacy) and range (new)
   const requestedDepth = scanDepth || range || 3;
@@ -99,28 +99,36 @@ router.post('/scan', authMiddleware, async (req, res) => {
   }
 
   // 4. Persist scan to history
+  const scanRecordData = {
+    user_id: dbUser.id,
+    platform: 'youtube',
+    username: scanResult.channel.title,
+    channel_name: scanResult.channel.title,
+    channel_handle: scanResult.channel.handle,
+    channel_input: channelInput.trim(),
+    channel_thumbnail: scanResult.channel.thumbnailUrl,
+    subscriber_count: scanResult.channel.subscriberCount,
+    unique_brand_count: scanResult.uniqueBrandCount,
+    total_deals_found: scanResult.totalDealsFound,
+    videos_analyzed: scanResult.videosAnalyzed,
+    videos_with_deals: scanResult.videosWithDeals,
+    scan_depth: safeDepth,
+    summary: scanResult.summary,
+    deals: scanResult.brandsFound,
+    unique_brands: scanResult.uniqueBrands,
+    videos: scanResult.videos,
+    credits_used: creditsUsed,
+  };
+  
+  // Link to parent group scan if this is part of a group scan
+  if (groupScanId) {
+    scanRecordData.group_scan_id = groupScanId;
+    console.log('[youtube route] Linking scan to group_scan_id:', groupScanId);
+  }
+  
   const { data: scanRecord, error: insertError } = await supabase
     .from('scans')
-    .insert({
-      user_id: dbUser.id,
-      platform: 'youtube',
-      username: scanResult.channel.title,
-      channel_name: scanResult.channel.title,
-      channel_handle: scanResult.channel.handle,
-      channel_input: channelInput.trim(),
-      channel_thumbnail: scanResult.channel.thumbnailUrl,
-      subscriber_count: scanResult.channel.subscriberCount,
-      unique_brand_count: scanResult.uniqueBrandCount,
-      total_deals_found: scanResult.totalDealsFound,
-      videos_analyzed: scanResult.videosAnalyzed,
-      videos_with_deals: scanResult.videosWithDeals,
-      scan_depth: safeDepth,
-      summary: scanResult.summary,
-      deals: scanResult.brandsFound,
-      unique_brands: scanResult.uniqueBrands,
-      videos: scanResult.videos,
-      credits_used: creditsUsed,
-    })
+    .insert(scanRecordData)
     .select('id')
     .single();
 
