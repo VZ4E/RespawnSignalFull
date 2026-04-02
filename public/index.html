@@ -4314,29 +4314,18 @@ function closeModal(modalId) {
 async function submitAddCreator() {
   const name = document.getElementById('creator-name-input').value.trim();
   const isAgency = document.getElementById('creator-is-agency').checked;
-  
+
   if (!name) {
     showMsg('creator-add-msg', '✗ Please enter a creator name', 'error');
     return;
   }
-  
+
   try {
-    const res = await fetch('/api/creators', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ display_name: name, is_agency: isAgency })
-    });
-    
-    if (!res.ok) {
-      const err = await res.json();
-      showMsg('creator-add-msg', '✗ ' + (err.error || 'Failed to create creator'), 'error');
-      return;
-    }
-    
+    await api('/api/creators', 'POST', { display_name: name, is_agency: isAgency });
     closeModal('add-creator-modal');
     loadCreators();
   } catch (e) {
-    showMsg('creator-add-msg', '✗ Error: ' + e.message, 'error');
+    showMsg('creator-add-msg', '✗ ' + (e.message || 'Failed to create creator'), 'error');
   }
 }
 
@@ -4412,13 +4401,7 @@ async function submitAddConfig() {
 
 async function loadCreators() {
   try {
-    const res = await fetch('/api/creators', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    
-    if (!res.ok) return;
-    
-    const data = await res.json();
+    const data = await api('/api/creators');
     creatorsList = data.creators || [];
     renderCreators();
   } catch (e) {
