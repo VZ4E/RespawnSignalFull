@@ -2621,15 +2621,6 @@ function applyPlanLimits() {
     document.getElementById('range-group')?.setAttribute('data-agency-enabled', 'true');
     
     console.log('[applyPlanLimits] SAFETY CHECK COMPLETE: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
-    
-    // CONTINUOUS MONITOR: If buttons somehow get re-disabled, keep re-enabling them
-    setInterval(() => {
-      if (r14.disabled || r30.disabled) {
-        console.warn('[applyPlanLimits] CONTINUOUS MONITOR: Buttons were re-disabled! Forcing enabled again.');
-        r14.disabled = false;
-        r30.disabled = false;
-      }
-    }, 500);
   }
   
   console.log('[applyPlanLimits] FINAL STATE: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
