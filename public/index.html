@@ -242,6 +242,8 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .range-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); background:#fff; }
 .range-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 8px var(--accent-glow); }
 .range-btn:disabled { opacity:0.35; cursor:not-allowed; }
+/* AGENCY TIER OVERRIDE: Ensure agency users see enabled range buttons */
+[data-agency-enabled="true"] .range-btn:not(:first-child) { opacity:1 !important; cursor:pointer !important; }
 
 .platform-selector {
   background:var(--surface2); border:2px solid var(--border); border-radius:10px;
@@ -2614,6 +2616,10 @@ function applyPlanLimits() {
     console.log('[applyPlanLimits] SAFETY CHECK: Forcing agency tier to have all ranges enabled');
     r14.disabled = false;
     r30.disabled = false;
+    
+    // Mark the range group with agency data attribute for CSS override
+    document.getElementById('range-group')?.setAttribute('data-agency-enabled', 'true');
+    
     console.log('[applyPlanLimits] SAFETY CHECK COMPLETE: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
     
     // CONTINUOUS MONITOR: If buttons somehow get re-disabled, keep re-enabling them
