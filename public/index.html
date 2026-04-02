@@ -2554,13 +2554,22 @@ function escapeHtml(text) {
 // ── PLAN LIMITS ──
 // Deployment timestamp: 2026-04-02 16:11 EDT - Agency tier fix
 let applyPlanLimits_callCount = 0;
+let applyPlanLimits_inProgress = false;
 function applyPlanLimits() {
-  applyPlanLimits_callCount++;
-  console.log('[applyPlanLimits] Call #%d START: currentUser=%o', applyPlanLimits_callCount, currentUser);
-  if (!currentUser) {
-    console.log('[applyPlanLimits] EARLY RETURN: no currentUser');
+  // Guard against recursion
+  if (applyPlanLimits_inProgress) {
+    console.log('[applyPlanLimits] SKIPPING: Already in progress (recursion guard)');
     return;
   }
+  
+  applyPlanLimits_inProgress = true;
+  try {
+    applyPlanLimits_callCount++;
+    console.log('[applyPlanLimits] Call #%d START: currentUser=%o', applyPlanLimits_callCount, currentUser);
+    if (!currentUser) {
+      console.log('[applyPlanLimits] EARLY RETURN: no currentUser');
+      return;
+    }
   const plan = (currentUser.plan || 'none').toLowerCase().trim();
   let maxRange = PLAN_MAX_RANGE[plan] || 0;
   
@@ -2614,11 +2623,21 @@ function applyPlanLimits() {
   // SAFETY: For agency tier, forcefully enable all range buttons  
   if (plan === 'agency') {
     console.log('[applyPlanLimits] SAFETY CHECK: Forcing agency tier to have all ranges enabled');
-    r14.disabled = false;
-    r30.disabled = false;
+    // Only modify if currently disabled to avoid triggering unnecessary events
+    if (r14.disabled) {
+      r14.disabled = false;
+      console.log('[applyPlanLimits] Enabled r14');
+    }
+    if (r30.disabled) {
+      r30.disabled = false;
+      console.log('[applyPlanLimits] Enabled r30');
+    }
     
     // Mark the range group with agency data attribute for CSS override
-    document.getElementById('range-group')?.setAttribute('data-agency-enabled', 'true');
+    const rangeGroup = document.getElementById('range-group');
+    if (rangeGroup && !rangeGroup.hasAttribute('data-agency-enabled')) {
+      rangeGroup.setAttribute('data-agency-enabled', 'true');
+    }
     
     console.log('[applyPlanLimits] SAFETY CHECK COMPLETE: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
   }
@@ -2640,6 +2659,9 @@ function applyPlanLimits() {
 
   // Account
   refreshAccount();
+  } finally {
+    applyPlanLimits_inProgress = false;
+  }
 }
 
 // ── NAV ──
