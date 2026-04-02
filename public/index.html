@@ -2959,6 +2959,23 @@ async function startGroupBulkScan() {
     // Start progress tracking
     setStatus(`Starting bulk scan of ${members.length} creators...`);
     
+    // Create parent group scan record
+    console.log('[Group Scan] Creating parent group scan record...');
+    let groupScanId = null;
+    try {
+      const groupScanRecord = await api('/api/group-scans', 'POST', {
+        group_id: selectedGroupId,
+        group_name: group.name,
+        creator_count: members.length,
+        scan_range: scanRange
+      });
+      groupScanId = groupScanRecord.id;
+      console.log('[Group Scan] Parent group scan created:', groupScanId);
+    } catch (e) {
+      console.error('[Group Scan] Failed to create parent record:', e.message);
+      // Continue anyway - we'll try to link scans retroactively
+    }
+    
     // Scan each creator sequentially
     let successCount = 0;
     let failedCount = 0;
@@ -2982,7 +2999,8 @@ async function startGroupBulkScan() {
             channelInput: handle, 
             scanDepth,
             groupId: selectedGroupId,
-            groupName: group.name
+            groupName: group.name,
+            groupScanId: groupScanId
           });
         } else if (platform === 'tiktok' || platform === 'instagram' || platform === 'twitch') {
           // TikTok, Instagram, Twitch all use /api/scan
@@ -2991,7 +3009,8 @@ async function startGroupBulkScan() {
             handle,
             range: scanRange,
             groupId: selectedGroupId,
-            groupName: group.name
+            groupName: group.name,
+            groupScanId: groupScanId
           });
         } else {
           throw new Error(`Unsupported platform: ${platform}`);
@@ -3301,14 +3320,54 @@ async function toggleExplanation(dealId, deal) {
 async function loadHistory() {
   try {
     const data = await api('/api/scans');
-    scanHistory = data.map(s => ({
-      id: s.id,
-      label: s.username,
-      deals: s.deals || [],
-      videos: s.videos || [],
-      meta: { range: s.range, videoCount: s.video_count, credits: s.credits_used },
-      timestamp: s.created_at,
-    }));
+    
+    // Map individual scans
+    const individualScans = data
+      .filter(s => !s.group_scan_id) // Only individual scans, not part of a group
+      .map(s => ({
+        id: s.id,
+        label: s.username,
+        deals: s.deals || [],
+        videos: s.videos || [],
+        meta: { range: s.range, videoCount: s.video_count, credits: s.credits_used },
+        timestamp: s.created_at,
+      }));
+    
+    // Group scans by group_scan_id
+    const groupedScans = {};
+    data.filter(s => s.group_scan_id).forEach(s => {
+      const gid = s.group_scan_id;
+      if (!groupedScans[gid]) {
+        groupedScans[gid] = {
+          id: gid,
+          label: s.group_name || 'Group Scan',
+          isGroupScan: true,
+          childScans: [],
+          deals: [],
+          videos: [],
+          meta: { videoCount: 0, credits: 0 },
+          timestamp: s.created_at,
+        };
+      }
+      groupedScans[gid].childScans.push({
+        username: s.username,
+        deals: s.deals || [],
+        videos: s.videos || [],
+        platform: s.platform
+      });
+      groupedScans[gid].deals = [...groupedScans[gid].deals, ...(s.deals || [])];
+      groupedScans[gid].videos = [...groupedScans[gid].videos, ...(s.videos || [])];
+      groupedScans[gid].meta.videoCount += s.video_count || 0;
+      groupedScans[gid].meta.credits += s.credits_used || 0;
+    });
+    
+    // Combine: group scans first (most recent), then individual scans
+    scanHistory = [
+      ...Object.values(groupedScans).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+      ...individualScans.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    ];
+    
+    console.log('[loadHistory] Loaded', scanHistory.length, 'scans:', groupedScans, individualScans);
     updateBadges();
     renderHistory();
     renderDealsPage();
@@ -3325,6 +3384,62 @@ function renderHistory() {
   c.innerHTML = scanHistory.map(e => {
     const d = new Date(e.timestamp);
     const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    
+    // For group scans, show a special group header
+    if (e.isGroupScan) {
+      const allB = (e.deals||[]).flatMap(d => d.brands||(d.brand?[d.brand]:[])).filter(Boolean);
+      const uniq = [...new Set(allB)];
+      const preview = uniq.slice(0,3).join(', ') + (uniq.length > 3 ? ` +${uniq.length-3}` : '');
+      
+      const childHtml = (e.childScans || []).map(cs => `
+        <div style="background:var(--surface2);padding:8px;border-radius:4px;border-left:3px solid var(--accent-dim);margin-bottom:6px;font-size:11px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-weight:600">@${cs.username}</span>
+            <span style="color:var(--text3)">${cs.platform || 'unknown'}</span>
+          </div>
+          <div style="color:var(--text3)">${(cs.deals || []).length} deal${(cs.deals || []).length !== 1 ? 's' : ''}</div>
+        </div>
+      `).join('');
+      
+      return `
+        <div class="history-item" style="border-left:4px solid var(--accent-dim)" onclick="toggleExpand('${e.id}')">
+          <div>
+            <div class="hi-name" style="color:var(--accent)">📦 ${e.label}</div>
+            <div class="hi-meta">
+              <span>${ds}</span>
+              ${e.childScans?.length ? `<span>${e.childScans.length} creators</span>` : ''}
+              ${e.meta?.videoCount ? `<span>${e.meta.videoCount} videos</span>` : ''}
+              ${e.meta?.credits ? `<span>${e.meta.credits} credits</span>` : ''}
+            </div>
+          </div>
+          <div class="hi-right">
+            <div class="hi-deals">${(e.deals||[]).length} deal${(e.deals||[]).length!==1?'s':''}</div>
+            ${preview?`<div style="font-size:11px;color:var(--text3);text-align:right;margin-bottom:4px">${preview}</div>`:''}
+          </div>
+        </div>
+        <div class="history-expand" id="he-${e.id}">
+          <div style="margin-bottom:16px">
+            <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Creators Scanned</div>
+            ${childHtml}
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Deals Found (${(e.deals||[]).length})</div>
+            ${!(e.deals?.length) ? '<div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text3);border-left:3px solid var(--border2)">No deals found in this group scan</div>' : e.deals.map(d => `
+              <div class="he-row">
+                <div style="flex:1">
+                  <div class="he-brand">${(d.brands||(d.brand?[d.brand]:['?'])).join(', ')}</div>
+                  <div class="he-type">${d.deal_type||''}${d.video_ref?' · '+d.video_ref:''}</div>
+                  ${d.evidence?`<div class="he-evidence">"${d.evidence.slice(0,85)}${d.evidence.length>85?'...':''}"</div>`:''}
+                </div>
+                <div class="conf-pill ${d.confidence==='high'?'conf-high':d.confidence==='medium'?'conf-mid':'conf-low'}" style="margin-top:0">${d.confidence||'?'}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    // Individual scan rendering
     const allB = (e.deals||[]).flatMap(d => d.brands||(d.brand?[d.brand]:[])).filter(Boolean);
     const uniq = [...new Set(allB)];
     const preview = uniq.slice(0,3).join(', ') + (uniq.length > 3 ? ` +${uniq.length-3}` : '');
