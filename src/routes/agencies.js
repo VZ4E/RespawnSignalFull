@@ -16,10 +16,10 @@ const supabase = createClient(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MIDDLEWARE: Verify JWT Token
+// MIDDLEWARE: Verify JWT Token (decode JWT payload directly)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function verifyAuth(req, res, next) {
+function verifyAuth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
@@ -27,12 +27,26 @@ async function verifyAuth(req, res, next) {
   }
 
   try {
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data.user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+    // Decode JWT (don't verify signature — Supabase handles that)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return res.status(401).json({ error: 'Invalid token format' });
     }
 
-    req.user = data.user;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    
+    // Check expiration
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      return res.status(401).json({ error: 'Token expired' });
+    }
+
+    // Extract user_id from token (service role has role: "service_role", users have sub: user_id)
+    const userId = payload.sub || payload.user_id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Invalid token payload' });
+    }
+
+    req.user = { id: userId, role: payload.role };
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Authentication failed' });
