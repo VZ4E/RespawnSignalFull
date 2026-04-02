@@ -2550,8 +2550,10 @@ function escapeHtml(text) {
 }
 
 // ── PLAN LIMITS ──
+let applyPlanLimits_callCount = 0;
 function applyPlanLimits() {
-  console.log('[applyPlanLimits] START: currentUser=%o', currentUser);
+  applyPlanLimits_callCount++;
+  console.log('[applyPlanLimits] Call #%d START: currentUser=%o', applyPlanLimits_callCount, currentUser);
   if (!currentUser) {
     console.log('[applyPlanLimits] EARLY RETURN: no currentUser');
     return;
@@ -2579,16 +2581,25 @@ function applyPlanLimits() {
   const r14 = document.getElementById('range-14');
   const r30 = document.getElementById('range-30');
   console.log('[applyPlanLimits] Elements: r14=%o, r30=%o', r14, r30);
+  console.log('[applyPlanLimits] Before any changes: r14.disabled=%s, r30.disabled=%s', r14?.disabled, r30?.disabled);
   console.log('[applyPlanLimits] Disabling logic: maxRange=%d < 14? %s, maxRange=%d < 30? %s', maxRange, maxRange < 14, maxRange, maxRange < 30);
+  
   if (maxRange < 14) {
     console.log('[applyPlanLimits] Disabling r14 because maxRange(%d) < 14', maxRange);
     r14.disabled = true;
+  } else {
+    console.log('[applyPlanLimits] NOT disabling r14 because maxRange(%d) >= 14', maxRange);
   }
+  
   if (maxRange < 30) {
     console.log('[applyPlanLimits] Disabling r30 because maxRange(%d) < 30', maxRange);
     r30.disabled = true;
+  } else {
+    console.log('[applyPlanLimits] NOT disabling r30 because maxRange(%d) >= 30', maxRange);
   }
+  
   console.log('[applyPlanLimits] FINAL STATE: r14.disabled=%s, r30.disabled=%s', r14?.disabled, r30?.disabled);
+  console.log('[applyPlanLimits] Call #%d COMPLETE', applyPlanLimits_callCount);
 
   // Automation
   const autoEl = document.getElementById('automation-content');
