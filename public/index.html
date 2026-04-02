@@ -2677,6 +2677,11 @@ function navTo(id, el) {
   if (id === 'groups') loadGroupsUI();
   if (id === 'pricing') renderPricingPage();
   if (id === 'account') refreshAccount();
+  if (id === 'settings') {
+    // Initialize creators tab on settings page load
+    const creatorsBtn = document.querySelector('[onclick*="switchSettingsTab"][onclick*="creators"]');
+    if (creatorsBtn) switchSettingsTab('creators', creatorsBtn);
+  }
 }
 
 // ── SCANNER ──
