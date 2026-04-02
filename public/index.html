@@ -2684,6 +2684,7 @@ function setRange(n, el) {
   scanRange = n;
   el.closest('.range-group').querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  updateCreditPreview();
 }
 
 function setStatus(msg) {
@@ -2899,11 +2900,6 @@ function updateCreditPreview() {
 
 // Override setRange to update credit preview
 const originalSetRange = window.setRange || function() {};
-function setRange(range, btn) {
-  if (originalSetRange) originalSetRange(range, btn);
-  updateCreditPreview();
-}
-
 async function startGroupBulkScan() {
   if (!selectedGroupId) {
     setError('Select a group');
