@@ -2558,8 +2558,14 @@ function applyPlanLimits() {
     console.log('[applyPlanLimits] EARLY RETURN: no currentUser');
     return;
   }
-  const plan = currentUser.plan || 'none';
-  const maxRange = PLAN_MAX_RANGE[plan] || 0;
+  const plan = (currentUser.plan || 'none').toLowerCase().trim();
+  let maxRange = PLAN_MAX_RANGE[plan] || 0;
+  
+  // EMERGENCY FIX: Ensure all paid plans (including agency) get maxRange of at least 30
+  if (['starter', 'pro', 'agency', 'enterprise'].includes(plan)) {
+    maxRange = Math.max(maxRange, 30);
+    console.log('[applyPlanLimits] EMERGENCY FIX: Upgraded maxRange to 30 for paid plan "%s"', plan);
+  }
   
   console.log('[applyPlanLimits] currentUser.plan=%s (raw), plan=%s (with fallback), maxRange=%d', currentUser.plan, plan, maxRange);
   console.log('[applyPlanLimits] PLAN_MAX_RANGE=%o', PLAN_MAX_RANGE);
