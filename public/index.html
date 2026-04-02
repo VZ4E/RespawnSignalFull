@@ -2777,15 +2777,35 @@ let selectedGroupCreators = [];
 
 function setScanMode(mode, btn) {
   scanMode = mode;
+  console.log('[setScanMode] Changed to:', mode);
   
-  // Update button styles
-  document.getElementById('mode-single').style.background = mode === 'single' ? 'var(--accent-dim)' : 'var(--surface)';
-  document.getElementById('mode-single').style.color = mode === 'single' ? 'var(--accent)' : 'var(--text)';
-  document.getElementById('mode-single').style.borderColor = mode === 'single' ? 'var(--accent)' : 'var(--border)';
+  // Update button styles and active classes
+  const singleBtn = document.getElementById('mode-single');
+  const groupBtn = document.getElementById('mode-group');
   
-  document.getElementById('mode-group').style.background = mode === 'group' ? 'var(--accent-dim)' : 'var(--surface)';
-  document.getElementById('mode-group').style.color = mode === 'group' ? 'var(--accent)' : 'var(--text)';
-  document.getElementById('mode-group').style.borderColor = mode === 'group' ? 'var(--accent)' : 'var(--border)';
+  // Remove active class from both
+  singleBtn.classList.remove('active');
+  groupBtn.classList.remove('active');
+  
+  // Add active class and styles to selected button
+  if (mode === 'single') {
+    singleBtn.classList.add('active');
+    singleBtn.style.background = 'var(--accent-dim)';
+    singleBtn.style.color = 'var(--accent)';
+    singleBtn.style.borderColor = 'var(--accent)';
+    groupBtn.style.background = 'var(--surface)';
+    groupBtn.style.color = 'var(--text)';
+    groupBtn.style.borderColor = 'var(--border)';
+  } else if (mode === 'group') {
+    groupBtn.classList.add('active');
+    groupBtn.style.background = 'var(--accent-dim)';
+    groupBtn.style.color = 'var(--accent)';
+    groupBtn.style.borderColor = 'var(--accent)';
+    singleBtn.style.background = 'var(--surface)';
+    singleBtn.style.color = 'var(--text)';
+    singleBtn.style.borderColor = 'var(--border)';
+  }
+  console.log('[setScanMode] Active:', { single: singleBtn.classList.contains('active'), group: groupBtn.classList.contains('active') });
   
   // Toggle UI elements
   document.getElementById('single-mode-card').style.display = mode === 'single' ? 'block' : 'none';
