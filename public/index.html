@@ -4851,13 +4851,13 @@ function createGroupModal() {
   modal.style.cssText = 'display:flex';
   modal.innerHTML = `
     <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
-    <div class="modal-content">
+    <div class="modal-content" style="background:#ffffff">
       <div class="modal-header"><h2>Create Group</h2></div>
-      <input class="form-input" id="group-name-input" type="text" placeholder="Group name (e.g., 'Fitness Creators')" style="margin-bottom:12px" />
-      <textarea class="form-input" id="group-desc-input" placeholder="Description (optional)" style="margin-bottom:12px;height:80px"></textarea>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn-ghost" onclick="document.getElementById('create-group-modal').style.display='none'">Cancel</button>
-        <button class="auth-btn" onclick="createGroup()">Create</button>
+      <input class="form-input" id="group-name-input" type="text" placeholder="Group name (e.g., 'Fitness Creators')" style="margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:6px" />
+      <textarea class="form-input" id="group-desc-input" placeholder="Description (optional)" style="margin-bottom:20px;padding:12px;border:1px solid var(--border);border-radius:6px;height:50px;resize:none"></textarea>
+      <div style="display:flex;gap:12px;justify-content:flex-end">
+        <button class="btn-ghost" style="padding:10px 20px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-weight:600;color:var(--text)" onclick="document.getElementById('create-group-modal').style.display='none'">Cancel</button>
+        <button class="auth-btn" style="padding:10px 24px" onclick="createGroup()">Create</button>
       </div>
       <div id="group-create-msg" style="margin-top:12px;font-size:12px;display:none"></div>
     </div>
@@ -4930,47 +4930,49 @@ function createEditGroupModal() {
   modal.className = 'modal';
   modal.innerHTML = `
     <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
-    <div class="modal-content" style="max-width:600px">
+    <div class="modal-content" style="max-width:700px;background:#ffffff;padding:28px">
       <div class="modal-header"><h2>Edit Group</h2></div>
       <input class="form-input" id="edit-group-id" type="hidden" />
       
-      <div style="margin-bottom:20px">
-        <label style="display:block;font-weight:500;margin-bottom:6px">Group Name</label>
-        <input class="form-input" id="edit-group-name" type="text" />
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-weight:600;margin-bottom:8px;font-size:14px">Group Name</label>
+        <input class="form-input" id="edit-group-name" type="text" style="padding:12px;border:1px solid var(--border);border-radius:6px;width:100%" />
       </div>
 
-      <div style="margin-bottom:20px">
-        <label style="display:block;font-weight:500;margin-bottom:6px">Description</label>
-        <textarea class="form-input" id="edit-group-desc" style="height:60px"></textarea>
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-weight:600;margin-bottom:8px;font-size:14px">Description</label>
+        <textarea class="form-input" id="edit-group-desc" style="padding:12px;border:1px solid var(--border);border-radius:6px;width:100%;height:50px;resize:none"></textarea>
       </div>
 
-      <div style="margin-bottom:20px">
-        <label style="display:block;font-weight:500;margin-bottom:6px">Members (Max 20)</label>
-        <div id="group-members-list" style="display:grid;gap:8px;margin-bottom:12px"></div>
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-weight:600;margin-bottom:12px;font-size:14px">Members (Max 20)</label>
+        <div id="group-members-list" style="display:grid;gap:8px;margin-bottom:16px"></div>
         
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-          <div>
-            <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Add Manual</label>
-            <select id="add-member-platform" class="form-input" style="margin-bottom:4px">
-              <option value="tiktok">TikTok</option>
-              <option value="youtube">YouTube</option>
-              <option value="instagram">Instagram</option>
-              <option value="twitch">Twitch</option>
-            </select>
-            <input class="form-input" id="add-member-handle" type="text" placeholder="Handle (e.g., johndoe)" style="margin-bottom:4px" />
-            <button class="btn-ghost" style="width:100%;font-size:12px;padding:6px" onclick="addGroupMember()">Add</button>
-          </div>
-          <div>
-            <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Paste List</label>
-            <textarea id="add-members-bulk" class="form-input" placeholder="tiktok:user1&#10;youtube:user2" style="margin-bottom:4px;height:76px;font-size:11px;font-family:var(--mono)"></textarea>
-            <button class="btn-ghost" style="width:100%;font-size:12px;padding:6px" onclick="addGroupMembersBulk()">Import</button>
+        <div style="border-top:1px solid var(--border);padding-top:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Add Manual</label>
+              <select id="add-member-platform" class="form-input" style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:6px;width:100%">
+                <option value="tiktok">TikTok</option>
+                <option value="youtube">YouTube</option>
+                <option value="instagram">Instagram</option>
+                <option value="twitch">Twitch</option>
+              </select>
+              <input class="form-input" id="add-member-handle" type="text" placeholder="Handle (e.g., johndoe)" style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:6px;width:100%" />
+              <button class="btn-ghost" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-weight:600" onclick="addGroupMember()">Add</button>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Paste List</label>
+              <textarea id="add-members-bulk" class="form-input" placeholder="tiktok:user1&#10;youtube:user2" style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:6px;width:100%;height:54px;font-size:11px;font-family:var(--mono);resize:none"></textarea>
+              <button class="btn-ghost" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-weight:600" onclick="addGroupMembersBulk()">Import</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn-ghost" onclick="document.getElementById('edit-group-modal').style.display='none'">Cancel</button>
-        <button class="auth-btn" onclick="saveGroupChanges()">Save</button>
+      <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--border)">
+        <button class="btn-ghost" style="padding:10px 20px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-weight:600;color:var(--text)" onclick="document.getElementById('edit-group-modal').style.display='none'">Cancel</button>
+        <button class="auth-btn" style="padding:10px 24px" onclick="saveGroupChanges()">Save</button>
       </div>
       <div id="group-edit-msg" style="margin-top:12px;font-size:12px;display:none"></div>
     </div>
@@ -4987,9 +4989,9 @@ function displayGroupMembers(members) {
   }
 
   list.innerHTML = members.map(m => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:4px;font-size:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);font-size:12px">
       <span>${m.platform} • <strong>${escapeHtml(m.handle)}</strong></span>
-      <button class="danger-btn" style="font-size:10px;padding:3px 8px" onclick="removeGroupMember('${m.id}')">×</button>
+      <button class="danger-btn" style="font-size:10px;padding:4px 10px;border-radius:4px" onclick="removeGroupMember('${m.id}')">×</button>
     </div>
   `).join('');
 }
