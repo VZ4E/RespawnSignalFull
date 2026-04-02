@@ -3213,7 +3213,7 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
                 <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
                 ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
                 <div style="margin-top:8px">
-                  <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+                  <button class="explain-btn" onclick="toggleExplanation('${dealId}', JSON.parse(this.dataset.deal))" data-deal="${(JSON.stringify(d) || '{}').replace(/"/g, '&quot;')}">ℹ️ What is this deal?</button>
                   <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
                     <span class="loading">Loading explanation...</span>
                   </div>
@@ -3238,7 +3238,7 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
         <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
         ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
         <div style="margin-top:8px">
-          <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+          <button class="explain-btn" onclick="toggleExplanation('${dealId}', JSON.parse(this.dataset.deal))" data-deal="${(JSON.stringify(d) || '{}').replace(/"/g, '&quot;')}">ℹ️ What is this deal?</button>
           <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
             <span class="loading">Loading explanation...</span>
           </div>
@@ -3565,7 +3565,7 @@ function renderDealsPage() {
           <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
           ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
           <div style="margin-top:8px">
-            <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+            <button class="explain-btn" onclick="toggleExplanation('${dealId}', JSON.parse(this.dataset.deal))" data-deal="${(JSON.stringify(d) || '{}').replace(/"/g, '&quot;')}">ℹ️ What is this deal?</button>
             <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
               <span class="loading">Loading explanation...</span>
             </div>
@@ -3755,7 +3755,7 @@ async function runManualAnalysis() {
           <div class="deal-type-lbl">${d.deal_type || 'Sponsorship'}</div>
           ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
           <div style="margin-top:8px">
-            <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+            <button class="explain-btn" onclick="toggleExplanation('${dealId}', JSON.parse(this.dataset.deal))" data-deal="${(JSON.stringify(d) || '{}').replace(/"/g, '&quot;')}">ℹ️ What is this deal?</button>
             <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
               <span class="loading">Loading explanation...</span>
             </div>
