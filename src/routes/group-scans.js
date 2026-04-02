@@ -7,10 +7,14 @@ const { authMiddleware } = require('../middleware/auth');
 // Create a parent group scan record to link individual scans under
 router.post('/', authMiddleware, async (req, res) => {
   const { group_id, group_name, creator_count, scan_range } = req.body;
-  const { dbUser } = req;
+  const { user } = req;
 
   if (!group_id || !group_name) {
     return res.status(400).json({ error: 'group_id and group_name are required' });
+  }
+
+  if (!user || !user.id) {
+    return res.status(401).json({ error: 'Authentication required' });
   }
 
   try {
@@ -19,7 +23,7 @@ router.post('/', authMiddleware, async (req, res) => {
     const { data: groupScanRecord, error: insertError } = await supabase
       .from('group_scans')
       .insert({
-        user_id: dbUser.id,
+        user_id: user.id,
         group_id,
         group_name,
         creator_count: creator_count || 0,
@@ -64,14 +68,14 @@ router.post('/', authMiddleware, async (req, res) => {
 // Fetch a specific group scan and its child scans
 router.get('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { dbUser } = req;
+  const { user } = req;
 
   try {
     const { data: groupScan, error: fetchError } = await supabase
       .from('group_scans')
       .select('*')
       .eq('id', id)
-      .eq('user_id', dbUser.id)
+      .eq('user_id', user.id)
       .single();
 
     if (fetchError || !groupScan) {
@@ -83,7 +87,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
       .from('scans')
       .select('id, username, platform, deals, video_count, credits_used, created_at')
       .eq('group_scan_id', id)
-      .eq('user_id', dbUser.id)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     return res.json({
@@ -101,7 +105,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // Update group scan status (mark as complete, etc.)
 router.patch('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { dbUser } = req;
+  const { user } = req;
   const { status, deals_found, total_credits_used } = req.body;
 
   try {
@@ -114,7 +118,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
       .from('group_scans')
       .update(updateData)
       .eq('id', id)
-      .eq('user_id', dbUser.id)
+      .eq('user_id', user.id)
       .select()
       .single();
 
