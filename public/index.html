@@ -2318,9 +2318,12 @@ async function init() {
   if (token) {
     try {
       const me = await api('/api/auth/me');
+      console.log('[init] /api/auth/me response:', me);
       currentUser = me;
+      console.log('[init] currentUser set to:', currentUser);
       showApp();
     } catch(_) {
+      console.error('[init] Error fetching /api/auth/me:', _);
       localStorage.removeItem('rs_token');
       showLanding();
     }
@@ -2338,6 +2341,7 @@ function showAuth(tab = 'signup') {
   switchAuthTab(tab);
 }
 function showApp() {
+  console.log('[showApp] Called. currentUser=%o', currentUser);
   setView('app');
   applyPlanLimits();
   loadHistory();
