@@ -266,6 +266,12 @@ router.post('/scrape', async (req, res) => {
         }
       }
 
+      // Debug log: show raw creators before any cleaning/deduplication
+      console.log(`[Agency Scrape] Raw creators before cleaning: ${allCreators.length} total`);
+      if (allCreators.length > 0) {
+        console.log(`[Agency Scrape] First creator raw data:`, JSON.stringify(allCreators[0]));
+      }
+
       // Deduplicate by handle
       const seen = new Set();
       const uniqueCreators = allCreators.filter(c => {
