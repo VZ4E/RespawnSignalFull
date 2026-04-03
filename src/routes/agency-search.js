@@ -1,34 +1,39 @@
 const express = require('express');
-const axios = require('axios');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
+const FirecrawlApp = require('@mendable/firecrawl-js').default;
 
 const router = express.Router();
+
+// Initialize Firecrawl client
+const firecrawl = new FirecrawlApp({ 
+  apiKey: process.env.FIRECRAWL_API_KEY 
+});
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
 
 /**
  * POST /api/agency-search/scrape
- * Scrape creator handles from an agency website using Perplexity Sonar
+ * Scrape creator roster from an agency website using Firecrawl
  * 
- * Body: { url: string, domain?: string }
- * Returns: { creators: [{ handle, name, platforms, followerCount, verified }], agencyName, agencyDomain }
+ * Body: { url: string }
+ * Returns: { success: true, creators: [...], count: number }
  */
 router.post('/scrape', async (req, res) => {
-  const { url, domain } = req.body;
+  const { url } = req.body;
 
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'url is required' });
   }
 
-  const perplexityKey = process.env.PERPLEXITY_KEY;
-  if (!perplexityKey) {
-    return res.status(500).json({ error: 'Perplexity API key not configured' });
+  const firecrawlKey = process.env.FIRECRAWL_API_KEY;
+  if (!firecrawlKey) {
+    return res.status(500).json({ error: 'Firecrawl API key not configured' });
   }
 
   try {
-    console.log(`[Agency Scrape] Starting scrape for URL: ${url}`);
+    console.log(`[Agency Scrape] Starting Firecrawl scrape for URL: ${url}`);
 
     // Normalize the URL
     let normalizedUrl = url.toLowerCase().trim();
@@ -36,80 +41,27 @@ router.post('/scrape', async (req, res) => {
       normalizedUrl = `https://${normalizedUrl}`;
     }
 
-    // Extract domain for context
-    let agencyDomain = domain || extractDomain(normalizedUrl);
-
-    // Use Perplexity Sonar to extract creators from the agency page
-    const perplexityResponse = await axios.post(
-      'https://api.perplexity.ai/chat/completions',
-      {
-        model: 'sonar-pro',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert at extracting creator and influencer information from agency websites. Extract all roster information and return as valid JSON.'
-          },
-          {
-            role: 'user',
-            content: `Analyze this agency website THOROUGHLY and extract EVERY SINGLE creator/influencer from their complete roster:
-
-URL: ${normalizedUrl}
-
-IMPORTANT: Extract ALL creators listed, not just a sample. Check every page, every section, every roster list.
-
-For each creator, provide:
-- handle: Username/handle (without @)
-- name: Real name if available
-- platforms: Platforms they're on [tiktok, youtube, instagram, twitch, etc]
-- followerCount: Follower count if mentioned
-- niche: Content niche/category (e.g., "beauty", "gaming", "fitness", "comedy", "fashion", etc)
-
-Return ONLY valid JSON array, no markdown, no code blocks:
-[
-  {"handle":"user1","name":"Name","platforms":["tiktok","instagram"],"followerCount":2000000,"niche":"beauty"},
-  {"handle":"user2","name":"Name","platforms":["youtube"],"followerCount":500000,"niche":"gaming"},
-  {"handle":"user3","name":"Name","platforms":["twitch","youtube"],"followerCount":1500000,"niche":"gaming"}
-]
-
-If no creators found, return: []
-
-CRITICAL: Return COMPLETE roster, not truncated results.`
-          }
-        ],
-        temperature: 0.2,
-        top_p: 0.9,
-        max_tokens: 4000
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${perplexityKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
+    // Use Firecrawl to scrape and extract creators
+    const result = await firecrawl.scrapeUrl(normalizedUrl, {
+      formats: ['extract'],
+      extract: {
+        prompt: 'Extract all talent/creator/influencer roster entries from this page. For each person return: handle (social media username), name (full name), platforms (array of platform names like TikTok, YouTube, Instagram, Twitch), followerCount (number if available), and description (short bio if available).',
+        schema: {
+          creators: [{
+            handle: 'string',
+            name: 'string',
+            platforms: ['string'],
+            followerCount: 'number',
+            description: 'string'
+          }]
+        }
       }
-    );
+    });
 
-    console.log('[Agency Scrape] Perplexity response:', perplexityResponse.data);
+    console.log(`[Agency Scrape] Firecrawl result:`, result);
 
-    let creators = [];
-    const content = perplexityResponse.data.choices?.[0]?.message?.content || '';
-
-    // Parse the JSON response
-    try {
-      // Extract JSON array from the response (in case there's extra text)
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        creators = JSON.parse(jsonMatch[0]);
-      } else {
-        creators = JSON.parse(content);
-      }
-    } catch (parseErr) {
-      console.error('[Agency Scrape] JSON parse error:', parseErr.message);
-      console.error('[Agency Scrape] Raw content:', content);
-      // Return what we got, even if parsing failed
-      creators = [];
-    }
-
+    const creators = result.extract?.creators || [];
+    
     // Validate and normalize creator data
     const validCreators = (creators || [])
       .filter(c => c.handle && typeof c.handle === 'string')
@@ -118,41 +70,25 @@ CRITICAL: Return COMPLETE roster, not truncated results.`
         name: c.name || c.handle,
         platforms: (c.platforms || []).map(p => p.toLowerCase().trim()),
         followerCount: c.followerCount || c.follower_count || 0,
-        niche: (c.niche || '').toLowerCase().trim() || 'general',
+        description: c.description || '',
         verified: false
       }))
-      .slice(0, 200); // Increased from 50 to 200 creators per scrape
+      .slice(0, 200); // Limit to 200 creators per scrape
 
-    console.log(`[Agency Scrape] Extracted ${validCreators.length} creators from ${agencyDomain}`);
+    console.log(`[Agency Scrape] Extracted ${validCreators.length} creators from ${normalizedUrl}`);
 
     res.json({
       success: true,
-      agencyName: extractAgencyName(url),
-      agencyDomain: agencyDomain,
       creators: validCreators,
       count: validCreators.length
     });
   } catch (err) {
-    console.error('[Agency Scrape] Error:', err.message);
-    console.error('[Agency Scrape] Error details:', {
-      status: err.response?.status,
-      statusText: err.response?.statusText,
-      data: err.response?.data,
-      headers: err.response?.headers
-    });
-    
-    if (err.response?.status === 429) {
-      return res.status(429).json({ error: 'Rate limited by Perplexity API. Please try again in a moment.' });
-    }
-    
-    if (err.response?.status === 401) {
-      return res.status(401).json({ error: 'Perplexity API key is invalid or expired' });
-    }
+    console.error('[Agency Scrape] Firecrawl Error:', err.message);
+    console.error('[Agency Scrape] Error details:', err);
     
     res.status(500).json({ 
       error: 'Failed to scrape agency creators', 
-      details: err.message,
-      perplexityError: err.response?.data?.error
+      details: err.message
     });
   }
 });
@@ -482,37 +418,5 @@ router.delete('/:agencyId', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete agency', details: err.message });
   }
 });
-
-// ═══════════════════════════════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Extract domain from URL
- */
-function extractDomain(url) {
-  try {
-    const urlObj = new URL(url);
-    return urlObj.hostname;
-  } catch (_) {
-    return url;
-  }
-}
-
-/**
- * Extract agency name from URL
- */
-function extractAgencyName(url) {
-  try {
-    const domain = extractDomain(url);
-    return domain
-      .split('.')[0]
-      .split('-')
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
-  } catch (_) {
-    return url;
-  }
-}
 
 module.exports = router;
