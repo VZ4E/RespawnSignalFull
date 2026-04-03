@@ -48,15 +48,24 @@ router.post('/scrape', async (req, res) => {
         url: normalizedUrl,
         formats: ['extract'],
         extract: {
-          prompt: 'Extract all talent/creator/influencer roster entries from this page. For each person return: handle (social media username), name (full name), platforms (array of platform names like TikTok, YouTube, Instagram, Twitch), followerCount (number if available), and description (short bio if available).',
+          prompt: 'Extract all talent, creator, and influencer roster entries from this page. For each person return their social media handle, full name, platforms they are on, follower count if available, and a short description.',
           schema: {
-            creators: [{
-              handle: 'string',
-              name: 'string',
-              platforms: ['string'],
-              followerCount: 'number',
-              description: 'string'
-            }]
+            type: 'object',
+            properties: {
+              creators: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    handle: { type: 'string' },
+                    name: { type: 'string' },
+                    platforms: { type: 'array', items: { type: 'string' } },
+                    followerCount: { type: 'number' },
+                    description: { type: 'string' }
+                  }
+                }
+              }
+            }
           }
         }
       })
