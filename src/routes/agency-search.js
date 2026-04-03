@@ -23,16 +23,21 @@ function cleanHandle(handle) {
     try {
       const url = new URL(handle);
       const segments = url.pathname.split('/').filter(Boolean);
-      return segments[segments.length - 1] || handle;
+      handle = segments[segments.length - 1] || handle;
     } catch (e) {
       // If URL parsing fails, fall back to string splitting
       console.warn(`[cleanHandle] Failed to parse URL "${handle}":`, e.message);
-      return handle.split('/').filter(Boolean).pop() || handle;
+      handle = handle.split('/').filter(Boolean).pop() || handle;
     }
   }
   
   if (handle.startsWith('/')) {
-    return handle.split('/').filter(Boolean).pop() || handle;
+    handle = handle.split('/').filter(Boolean).pop() || handle;
+  }
+  
+  // Remove @ if present, return without @ (caller can add if needed)
+  if (handle.startsWith('@')) {
+    handle = handle.substring(1);
   }
   
   return handle;
@@ -761,7 +766,7 @@ router.post('/lookup', async (req, res) => {
       },
       body: JSON.stringify({
         model: 'sonar-pro',
-        system: 'You must respond with ONLY a valid JSON object. No explanations, no markdown, no text before or after the JSON. If you cannot find information, use null for that field.',
+        system: 'IMPORTANT: You must respond with ONLY a raw JSON object. Do not include any explanation, markdown formatting, or text outside the JSON object. Start your response with { and end with }. If you cannot find information, use null for that field.',
         messages: [{
           role: 'user',
           content: `Search for the content creator with handle @${cleanedHandle}. Find their:
@@ -817,7 +822,7 @@ Respond with ONLY JSON, no other text.`
       },
       body: JSON.stringify({
         model: 'sonar-pro',
-        system: 'You must respond with ONLY a valid JSON object. No explanations, no markdown, no text before or after the JSON. If you cannot find information, use null for that field.',
+        system: 'IMPORTANT: You must respond with ONLY a raw JSON object. Do not include any explanation, markdown formatting, or text outside the JSON object. Start your response with { and end with }. If you cannot find information, use null for that field.',
         messages: [{
           role: 'user',
           content: `Search the web for talent agency or management company representation for the content creator "${cleanedHandle}". 
