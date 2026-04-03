@@ -761,6 +761,7 @@ router.post('/lookup', async (req, res) => {
       },
       body: JSON.stringify({
         model: 'sonar-pro',
+        system: 'You must respond with ONLY a valid JSON object. No explanations, no markdown, no text before or after the JSON. If you cannot find information, use null for that field.',
         messages: [{
           role: 'user',
           content: `Search for the content creator with handle @${cleanedHandle}. Find their:
@@ -783,7 +784,7 @@ Return ONLY JSON with these fields (null if not found):
   "twitterFollowers": 0
 }
 
-No markdown, only JSON.`
+Respond with ONLY JSON, no other text.`
         }],
         max_tokens: 300
       })
@@ -796,9 +797,16 @@ No markdown, only JSON.`
     const basicData = await basicInfoResponse.json();
     const basicText = basicData.choices?.[0]?.message?.content || '{}';
     const basicCleaned = basicText.replace(/```json|```/g, '').trim();
-    const creatorInfo = JSON.parse(basicCleaned);
-
-    console.log(`[Creator Lookup] Step 1 - Basic info for "${cleanedHandle}":`, creatorInfo);
+    
+    let creatorInfo = {};
+    try {
+      creatorInfo = JSON.parse(basicCleaned);
+      console.log(`[Creator Lookup] Step 1 - Basic info for "${cleanedHandle}":`, creatorInfo);
+    } catch (parseError) {
+      console.warn(`[Creator Lookup] Step 1 - Failed to parse Perplexity response as JSON. Raw text: "${basicCleaned.substring(0, 200)}..."`);
+      console.warn(`[Creator Lookup] Parse error: ${parseError.message}`);
+      creatorInfo = { name: null, tiktok: null, youtube: null, instagram: null, twitter: null };
+    }
 
     // STEP 2: Search specifically for agency representation
     const agencyResponse = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -809,6 +817,7 @@ No markdown, only JSON.`
       },
       body: JSON.stringify({
         model: 'sonar-pro',
+        system: 'You must respond with ONLY a valid JSON object. No explanations, no markdown, no text before or after the JSON. If you cannot find information, use null for that field.',
         messages: [{
           role: 'user',
           content: `Search the web for talent agency or management company representation for the content creator "${cleanedHandle}". 
@@ -826,7 +835,7 @@ Return ONLY JSON with these fields (null if not found):
   "agencyWebsite": "agency website URL"
 }
 
-No markdown, only JSON.`
+Respond with ONLY JSON, no other text.`
         }],
         max_tokens: 200
       })
@@ -839,9 +848,16 @@ No markdown, only JSON.`
     const agencyData = await agencyResponse.json();
     const agencyText = agencyData.choices?.[0]?.message?.content || '{}';
     const agencyCleaned = agencyText.replace(/```json|```/g, '').trim();
-    const agencyInfo = JSON.parse(agencyCleaned);
-
-    console.log(`[Creator Lookup] Step 2 - Agency info for "${cleanedHandle}":`, agencyInfo);
+    
+    let agencyInfo = { agencyName: null, agencyWebsite: null };
+    try {
+      agencyInfo = JSON.parse(agencyCleaned);
+      console.log(`[Creator Lookup] Step 2 - Agency info for "${cleanedHandle}":`, agencyInfo);
+    } catch (parseError) {
+      console.warn(`[Creator Lookup] Step 2 - Failed to parse Perplexity response as JSON. Raw text: "${agencyCleaned.substring(0, 200)}..."`);
+      console.warn(`[Creator Lookup] Parse error: ${parseError.message}`);
+      agencyInfo = { agencyName: null, agencyWebsite: null };
+    }
 
     // Merge both responses
     if (agencyInfo.agencyName) {
