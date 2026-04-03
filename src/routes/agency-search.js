@@ -66,11 +66,13 @@ function isBusinessEmail(email) {
  * Returns: { displayName, bio, followers, following, bioLinks, emails }
  */
 async function fetchTikTokProfile(username) {
-  console.log(`[TikTok Profile] Fetching profile for @${username}`);
+  // Normalize username to lowercase for TikTok API
+  const normalizedUsername = username.toLowerCase().trim();
+  console.log(`[TikTok Profile] Fetching profile for @${normalizedUsername}`);
   
   try {
     const resp = await fetch(
-      `https://tiktok-scraper7.p.rapidapi.com/user/info?unique_id=${encodeURIComponent(username)}`,
+      `https://tiktok-scraper7.p.rapidapi.com/user/info?unique_id=${encodeURIComponent(normalizedUsername)}`,
       {
         headers: {
           'x-rapidapi-key': process.env.RAPIDAPI_KEY,
@@ -80,7 +82,12 @@ async function fetchTikTokProfile(username) {
     );
     
     const data = await resp.json();
-    console.log(`[TikTok Profile] Raw response for @${username}:`, JSON.stringify(data).substring(0, 500));
+    console.log(`[TikTok Profile] Raw response for @${normalizedUsername}:`, JSON.stringify(data).substring(0, 800));
+    
+    // Log user stats if available
+    if (data?.data?.user?.stats) {
+      console.log(`[TikTok Profile] User stats for @${normalizedUsername}:`, JSON.stringify(data.data.user.stats));
+    }
     
     if (!resp.ok) {
       throw new Error(`API error: ${resp.status}`);
@@ -90,28 +97,46 @@ async function fetchTikTokProfile(username) {
     const userInfo = data?.data?.user || data?.data || data?.user || data;
     
     if (!userInfo) {
-      console.warn(`[TikTok Profile] No user info found in response for @${username}`);
+      console.warn(`[TikTok Profile] No user info found in response for @${normalizedUsername}`);
       return null;
     }
     
-    // Extract profile data
-    const displayName = userInfo.nickname || userInfo.user?.nickname || userInfo.uniqueId || username;
+    // Extract profile data with multiple field paths for follower count
+    const displayName = userInfo.nickname || userInfo.user?.nickname || userInfo.uniqueId || normalizedUsername;
     const bio = userInfo.signature || userInfo.user?.signature || '';
-    const followers = userInfo.followerCount || userInfo.user?.followerCount || userInfo.followers || 0;
-    const following = userInfo.followingCount || userInfo.user?.followingCount || userInfo.following || 0;
     
-    console.log(`[TikTok Profile] Extracted for @${username}: name="${displayName}", followers=${followers}, bio="${bio.substring(0, 100)}..."`);
+    // Try multiple paths for follower/following counts (check stats object first)
+    const followers = userInfo.stats?.followerCount || 
+                     userInfo.followerCount || 
+                     userInfo.user?.followerCount || 
+                     userInfo.followers || 
+                     0;
+    const following = userInfo.stats?.followingCount || 
+                     userInfo.followingCount || 
+                     userInfo.user?.followingCount || 
+                     userInfo.following || 
+                     0;
+    
+    console.log(`[TikTok Profile] Extracted for @${normalizedUsername}: name="${displayName}", followers=${followers}, bio="${bio.substring(0, 100)}..."`);
     
     // Extract links and emails from bio (raw data only)
     const bioLinks = [];
     const emails = [];
     
     if (bio) {
-      // Extract URLs from bio (http/https or www)
-      const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+      // Extract URLs from bio: https/http, www., or bare domains (with optional path)
+      // Pattern: (https?://... | www.... | bare.domain.com/path)
+      const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
       const urlMatches = bio.match(urlPattern);
       if (urlMatches) {
-        bioLinks.push(...urlMatches.filter(url => !bioLinks.includes(url)));
+        // Filter duplicates and add https:// to bare domains
+        urlMatches.forEach(url => {
+          if (!bioLinks.includes(url)) {
+            // If URL doesn't start with http:// or https://, add https://
+            const normalizedUrl = /^https?:\/\//.test(url) ? url : `https://${url}`;
+            bioLinks.push(normalizedUrl);
+          }
+        });
       }
       
       // Extract emails from bio using provided regex
@@ -847,10 +872,12 @@ router.post('/lookup', async (req, res) => {
 
   try {
     const cleanedHandle = cleanHandle(handle);
-    console.log(`[Creator Lookup] Looking up: "${handle}" → cleaned to "${cleanedHandle}"`);
+    // Normalize handle to lowercase for TikTok API (case-insensitive)
+    const normalizedHandle = cleanedHandle.toLowerCase();
+    console.log(`[Creator Lookup] Looking up: "${handle}" → cleaned to "${cleanedHandle}" → normalized to "${normalizedHandle}"`);
 
     // Fetch TikTok profile data using the same API as the scanner
-    const profileData = await fetchTikTokProfile(cleanedHandle);
+    const profileData = await fetchTikTokProfile(normalizedHandle);
 
     // Check if we have any data at all
     if (!profileData) {
@@ -866,7 +893,7 @@ router.post('/lookup', async (req, res) => {
       .from('scans')
       .select('id, username, range, video_count, credits_used, deals, created_at')
       .eq('user_id', userId)
-      .ilike('username', `%${cleanedHandle}%`)
+      .ilike('username', `%${normalizedHandle}%`)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -890,18 +917,18 @@ router.post('/lookup', async (req, res) => {
       };
     });
 
-    console.log(`[Creator Lookup] Found ${formattedScanHistory.length} scans for "${cleanedHandle}"`);
+    console.log(`[Creator Lookup] Found ${formattedScanHistory.length} scans for "${normalizedHandle}"`);
 
     // SILENT LEAD LOGGING: Check if creator is unrepresented
     const businessEmails = profileData.emails.filter(email => isBusinessEmail(email));
-    console.log(`[Lead Logging] @${cleanedHandle}: ${profileData.emails.length} emails found, ${businessEmails.length} business emails`);
+    console.log(`[Lead Logging] @${normalizedHandle}: ${profileData.emails.length} emails found, ${businessEmails.length} business emails`);
     
     if (profileData.emails.length === 0 || businessEmails.length === 0) {
       // No business email found — log as unrepresented creator (silently, no response change)
       const { error: logError } = await supabase
         .from('unrepresented_creators')
         .insert([{
-          handle: cleanedHandle,
+          handle: normalizedHandle,
           platform: 'tiktok',
           name: profileData.displayName,
           followers: profileData.followers,
@@ -911,16 +938,16 @@ router.post('/lookup', async (req, res) => {
         }]);
       
       if (logError) {
-        console.warn(`[Lead Logging] Failed to log unrepresented creator @${cleanedHandle}:`, logError.message);
+        console.warn(`[Lead Logging] Failed to log unrepresented creator @${normalizedHandle}:`, logError.message);
       } else {
-        console.log(`[Lead Logging] Logged unrepresented creator: @${cleanedHandle}`);
+        console.log(`[Lead Logging] Logged unrepresented creator: @${normalizedHandle}`);
       }
     }
 
     res.json({
       creator: {
         displayName: profileData.displayName || null,
-        handle: cleanedHandle,
+        handle: normalizedHandle,
         bio: profileData.bio || null,
         followers: profileData.followers || null,
         following: profileData.following || null,
