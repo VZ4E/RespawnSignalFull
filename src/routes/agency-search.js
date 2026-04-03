@@ -110,11 +110,14 @@ function extractNicheHintFromUrl(pageUrl) {
 /**
  * Enrich a creator with social media profiles and niche using Perplexity
  * @param {Object} creator - Creator object
- * @param {string} nicheHint - Optional niche hint extracted from page URL
- * @param {boolean} isDirectMatch - If true, use niche hint directly without calling Perplexity for niche
+ * @param {string} scrapePageUrl - The original URL that was scraped (used to extract niche hint)
  */
-async function enrichCreator(creator, nicheHint = null, isDirectMatch = false) {
+async function enrichCreator(creator, scrapePageUrl) {
   try {
+    // Extract niche hint from the scrape URL
+    const { hint: nicheHint, isDirectMatch } = extractNicheHintFromUrl(scrapePageUrl);
+    console.log(`[Enrichment] Creator: ${creator.name || creator.handle} | URL: ${scrapePageUrl} | nicheHint: ${nicheHint} | isDirectMatch: ${isDirectMatch}`);
+    
     // If niche hint is a direct match, we only need to find social handles
     const nicheContext = nicheHint ? `This creator was found on a ${nicheHint} agency page. Use this as strong context when determining their niche category.` : '';
     
@@ -303,13 +306,11 @@ router.post('/scrape', async (req, res) => {
         console.log(`[Agency Scrape] Poll attempt ${attempts}: status=${statusData.status}, pages=${(statusData.data || []).length}`);
 
         if (statusData.data && statusData.data.length > 0) {
-          // Extract creators from all crawled pages, tracking source page for niche hints
+          // Extract creators from all crawled pages
           for (const page of statusData.data) {
             const pageCreators = page.extract?.creators || [];
             console.log(`[Agency Scrape] Found ${pageCreators.length} creators on page: ${page.url}`);
-            // Attach source page URL to each creator for niche hint extraction
-            const creatorsWithPageUrl = pageCreators.map(c => ({ ...c, _sourcePageUrl: page.url }));
-            allCreators = allCreators.concat(creatorsWithPageUrl);
+            allCreators = allCreators.concat(pageCreators);
           }
           
           // Track when creators were first found
@@ -344,11 +345,6 @@ router.post('/scrape', async (req, res) => {
           // Fix 1: Strip URL handles (safely handles malformed URLs)
           handle = cleanHandle(handle);
           
-          // Extract niche hint from source page URL
-          console.log(`[Agency Scrape] Processing creator ${c.name || c.handle}: _sourcePageUrl = "${c._sourcePageUrl}"`);
-          const { hint: nicheHint, isDirectMatch } = extractNicheHintFromUrl(c._sourcePageUrl);
-          console.log(`[Agency Scrape] Niche hint result for ${c.name || c.handle}: hint="${nicheHint}", isDirectMatch=${isDirectMatch}`);
-          
           return {
             handle: handle,
             name: (c.name || c.handle).trim(),
@@ -357,10 +353,7 @@ router.post('/scrape', async (req, res) => {
             description: c.description || '',
             verified: false,
             // Track social count for dedup priority
-            socialCount: [c.socials?.tiktok, c.socials?.youtube, c.socials?.instagram, c.socials?.twitter].filter(Boolean).length,
-            // Niche hint from URL for Perplexity enrichment
-            _nicheHint: nicheHint,
-            _nicheIsDirectMatch: isDirectMatch
+            socialCount: [c.socials?.tiktok, c.socials?.youtube, c.socials?.instagram, c.socials?.twitter].filter(Boolean).length
           };
         })
         // Fix 2: Filter garbage entries
@@ -410,7 +403,7 @@ router.post('/scrape', async (req, res) => {
         const batch = validCreators.slice(i, i + 5);
         console.log(`[Agency Scrape] Enriching batch ${Math.floor(i / 5) + 1}/${Math.ceil(validCreators.length / 5)}`);
         const results = await Promise.all(batch.map(creator => 
-          enrichCreator(creator, creator._nicheHint, creator._nicheIsDirectMatch)
+          enrichCreator(creator, normalizedUrl)
         ));
         enriched.push(...results);
       }
@@ -420,9 +413,6 @@ router.post('/scrape', async (req, res) => {
       // Remove internal fields before sending to frontend
       const cleanedCreators = enriched.map(c => {
         const cleaned = { ...c };
-        delete cleaned._sourcePageUrl;
-        delete cleaned._nicheHint;
-        delete cleaned._nicheIsDirectMatch;
         delete cleaned.socialCount;
         return cleaned;
       });
