@@ -739,10 +739,10 @@ router.delete('/:agencyId', async (req, res) => {
 
 /**
  * POST /api/agency-search/lookup
- * Look up a creator by handle or profile URL and find their agency representation
+ * Look up a creator by handle or profile URL using Firecrawl scraping
  * 
  * Body: { handle: string }
- * Returns: { creator: { name, handles: [{platform, followers}] }, agency: { name, website }, scanHistory: [...] }
+ * Returns: { creator: { name, bio, followers, bioLinks, emails, agencyMention }, scanHistory: [...] }
  */
 router.post('/lookup', async (req, res) => {
   const { handle } = req.body;
@@ -756,168 +756,52 @@ router.post('/lookup', async (req, res) => {
     const cleanedHandle = cleanHandle(handle);
     console.log(`[Creator Lookup] Looking up: "${handle}" → cleaned to "${cleanedHandle}"`);
 
-    // Query Perplexity to find creator info and representing agency
-    // STEP 1: Get basic creator info (name, socials, followers)
-    const basicInfoResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+    // Default to TikTok if no platform specified
+    const profileUrl = `https://www.tiktok.com/@${cleanedHandle}`;
+    console.log(`[Creator Lookup] Scraping profile: ${profileUrl}`);
+
+    // Scrape the TikTok profile with Firecrawl
+    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'sonar-pro',
-        system: 'IMPORTANT: You must respond with ONLY a raw JSON object. Do not include any explanation, markdown formatting, or text outside the JSON object. Start your response with { and end with }. If you cannot find information, use null for that field.',
-        messages: [{
-          role: 'user',
-          content: `Search for the content creator with handle @${cleanedHandle}. Find their:
-1. Real/full name
-2. TikTok account and current follower count
-3. YouTube channel and subscriber count
-4. Instagram account and follower count
-5. Twitter account and follower count
-
-Return ONLY JSON with these fields (null if not found):
-{
-  "name": "full name",
-  "tiktok": "handle without @",
-  "youtube": "channel name",
-  "instagram": "handle without @",
-  "twitter": "handle without @",
-  "tiktokFollowers": 0,
-  "youtubeFollowers": 0,
-  "instagramFollowers": 0,
-  "twitterFollowers": 0
-}
-
-Respond with ONLY JSON, no other text.`
-        }],
-        max_tokens: 300
+        url: profileUrl,
+        formats: ['extract'],
+        extract: {
+          prompt: 'Extract from this TikTok profile: the creator full name, bio text, follower count, following count, all links in the bio, any email addresses mentioned, any agency or management company mentioned, any other social media handles or links mentioned.',
+          schema: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              bio: { type: 'string' },
+              followers: { type: 'number' },
+              following: { type: 'number' },
+              bioLinks: { type: 'array', items: { type: 'string' } },
+              emails: { type: 'array', items: { type: 'string' } },
+              agencyMention: { type: 'string' },
+              otherSocials: { type: 'array', items: { type: 'string' } }
+            }
+          }
+        }
       })
     });
 
-    if (!basicInfoResponse.ok) {
-      throw new Error(`Perplexity API error: ${basicInfoResponse.status}`);
+    if (!scrapeResponse.ok) {
+      throw new Error(`Firecrawl API error: ${scrapeResponse.status}`);
     }
 
-    const basicData = await basicInfoResponse.json();
-    const basicText = basicData.choices?.[0]?.message?.content || '{}';
-    const basicCleaned = basicText.replace(/```json|```/g, '').trim();
-    
-    let creatorInfo = {};
-    try {
-      creatorInfo = JSON.parse(basicCleaned);
-      console.log(`[Creator Lookup] Step 1 - Basic info for "${cleanedHandle}":`, creatorInfo);
-    } catch (parseError) {
-      console.warn(`[Creator Lookup] Step 1 - Failed to parse Perplexity response as JSON. Raw text: "${basicCleaned.substring(0, 200)}..."`);
-      console.warn(`[Creator Lookup] Parse error: ${parseError.message}`);
-      creatorInfo = { name: null, tiktok: null, youtube: null, instagram: null, twitter: null };
+    const scrapeData = await scrapeResponse.json();
+    const profileData = scrapeData.data?.extract || {};
+
+    console.log(`[Creator Lookup] Firecrawl profile data for "${cleanedHandle}":`, profileData);
+
+    // Check if we have any data at all
+    if (!profileData.name && !profileData.bio && !profileData.followers) {
+      return res.status(404).json({ error: 'Creator not found', details: 'No profile data available' });
     }
-
-    // STEP 2: Search specifically for agency representation
-    const agencyResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'sonar-pro',
-        system: 'IMPORTANT: You must respond with ONLY a raw JSON object. Do not include any explanation, markdown formatting, or text outside the JSON object. Start your response with { and end with }. If you cannot find information, use null for that field.',
-        messages: [{
-          role: 'user',
-          content: `Search the web for talent agency or management company representation for the content creator "${cleanedHandle}". 
-
-Search for:
-- "${cleanedHandle} talent agency"
-- "${cleanedHandle} management"
-- "${cleanedHandle} represented by"
-- "Dulcedo" associated with "${cleanedHandle}"
-- Any official management or agency partnerships
-
-Return ONLY JSON with these fields (null if not found):
-{
-  "agencyName": "talent agency or management company name",
-  "agencyWebsite": "agency website URL"
-}
-
-Respond with ONLY JSON, no other text.`
-        }],
-        max_tokens: 200
-      })
-    });
-
-    if (!agencyResponse.ok) {
-      throw new Error(`Perplexity API error (agency search): ${agencyResponse.status}`);
-    }
-
-    const agencyData = await agencyResponse.json();
-    const agencyText = agencyData.choices?.[0]?.message?.content || '{}';
-    const agencyCleaned = agencyText.replace(/```json|```/g, '').trim();
-    
-    let agencyInfo = { agencyName: null, agencyWebsite: null };
-    try {
-      agencyInfo = JSON.parse(agencyCleaned);
-      console.log(`[Creator Lookup] Step 2 - Agency info for "${cleanedHandle}":`, agencyInfo);
-    } catch (parseError) {
-      console.warn(`[Creator Lookup] Step 2 - Failed to parse Perplexity response as JSON. Raw text: "${agencyCleaned.substring(0, 200)}..."`);
-      console.warn(`[Creator Lookup] Parse error: ${parseError.message}`);
-      agencyInfo = { agencyName: null, agencyWebsite: null };
-    }
-
-    // Merge both responses
-    if (agencyInfo.agencyName) {
-      creatorInfo.agencyName = agencyInfo.agencyName;
-    }
-    if (agencyInfo.agencyWebsite) {
-      creatorInfo.agencyWebsite = agencyInfo.agencyWebsite;
-    }
-
-    console.log(`[Creator Lookup] Final merged info for "${cleanedHandle}":`, creatorInfo);
-
-    // Only return 404 if we have NO data at all (all fields null including handles)
-    const hasAnyData = creatorInfo.name || creatorInfo.tiktok || creatorInfo.youtube || 
-                       creatorInfo.instagram || creatorInfo.twitter || creatorInfo.agencyName;
-    
-    if (!hasAnyData) {
-      return res.status(404).json({ error: 'Creator not found', details: 'No creator information available' });
-    }
-
-    // Build handles array with platform and follower counts
-    const handles = [];
-    if (creatorInfo.tiktok) {
-      handles.push({
-        platform: 'TikTok',
-        handle: creatorInfo.tiktok,
-        followers: creatorInfo.tiktokFollowers
-      });
-    }
-    if (creatorInfo.youtube) {
-      handles.push({
-        platform: 'YouTube',
-        handle: creatorInfo.youtube,
-        followers: creatorInfo.youtubeFollowers
-      });
-    }
-    if (creatorInfo.instagram) {
-      handles.push({
-        platform: 'Instagram',
-        handle: creatorInfo.instagram,
-        followers: creatorInfo.instagramFollowers
-      });
-    }
-    if (creatorInfo.twitter) {
-      handles.push({
-        platform: 'Twitter',
-        handle: creatorInfo.twitter,
-        followers: creatorInfo.twitterFollowers
-      });
-    }
-
-    // Build agency object
-    const agency = creatorInfo.agencyName ? {
-      name: creatorInfo.agencyName,
-      website: creatorInfo.agencyWebsite || null
-    } : null;
 
     // Query scan history from the scans table
     const { data: scanHistory, error: scanError } = await supabase
@@ -952,10 +836,16 @@ Respond with ONLY JSON, no other text.`
 
     res.json({
       creator: {
-        name: creatorInfo.name,
-        handles: handles
+        name: profileData.name || null,
+        handle: cleanedHandle,
+        bio: profileData.bio || null,
+        followers: profileData.followers || null,
+        following: profileData.following || null,
+        bioLinks: profileData.bioLinks || [],
+        emails: profileData.emails || [],
+        agencyMention: profileData.agencyMention || null,
+        otherSocials: profileData.otherSocials || []
       },
-      agency: agency,
       scanHistory: formattedScanHistory
     });
   } catch (err) {
