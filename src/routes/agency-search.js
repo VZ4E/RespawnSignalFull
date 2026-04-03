@@ -1,16 +1,14 @@
 const express = require('express');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
-
-let FirecrawlApp;
-try {
-  FirecrawlApp = require('@mendable/firecrawl-js').default;
-} catch (e) {
-  console.error('[Agency Search] Failed to load Firecrawl:', e.message);
-  FirecrawlApp = null;
-}
+const { default: FirecrawlApp } = require('@mendable/firecrawl-js');
 
 const router = express.Router();
+
+// Initialize Firecrawl client
+const firecrawl = new FirecrawlApp({ 
+  apiKey: process.env.FIRECRAWL_API_KEY 
+});
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
@@ -34,10 +32,6 @@ router.post('/scrape', async (req, res) => {
     return res.status(500).json({ error: 'Firecrawl API key not configured' });
   }
 
-  if (!FirecrawlApp) {
-    return res.status(500).json({ error: 'Firecrawl package failed to load' });
-  }
-
   try {
     console.log(`[Agency Scrape] Starting Firecrawl scrape for URL: ${url}`);
 
@@ -46,9 +40,6 @@ router.post('/scrape', async (req, res) => {
     if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
       normalizedUrl = `https://${normalizedUrl}`;
     }
-
-    // Initialize Firecrawl client for this request
-    const firecrawl = new FirecrawlApp({ apiKey: firecrawlKey });
 
     // Use Firecrawl to scrape and extract creators
     const result = await firecrawl.scrapeUrl(normalizedUrl, {
