@@ -8,6 +8,36 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // ═══════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Clean handle by extracting valid segment from URL or path
+ * Safely handles malformed URLs that would crash URL() constructor
+ */
+function cleanHandle(handle) {
+  if (!handle) return handle;
+  
+  if (handle.startsWith('http://') || handle.startsWith('https://')) {
+    try {
+      const url = new URL(handle);
+      const segments = url.pathname.split('/').filter(Boolean);
+      return segments[segments.length - 1] || handle;
+    } catch (e) {
+      // If URL parsing fails, fall back to string splitting
+      console.warn(`[cleanHandle] Failed to parse URL "${handle}":`, e.message);
+      return handle.split('/').filter(Boolean).pop() || handle;
+    }
+  }
+  
+  if (handle.startsWith('/')) {
+    return handle.split('/').filter(Boolean).pop() || handle;
+  }
+  
+  return handle;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // ENRICHMENT FUNCTION
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -198,12 +228,8 @@ router.post('/scrape', async (req, res) => {
         .map(c => {
           let handle = c.handle.toLowerCase().trim().replace(/^@/, '');
           
-          // Fix 1: Strip URL handles
-          if (handle.startsWith('http://') || handle.startsWith('https://') || handle.startsWith('/')) {
-            // Extract last segment from URL path
-            const urlObj = new URL(handle.startsWith('http') ? handle : `https://example.com${handle}`);
-            handle = urlObj.pathname.split('/').filter(Boolean).pop() || handle;
-          }
+          // Fix 1: Strip URL handles (safely handles malformed URLs)
+          handle = cleanHandle(handle);
           
           return {
             handle: handle,
