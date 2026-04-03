@@ -38,20 +38,6 @@ function cleanHandle(handle) {
 }
 
 /**
- * Extract path from URL for Firecrawl includePaths filter
- * e.g., https://dulcedo.com/profiles/gaming/fortnite → /profiles/gaming/fortnite
- */
-function extractPathFromUrl(url) {
-  try {
-    const urlObj = new URL(url);
-    return urlObj.pathname || '/';
-  } catch (e) {
-    console.warn(`[extractPathFromUrl] Failed to parse URL "${url}":`, e.message);
-    return '/';
-  }
-}
-
-/**
  * Extract niche hint from page URL
  * Maps path segments to niche categories
  * Returns { hint, isDirectMatch } where isDirectMatch = true if hint maps directly to a niche category
@@ -228,9 +214,10 @@ router.post('/scrape', async (req, res) => {
       },
       body: JSON.stringify({
         url: normalizedUrl,
-        limit: 20,
+        limit: 5,
+        maxDiscoveryDepth: 0,
         allowExternalLinks: false,
-        includePaths: [extractPathFromUrl(normalizedUrl)],
+        allowSubdomains: false,
         scrapeOptions: {
           formats: ['extract'],
           extract: {
