@@ -4077,22 +4077,63 @@ function openNicheGroupSelector(niche, creators) {
   // Fetch and populate groups
   (async () => {
     try {
-      const groups = await api('/api/groups', 'GET');
+      console.log('[Niche Selector] Fetching groups from /api/groups...');
+      
+      const validToken = await getValidToken();
+      const opts = {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (validToken) opts.headers['Authorization'] = `Bearer ${validToken}`;
+      
+      let resp = await fetch('/api/groups', opts);
+      const rawText = await resp.text();
+      console.log('[Niche Selector] Raw response text:', rawText);
+      console.log('[Niche Selector] Response status:', resp.status);
+      console.log('[Niche Selector] Response headers:', resp.headers);
+      
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${rawText}`);
+      }
+      
+      let parsedData;
+      try {
+        parsedData = JSON.parse(rawText);
+        console.log('[Niche Selector] Parsed response:', parsedData);
+      } catch (parseErr) {
+        console.error('[Niche Selector] JSON parse error:', parseErr.message);
+        console.error('[Niche Selector] Raw response was:', rawText);
+        throw new Error('Invalid JSON response: ' + parseErr.message);
+      }
+      
       const listEl = document.getElementById('niche-groups-list');
       
-      if (!groups || groups.length === 0) {
+      // Handle both response formats: array or { groups: [] }
+      let groupArray = [];
+      if (Array.isArray(parsedData)) {
+        groupArray = parsedData;
+      } else if (parsedData && parsedData.groups && Array.isArray(parsedData.groups)) {
+        groupArray = parsedData.groups;
+      }
+      
+      console.log('[Niche Selector] Extracted group array:', groupArray);
+      
+      if (groupArray.length === 0) {
         listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text2);font-size:12px">No groups yet. Create one first.</div>';
         return;
       }
 
-      listEl.innerHTML = groups.map(g => `
+      listEl.innerHTML = groupArray.map(g => `
         <button class="btn-ghost" style="padding:12px;text-align:left;border:1px solid var(--border);border-radius:6px;background:var(--surface2);cursor:pointer;font-weight:600;color:var(--text)" onclick="addNicheToGroup('${g.id}', '${escapeHtml(g.name)}', ${JSON.stringify(creators).replace(/'/g, "&apos;")})">
           ${escapeHtml(g.name)}
-          <div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:4px">${g.members ? g.members.length : 0} members</div>
+          <div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:4px">${g.memberCount || g.members?.length || 0} members</div>
         </button>
       `).join('');
+      
+      console.log('[Niche Selector] Successfully populated', groupArray.length, 'groups');
     } catch(e) {
       console.error('[Niche Selector] Error loading groups:', e);
+      console.error('[Niche Selector] Error stack:', e.stack);
       document.getElementById('niche-group-msg').textContent = 'Error loading groups: ' + e.message;
       document.getElementById('niche-group-msg').style.display = 'block';
     }
