@@ -264,11 +264,12 @@ router.post('/scrape', async (req, res) => {
     const crawlData = await crawlResponse.json();
     console.log(`[Agency Scrape] Crawl initiated with ID:`, crawlData.id);
 
-    // Step 2: Poll for crawl completion
+    // Step 2: Poll for crawl completion with partial results fallback
     if (crawlData.success && crawlData.id) {
       let completed = false;
       let attempts = 0;
       let allCreators = [];
+      let creatorsFoundAttempt = null;
 
       console.log(`[Agency Scrape] Polling for crawl completion (up to 30 attempts, 3s interval)...`);
 
@@ -276,10 +277,28 @@ router.post('/scrape', async (req, res) => {
         await new Promise(resolve => setTimeout(resolve, 3000));
         attempts++;
 
-        const statusResponse = await fetch(`https://api.firecrawl.dev/v1/crawl/${crawlData.id}`, {
-          headers: { 'Authorization': `Bearer ${firecrawlKey}` }
-        });
-        const statusData = await statusResponse.json();
+        // Fetch with 10 second timeout to prevent indefinite hangs
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        
+        let statusData;
+        try {
+          const statusResponse = await fetch(`https://api.firecrawl.dev/v1/crawl/${crawlData.id}`, {
+            headers: { 'Authorization': `Bearer ${firecrawlKey}` },
+            signal: controller.signal
+          });
+          statusData = await statusResponse.json();
+        } catch (e) {
+          clearTimeout(timeout);
+          console.error(`[Agency Scrape] Poll attempt ${attempts}: Fetch timeout or error:`, e.message);
+          // If we already have creators, break out and use them
+          if (allCreators.length > 0) {
+            console.log(`[Agency Scrape] Using partial results (${allCreators.length} creators found so far)`);
+            break;
+          }
+          throw e;
+        }
+        clearTimeout(timeout);
 
         console.log(`[Agency Scrape] Poll attempt ${attempts}: status=${statusData.status}, pages=${(statusData.data || []).length}`);
 
@@ -292,11 +311,20 @@ router.post('/scrape', async (req, res) => {
             const creatorsWithPageUrl = pageCreators.map(c => ({ ...c, _sourcePageUrl: page.url }));
             allCreators = allCreators.concat(creatorsWithPageUrl);
           }
+          
+          // Track when creators were first found
+          if (creatorsFoundAttempt === null) {
+            creatorsFoundAttempt = attempts;
+          }
         }
 
         if (statusData.status === 'completed') {
           completed = true;
           console.log(`[Agency Scrape] Crawl completed after ${attempts} polls`);
+        } else if (allCreators.length > 0 && attempts >= creatorsFoundAttempt + 15) {
+          // Partial results timeout: if creators found and we've waited 45+ seconds since first result, use partial results
+          console.log(`[Agency Scrape] Crawl still in progress after ${attempts} polls (${(attempts - creatorsFoundAttempt) * 3}s since first results). Using partial results with ${allCreators.length} creators.`);
+          completed = true;
         }
       }
 
