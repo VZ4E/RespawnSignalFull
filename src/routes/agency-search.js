@@ -1,6 +1,7 @@
 const express = require('express');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
+const { extractNicheHintFromUrl } = require('../utils/nicheExtractor');
 
 const router = express.Router();
 
