@@ -115,7 +115,7 @@ function extractNicheHintFromUrl(pageUrl) {
 async function enrichCreator(creator, scrapePageUrl) {
   try {
     // Extract niche hint from the scrape URL
-    const { hint: nicheHint, isDirectMatch } = extractNicheHintFromUrl(scrapePageUrl);
+    const { hint: nicheHint, isDirectMatch } = extractNicheHintFromUrl(scrapePageUrl) || { hint: null, isDirectMatch: false };
     console.log(`[Enrichment] Creator: ${creator.name || creator.handle} | URL: ${scrapePageUrl} | nicheHint: ${nicheHint} | isDirectMatch: ${isDirectMatch}`);
     
     // If niche hint is a direct match, we only need to find social handles
