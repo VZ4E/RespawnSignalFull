@@ -84,9 +84,6 @@ async function fetchTikTokProfile(username) {
     const data = await resp.json();
     console.log(`[TikTok Profile] Raw response for @${normalizedUsername}:`, JSON.stringify(data).substring(0, 800));
     
-    // Log stats object to identify exact field path
-    console.log(`[TikTok Profile] Stats object for @${normalizedUsername}:`, JSON.stringify(data?.user?.stats || data?.stats || 'not found'));
-    
     if (!resp.ok) {
       throw new Error(`API error: ${resp.status}`);
     }
@@ -99,18 +96,25 @@ async function fetchTikTokProfile(username) {
       return null;
     }
     
+    // Debug: Log exact field keys and follower count paths
+    console.log(`[TikTok Profile] userData keys:`, Object.keys(userInfo || {}));
+    console.log(`[TikTok Profile] followerCount check:`, userInfo?.followerCount, userInfo?.fans, userInfo?.stats?.followerCount, userInfo?.statsV2?.followerCount);
+    
     // Extract profile data with multiple field paths for follower count
     const displayName = userInfo.nickname || userInfo.user?.nickname || userInfo.uniqueId || normalizedUsername;
     const bio = userInfo.signature || userInfo.user?.signature || '';
     
-    // Try multiple paths for follower/following counts (check stats object first)
-    const followers = userInfo.stats?.followerCount || 
-                     userInfo.followerCount || 
+    // Try multiple paths for follower/following counts (check common variations)
+    const followers = userInfo.followerCount || 
+                     userInfo.fans || 
+                     userInfo.stats?.followerCount || 
+                     userInfo.statsV2?.followerCount ||
                      userInfo.user?.followerCount || 
                      userInfo.followers || 
                      0;
-    const following = userInfo.stats?.followingCount || 
-                     userInfo.followingCount || 
+    const following = userInfo.followingCount || 
+                     userInfo.stats?.followingCount ||
+                     userInfo.statsV2?.followingCount ||
                      userInfo.user?.followingCount || 
                      userInfo.following || 
                      0;
