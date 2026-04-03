@@ -752,7 +752,8 @@ router.post('/lookup', async (req, res) => {
     console.log(`[Creator Lookup] Looking up: "${handle}" → cleaned to "${cleanedHandle}"`);
 
     // Query Perplexity to find creator info and representing agency
-    const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+    // STEP 1: Get basic creator info (name, socials, followers)
+    const basicInfoResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
@@ -762,22 +763,16 @@ router.post('/lookup', async (req, res) => {
         model: 'sonar-pro',
         messages: [{
           role: 'user',
-          content: `Search the web comprehensively for the content creator or influencer with handle @${cleanedHandle}. This handle likely belongs to a popular TikTok, YouTube, or Instagram creator. Find and return:
-1. Their real/full name
-2. All social media accounts (TikTok, YouTube, Instagram, Twitter) with exact handles and current follower counts
-3. Any talent agency or management company representing them (e.g., Dulcedo Management, TalentX, etc.)
-4. Agency website URL if applicable
+          content: `Search for the content creator with handle @${cleanedHandle}. Find their:
+1. Real/full name
+2. TikTok account and current follower count
+3. YouTube channel and subscriber count
+4. Instagram account and follower count
+5. Twitter account and follower count
 
-Search specifically for:
-- "${cleanedHandle}" on TikTok, YouTube, Instagram
-- "@${cleanedHandle}" across all major platforms  
-- "${cleanedHandle} talent agency", "${cleanedHandle} management", "${cleanedHandle} represented by"
-- "Dulcedo" or other agency names associated with this handle
-- Any verified profiles or official accounts
-
-Return ONLY valid JSON with these fields (set to null if not found):
+Return ONLY JSON with these fields (null if not found):
 {
-  "name": "full name as a string",
+  "name": "full name",
   "tiktok": "handle without @",
   "youtube": "channel name",
   "instagram": "handle without @",
@@ -785,27 +780,78 @@ Return ONLY valid JSON with these fields (set to null if not found):
   "tiktokFollowers": 0,
   "youtubeFollowers": 0,
   "instagramFollowers": 0,
-  "twitterFollowers": 0,
-  "agencyName": "talent agency name",
-  "agencyWebsite": "https://agency-url.com"
+  "twitterFollowers": 0
 }
 
-Return ONLY the JSON object. Do not include markdown, code blocks, or any other text.`
+No markdown, only JSON.`
         }],
-        max_tokens: 400
+        max_tokens: 300
       })
     });
 
-    if (!perplexityResponse.ok) {
-      throw new Error(`Perplexity API error: ${perplexityResponse.status}`);
+    if (!basicInfoResponse.ok) {
+      throw new Error(`Perplexity API error: ${basicInfoResponse.status}`);
     }
 
-    const perplexityData = await perplexityResponse.json();
-    const responseText = perplexityData.choices?.[0]?.message?.content || '{}';
-    const cleanedJson = responseText.replace(/```json|```/g, '').trim();
-    const creatorInfo = JSON.parse(cleanedJson);
+    const basicData = await basicInfoResponse.json();
+    const basicText = basicData.choices?.[0]?.message?.content || '{}';
+    const basicCleaned = basicText.replace(/```json|```/g, '').trim();
+    const creatorInfo = JSON.parse(basicCleaned);
 
-    console.log(`[Creator Lookup] Perplexity response for "${cleanedHandle}":`, creatorInfo);
+    console.log(`[Creator Lookup] Step 1 - Basic info for "${cleanedHandle}":`, creatorInfo);
+
+    // STEP 2: Search specifically for agency representation
+    const agencyResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'sonar-pro',
+        messages: [{
+          role: 'user',
+          content: `Search the web for talent agency or management company representation for the content creator "${cleanedHandle}". 
+
+Search for:
+- "${cleanedHandle} talent agency"
+- "${cleanedHandle} management"
+- "${cleanedHandle} represented by"
+- "Dulcedo" associated with "${cleanedHandle}"
+- Any official management or agency partnerships
+
+Return ONLY JSON with these fields (null if not found):
+{
+  "agencyName": "talent agency or management company name",
+  "agencyWebsite": "agency website URL"
+}
+
+No markdown, only JSON.`
+        }],
+        max_tokens: 200
+      })
+    });
+
+    if (!agencyResponse.ok) {
+      throw new Error(`Perplexity API error (agency search): ${agencyResponse.status}`);
+    }
+
+    const agencyData = await agencyResponse.json();
+    const agencyText = agencyData.choices?.[0]?.message?.content || '{}';
+    const agencyCleaned = agencyText.replace(/```json|```/g, '').trim();
+    const agencyInfo = JSON.parse(agencyCleaned);
+
+    console.log(`[Creator Lookup] Step 2 - Agency info for "${cleanedHandle}":`, agencyInfo);
+
+    // Merge both responses
+    if (agencyInfo.agencyName) {
+      creatorInfo.agencyName = agencyInfo.agencyName;
+    }
+    if (agencyInfo.agencyWebsite) {
+      creatorInfo.agencyWebsite = agencyInfo.agencyWebsite;
+    }
+
+    console.log(`[Creator Lookup] Final merged info for "${cleanedHandle}":`, creatorInfo);
 
     // Only return 404 if we have NO data at all (all fields null including handles)
     const hasAnyData = creatorInfo.name || creatorInfo.tiktok || creatorInfo.youtube || 
@@ -855,9 +901,9 @@ Return ONLY the JSON object. Do not include markdown, code blocks, or any other 
     // Query scan history from the scans table
     const { data: scanHistory, error: scanError } = await supabase
       .from('scans')
-      .select('id, created_at, username, results')
+      .select('id, username, range, video_count, credits_used, deals, created_at')
       .eq('user_id', userId)
-      .filter('username', 'ilike', `%${cleanedHandle}%`)
+      .ilike('username', `%${cleanedHandle}%`)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -868,13 +914,16 @@ Return ONLY the JSON object. Do not include markdown, code blocks, or any other 
     // Parse scan results to extract deal counts
     const formattedScanHistory = (scanHistory || []).map(scan => {
       let dealCount = 0;
-      if (scan.results && typeof scan.results === 'object' && scan.results.deals) {
-        dealCount = Array.isArray(scan.results.deals) ? scan.results.deals.length : 0;
+      if (scan.deals && Array.isArray(scan.deals)) {
+        dealCount = scan.deals.length;
       }
       return {
         handle: scan.username,
         date: scan.created_at,
-        dealCount: dealCount
+        dealCount: dealCount,
+        range: scan.range,
+        videoCount: scan.video_count,
+        creditsUsed: scan.credits_used
       };
     });
 
