@@ -221,10 +221,8 @@ router.post('/scrape', async (req, res) => {
       },
       body: JSON.stringify({
         url: normalizedUrl,
-        limit: 5,
-        maxDiscoveryDepth: 0,
+        limit: 20,
         allowExternalLinks: false,
-        allowSubdomains: false,
         scrapeOptions: {
           formats: ['extract'],
           extract: {
