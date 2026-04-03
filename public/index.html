@@ -4256,28 +4256,31 @@ async function addNicheToGroup(groupId, groupName, creators) {
   msgEl.textContent = 'Adding creators...';
 
   try {
-    // Add each creator to the group
-    let added = 0;
-    for (const creator of creators) {
-      try {
-        await api(`/api/groups/${groupId}/members`, 'POST', {
-          handle: creator.handle,
-          platform: creator.platform
-        });
-        added++;
-      } catch(e) {
-        console.warn(`Failed to add ${creator.handle}:`, e.message);
-      }
-    }
+    console.log('[addNicheToGroup] Adding', creators.length, 'creators to group', groupName);
+    
+    // Convert creators to members array format: { platform, handle }
+    const membersToAdd = creators.map(c => ({
+      platform: c.platform || c.mainPlatform || 'unknown',
+      handle: c.handle || c.socials?.[c.mainPlatform]?.handle || 'unknown'
+    }));
+    
+    console.log('[addNicheToGroup] Members to add:', JSON.stringify(membersToAdd, null, 2));
+    
+    // Send all creators in one request with { members: [...] } format
+    const response = await api(`/api/groups/${groupId}/members`, 'POST', {
+      members: membersToAdd
+    });
+    
+    console.log('[addNicheToGroup] API response:', response);
 
     msgEl.style.color = 'var(--green)';
-    msgEl.textContent = `✓ Added ${added}/${creators.length} creators to ${groupName}`;
+    msgEl.textContent = `✓ Added ${response.added}/${creators.length} creators to ${groupName}`;
     
     setTimeout(() => {
       document.getElementById('niche-group-selector').style.display = 'none';
     }, 1500);
   } catch(e) {
-    console.error('[Add Niche] Error:', e);
+    console.error('[addNicheToGroup] Error:', e);
     msgEl.style.color = 'var(--red)';
     msgEl.textContent = 'Error: ' + e.message;
   }
