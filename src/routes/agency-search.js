@@ -7,6 +7,69 @@ const router = express.Router();
 // Apply auth middleware to all routes
 router.use(authMiddleware);
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ENRICHMENT FUNCTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Enrich a creator with social media profiles and niche using Perplexity
+ */
+async function enrichCreator(creator) {
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [{
+          role: 'user',
+          content: `Find the social media profiles for the content creator or influencer named "${creator.name || creator.handle}". Return ONLY a JSON object with these fields: tiktok (handle without @), youtube (channel name or handle), instagram (handle without @), twitter (handle without @), followerCount (their largest platform follower count as a number), mainPlatform (their primary platform: TikTok/YouTube/Instagram/Twitch), niche (one of: Fortnite/Battle Royale, FPS/Competitive, Minecraft/Sandbox, Roblox/Family Gaming, Fitness/Gaming, Lifestyle/IRL, RPG/Story Games, Strategy/Esports, Sports Games, Variety Gaming, Tech/Gaming, Entertainment, Influencer, Athlete, Uncategorized). Return null for any field you cannot find. Return ONLY the JSON object, no other text.`
+        }],
+        max_tokens: 200
+      })
+    });
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '{}';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const enriched = JSON.parse(clean);
+
+    // Build platforms array from found handles
+    const platforms = [];
+    if (enriched.tiktok) platforms.push('TikTok');
+    if (enriched.youtube) platforms.push('YouTube');
+    if (enriched.instagram) platforms.push('Instagram');
+    if (enriched.twitter) platforms.push('Twitter');
+
+    return {
+      ...creator,
+      handle: enriched.tiktok || enriched.instagram || enriched.youtube || creator.handle,
+      platforms,
+      followerCount: enriched.followerCount || creator.followerCount,
+      niche: enriched.niche || 'Uncategorized',
+      socials: {
+        tiktok: enriched.tiktok || null,
+        youtube: enriched.youtube || null,
+        instagram: enriched.instagram || null,
+        twitter: enriched.twitter || null
+      },
+      mainPlatform: enriched.mainPlatform || null
+    };
+  } catch (e) {
+    console.warn(`[Enrichment] Error enriching creator ${creator.name || creator.handle}:`, e.message);
+    return { 
+      ...creator, 
+      niche: 'Uncategorized', 
+      platforms: creator.platforms || [], 
+      socials: {},
+      mainPlatform: null
+    };
+  }
+}
+
 /**
  * POST /api/agency-search/scrape
  * Scrape creator roster from an agency website using Firecrawl
@@ -143,11 +206,23 @@ router.post('/scrape', async (req, res) => {
         .slice(0, 500); // Limit to 500 creators max
 
       console.log(`[Agency Scrape] Total unique creators extracted: ${validCreators.length}`);
+      console.log(`[Agency Scrape] Starting Perplexity enrichment for ${validCreators.length} creators (batch size: 5)...`);
+
+      // Enrich in batches of 5 to avoid rate limiting
+      const enriched = [];
+      for (let i = 0; i < validCreators.length; i += 5) {
+        const batch = validCreators.slice(i, i + 5);
+        console.log(`[Agency Scrape] Enriching batch ${Math.floor(i / 5) + 1}/${Math.ceil(validCreators.length / 5)}`);
+        const results = await Promise.all(batch.map(enrichCreator));
+        enriched.push(...results);
+      }
+
+      console.log(`[Agency Scrape] Enrichment complete. Returning ${enriched.length} enriched creators.`);
 
       res.json({
         success: true,
-        creators: validCreators,
-        count: validCreators.length
+        creators: enriched,
+        count: enriched.length
       });
     } else {
       throw new Error('Crawl initiation failed: no crawl ID received');

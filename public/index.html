@@ -3981,13 +3981,13 @@ async function scrapeAgency() {
 
   btn.disabled = true;
   btn.textContent = 'Crawling...';
-  statusEl.textContent = 'Crawling site... this may take 30-60 seconds';
+  statusEl.textContent = 'Crawling site... then enriching creator profiles. This may take 2-3 minutes for large rosters.';
   statusEl.style.display = 'block';
   resultsEl.style.display = 'none';
   emptyEl.style.display = 'none';
 
   try {
-    const data = await api('/api/agency-search/scrape', 'POST', { url }, 120000); // 2 min timeout
+    const data = await api('/api/agency-search/scrape', 'POST', { url }, 180000); // 3 min timeout
     console.log('[Agency Search] Crawl result:', data);
 
     if (!data.creators || data.creators.length === 0) {
@@ -4016,18 +4016,27 @@ async function scrapeAgency() {
           <button class="btn-ghost" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600" onclick="openNicheGroupSelector('${escapeHtml(niche)}', ${JSON.stringify(creators).replace(/'/g, "&apos;")})">Add Niche to Group</button>
         </div>
         <div style="display:grid;gap:10px">
-          ${creators.map(c => `
-            <div style="padding:12px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
-              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
-                <div>
-                  <div style="font-weight:600;font-size:13px">@${escapeHtml(c.handle)}</div>
-                  <div style="font-size:11px;color:var(--text2)">${escapeHtml(c.name || 'N/A')}</div>
+          ${creators.map(c => {
+            const socials = c.socials || {};
+            const socialsHtml = [
+              socials.tiktok ? `<span style="font-size:10px;background:var(--surface3);padding:2px 6px;border-radius:3px;margin-right:4px">TikTok: @${escapeHtml(socials.tiktok)}</span>` : '',
+              socials.youtube ? `<span style="font-size:10px;background:var(--surface3);padding:2px 6px;border-radius:3px;margin-right:4px">YT: ${escapeHtml(socials.youtube)}</span>` : '',
+              socials.instagram ? `<span style="font-size:10px;background:var(--surface3);padding:2px 6px;border-radius:3px;margin-right:4px">IG: @${escapeHtml(socials.instagram)}</span>` : ''
+            ].filter(Boolean).join('');
+            return `
+              <div style="padding:12px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                  <div style="flex:1">
+                    <div style="font-weight:600;font-size:13px">@${escapeHtml(c.handle)}</div>
+                    <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${escapeHtml(c.name || 'N/A')}</div>
+                    ${socialsHtml ? `<div style="display:flex;flex-wrap:wrap;gap:4px;font-size:10px">${socialsHtml}</div>` : ''}
+                  </div>
+                  <span style="font-size:10px;color:var(--text3);background:var(--accent-dim);padding:4px 8px;border-radius:4px;white-space:nowrap">${c.niche || 'Uncategorized'}</span>
                 </div>
-                <span style="font-size:11px;color:var(--text3);background:var(--surface3);padding:3px 8px;border-radius:4px">${c.platform}</span>
+                <div style="font-size:11px;color:var(--text2)">📊 ${c.followerCount ? (c.followerCount / 1000).toFixed(0) + 'K' : 'N/A'} followers</div>
               </div>
-              <div style="font-size:11px;color:var(--text2)">📊 ${c.followerCount ? (c.followerCount / 1000).toFixed(0) + 'K' : 'N/A'} followers</div>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
       </div>
     `).join('');
