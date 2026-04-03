@@ -84,10 +84,8 @@ async function fetchTikTokProfile(username) {
     const data = await resp.json();
     console.log(`[TikTok Profile] Raw response for @${normalizedUsername}:`, JSON.stringify(data).substring(0, 800));
     
-    // Log user stats if available
-    if (data?.data?.user?.stats) {
-      console.log(`[TikTok Profile] User stats for @${normalizedUsername}:`, JSON.stringify(data.data.user.stats));
-    }
+    // Log stats object to identify exact field path
+    console.log(`[TikTok Profile] Stats object for @${normalizedUsername}:`, JSON.stringify(data?.user?.stats || data?.stats || 'not found'));
     
     if (!resp.ok) {
       throw new Error(`API error: ${resp.status}`);
