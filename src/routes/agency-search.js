@@ -47,10 +47,12 @@ function cleanHandle(handle) {
  * @param {string} scrapePageUrl - The original URL that was scraped (used to extract niche hint)
  */
 async function enrichCreator(creator, scrapePageUrl) {
+  // Extract niche hint from the scrape URL (before try/catch so catch block can access it)
+  const nicheResult = extractNicheHintFromUrl(scrapePageUrl) || { hint: null, isDirectMatch: false };
+  const { hint: nicheHint, isDirectMatch } = nicheResult;
+  console.log(`[Enrichment] Creator: ${creator.name || creator.handle} | URL: ${scrapePageUrl} | nicheHint: ${nicheHint} | isDirectMatch: ${isDirectMatch}`);
+
   try {
-    // Extract niche hint from the scrape URL
-    const { hint: nicheHint, isDirectMatch } = extractNicheHintFromUrl(scrapePageUrl) || { hint: null, isDirectMatch: false };
-    console.log(`[Enrichment] Creator: ${creator.name || creator.handle} | URL: ${scrapePageUrl} | nicheHint: ${nicheHint} | isDirectMatch: ${isDirectMatch}`);
     
     // If niche hint is a direct match, we only need to find social handles
     const nicheContext = nicheHint ? `This creator was found on a ${nicheHint} agency page. Use this as strong context when determining their niche category.` : '';
