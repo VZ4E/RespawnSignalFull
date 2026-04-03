@@ -1825,22 +1825,53 @@ textarea:focus-visible {
 
     <!-- AGENCY SEARCH -->
     <div class="page" id="page-agency-search">
-      <div class="sec-head"><h1>Agency Search</h1><p>Paste an agency URL to pull their creator roster.</p></div>
+      <div class="sec-head"><h1>Agency Search</h1><p>Look up a creator by their handle or profile URL to find their agency representation.</p></div>
       
+      <!-- Creator Lookup Input -->
       <div class="card" style="margin-bottom:24px">
         <div style="display:flex;gap:12px;margin-bottom:16px">
-          <input class="form-input" id="agency-url-input" type="text" placeholder="https://example-agency.com" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:6px" />
-          <button class="run-btn" id="agency-scrape-btn" onclick="scrapeAgency()" style="padding:12px 24px">Scrape Roster</button>
+          <input class="form-input" id="creator-lookup-input" type="text" placeholder="Enter a creator handle or profile URL" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:6px" />
+          <button class="run-btn" id="creator-lookup-btn" onclick="lookupCreator()" style="padding:12px 24px">Look Up Creator</button>
         </div>
-        <div id="agency-scrape-status" style="display:none;font-size:12px;margin-bottom:12px"></div>
+        <div id="creator-lookup-status" style="display:none;font-size:12px;margin-bottom:12px"></div>
       </div>
 
-      <div id="agency-results" style="display:none">
-        <div id="agency-niches-container" style="display:grid;gap:16px"></div>
+      <!-- Creator Card Results -->
+      <div id="creator-result" style="display:none;margin-bottom:24px">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+            <div style="flex:1">
+              <div style="font-size:16px;font-weight:700;margin-bottom:8px" id="creator-result-name">—</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="creator-result-platforms"></div>
+            </div>
+          </div>
+          <div style="padding:12px;background:var(--surface2);border-radius:8px;margin-bottom:12px;border:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:4px">REPRESENTED BY</div>
+            <div style="font-size:14px;font-weight:600" id="creator-result-agency">—</div>
+            <div style="font-size:12px;color:var(--accent);margin-top:4px">
+              <a id="creator-result-agency-website" href="#" target="_blank" style="color:var(--accent);text-decoration:none">View Agency Website →</a>
+            </div>
+          </div>
+        </div>
       </div>
 
+      <!-- Scan History Section -->
+      <div id="scan-history-section" style="display:none">
+        <div style="margin-bottom:16px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px">Scan History</div>
+          <div id="creator-scan-history" style="display:flex;flex-direction:column;gap:7px"></div>
+        </div>
+      </div>
+
+      <!-- No Scans Prompt -->
+      <div id="no-scans-prompt" style="display:none;text-align:center;padding:32px;background:var(--surface2);border-radius:12px;border:1px dashed var(--border)">
+        <div style="font-size:14px;margin-bottom:16px">No scans found for this creator yet.</div>
+        <button class="run-btn" onclick="scanThisCreator()" style="padding:12px 24px">Scan This Creator</button>
+      </div>
+
+      <!-- Empty State -->
       <div id="agency-empty-state" style="text-align:center;padding:32px;color:var(--text2)">
-        <div style="font-size:14px">No results yet. Enter an agency URL and click "Scrape Roster".</div>
+        <div style="font-size:14px">Enter a creator's handle or profile URL to look them up.</div>
       </div>
     </div>
 
@@ -3993,7 +4024,135 @@ async function runManualAnalysis() {
   btn.disabled = false;
 }
 
-// ── AGENCY SEARCH ──
+// ── AGENCY SEARCH: CREATOR LOOKUP ──
+async function lookupCreator() {
+  const input = document.getElementById('creator-lookup-input');
+  const handle = input.value.trim();
+  
+  if (!handle) {
+    showStatusMsg('Please enter a creator handle or profile URL', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('creator-lookup-btn');
+  const statusEl = document.getElementById('creator-lookup-status');
+  const resultEl = document.getElementById('creator-result');
+  const historyEl = document.getElementById('scan-history-section');
+  const noScansEl = document.getElementById('no-scans-prompt');
+  const emptyEl = document.getElementById('agency-empty-state');
+
+  btn.disabled = true;
+  btn.textContent = 'Looking up...';
+  statusEl.textContent = 'Searching for creator information...';
+  statusEl.style.display = 'block';
+  resultEl.style.display = 'none';
+  historyEl.style.display = 'none';
+  noScansEl.style.display = 'none';
+  emptyEl.style.display = 'none';
+
+  try {
+    const data = await api('/api/agency-search/lookup', 'POST', { handle }, 30000);
+    console.log('[Creator Lookup] Result:', data);
+
+    if (!data.creator || !data.creator.name) {
+      statusEl.textContent = '✗ Creator not found. Try a different handle or URL.';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    // Render creator card
+    const creator = data.creator;
+    const agency = data.agency;
+
+    // Build platform badges with follower counts
+    const platformsHtml = creator.handles.map(handle => {
+      const platform = handle.platform;
+      const followers = handle.followers ? ` • ${(handle.followers / 1000).toFixed(1)}K` : '';
+      return `<span style="display:inline-flex;align-items:center;gap:6px;background:var(--accent-dim);border:1px solid var(--accent-mid);color:var(--accent);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500">${escapeHtml(platform)}${followers}</span>`;
+    }).join('');
+
+    document.getElementById('creator-result-name').textContent = escapeHtml(creator.name);
+    document.getElementById('creator-result-platforms').innerHTML = platformsHtml;
+    
+    if (agency && agency.name) {
+      document.getElementById('creator-result-agency').textContent = `Represented by ${escapeHtml(agency.name)}`;
+      if (agency.website) {
+        const agencyLink = document.getElementById('creator-result-agency-website');
+        agencyLink.href = agency.website;
+        agencyLink.style.display = 'inline';
+      } else {
+        document.getElementById('creator-result-agency-website').style.display = 'none';
+      }
+    } else {
+      document.getElementById('creator-result-agency').textContent = 'No agency representation found';
+      document.getElementById('creator-result-agency-website').style.display = 'none';
+    }
+
+    resultEl.style.display = 'block';
+    statusEl.style.display = 'none';
+
+    // Show scan history if available
+    if (data.scanHistory && data.scanHistory.length > 0) {
+      const scanList = document.getElementById('creator-scan-history');
+      scanList.innerHTML = data.scanHistory.map(scan => {
+        const dealsText = scan.dealCount ? `${scan.dealCount} deal${scan.dealCount !== 1 ? 's' : ''}` : 'No deals';
+        const date = new Date(scan.date).toLocaleDateString();
+        return `
+          <div class="history-item" onclick="expandScanHistory(this)">
+            <div>
+              <div class="hi-name">${escapeHtml(scan.handle)}</div>
+              <div class="hi-meta">
+                <span>${date}</span>
+                <span>${dealsText}</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <span class="hi-deals">${scan.dealCount || 0}</span>
+              <span style="color:var(--text3);font-size:12px">→</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      historyEl.style.display = 'block';
+      noScansEl.style.display = 'none';
+    } else {
+      historyEl.style.display = 'none';
+      noScansEl.style.display = 'block';
+    }
+
+    emptyEl.style.display = 'none';
+  } catch(e) {
+    console.error('[Creator Lookup] Error:', e);
+    statusEl.textContent = `✗ Error: ${e.message || 'Lookup failed'}`;
+    emptyEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Look Up Creator';
+  }
+}
+
+function scanThisCreator() {
+  const handle = document.getElementById('creator-lookup-input').value.trim();
+  if (!handle) {
+    showStatusMsg('No creator selected', 'error');
+    return;
+  }
+  
+  // Navigate to scanner page and pre-fill the handle
+  navTo('scanner', document.querySelector('.nav-item[onclick*="scanner"]'));
+  setTimeout(() => {
+    document.getElementById('manual-input').value = handle;
+    document.getElementById('input-detected').textContent = `Handle detected: ${escapeHtml(handle)}`;
+    document.getElementById('input-detected').style.display = 'inline-block';
+  }, 100);
+}
+
+function expandScanHistory(element) {
+  // Toggle expand - could be enhanced to show deal details
+  element.style.opacity = element.style.opacity === '0.7' ? '1' : '0.7';
+}
+
+// ── AGENCY SEARCH: SCRAPE (Legacy) ──
 async function scrapeAgency() {
   const urlInput = document.getElementById('agency-url-input');
   const url = urlInput.value.trim();

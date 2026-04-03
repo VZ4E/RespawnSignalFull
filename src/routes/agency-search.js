@@ -732,4 +732,134 @@ router.delete('/:agencyId', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/agency-search/lookup
+ * Look up a creator by handle or profile URL and find their agency representation
+ * 
+ * Body: { handle: string }
+ * Returns: { creator: { name, handles: [{platform, followers}] }, agency: { name, website }, scanHistory: [...] }
+ */
+router.post('/lookup', async (req, res) => {
+  const { handle } = req.body;
+  const userId = req.user.id;
+
+  if (!handle || typeof handle !== 'string') {
+    return res.status(400).json({ error: 'handle is required' });
+  }
+
+  try {
+    const cleanedHandle = cleanHandle(handle);
+    console.log(`[Creator Lookup] Looking up: "${handle}" → cleaned to "${cleanedHandle}"`);
+
+    // Query Perplexity to find creator info and representing agency
+    const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [{
+          role: 'user',
+          content: `Find information about the content creator or influencer with handle "${cleanedHandle}". Return ONLY a JSON object with these exact fields: name (full name), tiktok (handle without @), youtube (channel name), instagram (handle without @), twitter (handle without @), tiktokFollowers (number or null), youtubeFollowers (number or null), instagramFollowers (number or null), twitterFollowers (number or null), agencyName (name of representing agency or null), agencyWebsite (agency website URL or null). Return null for any field you cannot find. Return ONLY valid JSON, no other text.`
+        }],
+        max_tokens: 300
+      })
+    });
+
+    if (!perplexityResponse.ok) {
+      throw new Error(`Perplexity API error: ${perplexityResponse.status}`);
+    }
+
+    const perplexityData = await perplexityResponse.json();
+    const responseText = perplexityData.choices?.[0]?.message?.content || '{}';
+    const cleanedJson = responseText.replace(/```json|```/g, '').trim();
+    const creatorInfo = JSON.parse(cleanedJson);
+
+    console.log(`[Creator Lookup] Perplexity response for "${cleanedHandle}":`, creatorInfo);
+
+    if (!creatorInfo.name) {
+      return res.status(404).json({ error: 'Creator not found', details: 'No creator information available' });
+    }
+
+    // Build handles array with platform and follower counts
+    const handles = [];
+    if (creatorInfo.tiktok) {
+      handles.push({
+        platform: 'TikTok',
+        handle: creatorInfo.tiktok,
+        followers: creatorInfo.tiktokFollowers
+      });
+    }
+    if (creatorInfo.youtube) {
+      handles.push({
+        platform: 'YouTube',
+        handle: creatorInfo.youtube,
+        followers: creatorInfo.youtubeFollowers
+      });
+    }
+    if (creatorInfo.instagram) {
+      handles.push({
+        platform: 'Instagram',
+        handle: creatorInfo.instagram,
+        followers: creatorInfo.instagramFollowers
+      });
+    }
+    if (creatorInfo.twitter) {
+      handles.push({
+        platform: 'Twitter',
+        handle: creatorInfo.twitter,
+        followers: creatorInfo.twitterFollowers
+      });
+    }
+
+    // Build agency object
+    const agency = creatorInfo.agencyName ? {
+      name: creatorInfo.agencyName,
+      website: creatorInfo.agencyWebsite || null
+    } : null;
+
+    // Query scan history from the scans table
+    const { data: scanHistory, error: scanError } = await supabase
+      .from('scans')
+      .select('id, created_at, input_value, results')
+      .eq('user_id', userId)
+      .filter('input_value', 'ilike', `%${cleanedHandle}%`)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (scanError) {
+      console.warn(`[Creator Lookup] Error fetching scan history: ${scanError.message}`);
+    }
+
+    // Parse scan results to extract deal counts
+    const formattedScanHistory = (scanHistory || []).map(scan => {
+      let dealCount = 0;
+      if (scan.results && typeof scan.results === 'object' && scan.results.deals) {
+        dealCount = Array.isArray(scan.results.deals) ? scan.results.deals.length : 0;
+      }
+      return {
+        handle: scan.input_value,
+        date: scan.created_at,
+        dealCount: dealCount
+      };
+    });
+
+    console.log(`[Creator Lookup] Found ${formattedScanHistory.length} scans for "${cleanedHandle}"`);
+
+    res.json({
+      creator: {
+        name: creatorInfo.name,
+        handles: handles
+      },
+      agency: agency,
+      scanHistory: formattedScanHistory
+    });
+  } catch (err) {
+    console.error('[Creator Lookup] Error:', err.message);
+    res.status(500).json({ error: 'Lookup failed', details: err.message });
+  }
+});
+
 module.exports = router;
