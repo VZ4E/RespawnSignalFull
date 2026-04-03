@@ -92,12 +92,35 @@ router.post('/scrape', async (req, res) => {
       count: validCreators.length
     });
   } catch (err) {
-    console.error('[Agency Scrape] Firecrawl Error:', err.message);
-    console.error('[Agency Scrape] Error details:', err);
+    console.error('[Agency Scrape] ============ FIRECRAWL ERROR START ============');
+    console.error('[Agency Scrape] Error message:', err.message);
+    console.error('[Agency Scrape] Error name:', err.name);
+    console.error('[Agency Scrape] Error code:', err.code);
+    console.error('[Agency Scrape] Error status:', err.status);
+    console.error('[Agency Scrape] Error statusCode:', err.statusCode);
+    console.error('[Agency Scrape] Full error object:', JSON.stringify(err, null, 2));
+    
+    if (err.response) {
+      console.error('[Agency Scrape] Response status:', err.response.status);
+      console.error('[Agency Scrape] Response statusText:', err.response.statusText);
+      console.error('[Agency Scrape] Response headers:', JSON.stringify(err.response.headers, null, 2));
+      console.error('[Agency Scrape] Response data:', JSON.stringify(err.response.data, null, 2));
+    }
+    
+    if (err.config) {
+      console.error('[Agency Scrape] Request URL:', err.config.url);
+      console.error('[Agency Scrape] Request method:', err.config.method);
+      console.error('[Agency Scrape] Request headers:', JSON.stringify(err.config.headers, null, 2));
+    }
+    
+    console.error('[Agency Scrape] Stack trace:', err.stack);
+    console.error('[Agency Scrape] ============ FIRECRAWL ERROR END ============');
     
     res.status(500).json({ 
       error: 'Failed to scrape agency creators', 
-      details: err.message
+      details: err.message,
+      errorName: err.name,
+      errorCode: err.code
     });
   }
 });
