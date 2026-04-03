@@ -417,8 +417,12 @@ router.post('/scrape', async (req, res) => {
         return cleaned;
       });
 
+      // Extract the top-level niche (should be same for all creators from same page)
+      const finalNiche = cleanedCreators.length > 0 ? cleanedCreators[0].niche : null;
+
       res.json({
         success: true,
+        finalNiche: finalNiche,
         creators: cleanedCreators,
         count: cleanedCreators.length
       });
