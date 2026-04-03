@@ -193,16 +193,65 @@ router.post('/scrape', async (req, res) => {
         return true;
       });
 
-      // Validate and normalize creator data
-      const validCreators = uniqueCreators
-        .map(c => ({
-          handle: c.handle.toLowerCase().trim().replace(/^@/, ''),
-          name: c.name || c.handle,
-          platforms: (c.platforms || []).map(p => p.toLowerCase().trim()),
-          followerCount: c.followerCount || c.follower_count || 0,
-          description: c.description || '',
-          verified: false
-        }))
+      // Validate, normalize, and clean creator data
+      let validCreators = uniqueCreators
+        .map(c => {
+          let handle = c.handle.toLowerCase().trim().replace(/^@/, '');
+          
+          // Fix 1: Strip URL handles
+          if (handle.startsWith('http://') || handle.startsWith('https://') || handle.startsWith('/')) {
+            // Extract last segment from URL path
+            const urlObj = new URL(handle.startsWith('http') ? handle : `https://example.com${handle}`);
+            handle = urlObj.pathname.split('/').filter(Boolean).pop() || handle;
+          }
+          
+          return {
+            handle: handle,
+            name: (c.name || c.handle).trim(),
+            platforms: (c.platforms || []).map(p => p.toLowerCase().trim()),
+            followerCount: c.followerCount || c.follower_count || 0,
+            description: c.description || '',
+            verified: false,
+            // Track social count for dedup priority
+            socialCount: [c.socials?.tiktok, c.socials?.youtube, c.socials?.instagram, c.socials?.twitter].filter(Boolean).length
+          };
+        })
+        // Fix 2: Filter garbage entries
+        .filter(c => {
+          // Skip if handle contains dulcedo.com
+          if (c.handle.includes('dulcedo.com')) return false;
+          // Skip if name is generic placeholder
+          if (c.name === 'John Doe' || c.name === 'Jane Smith') return false;
+          // Skip if handle is query string
+          if (c.handle.startsWith('?') || c.handle.includes('?view=')) return false;
+          // Skip if name contains Dulcedo (navigation item)
+          if (c.name.toLowerCase().includes('dulcedo')) return false;
+          return true;
+        })
+        // Fix 3: Deduplicate by name (case-insensitive), keeping entry with more socials
+        .reduce((acc, creator) => {
+          const existingIdx = acc.findIndex(existing => 
+            existing.name.toLowerCase() === creator.name.toLowerCase()
+          );
+          
+          if (existingIdx === -1) {
+            // New creator
+            acc.push(creator);
+          } else {
+            // Duplicate name found - keep the one with more social data
+            const existing = acc[existingIdx];
+            const existingSocialCount = existing.socialCount || 0;
+            const newSocialCount = creator.socialCount || 0;
+            
+            if (newSocialCount > existingSocialCount) {
+              console.log(`[Agency Scrape] Dedup by name: replacing "${existing.handle}" with "${creator.handle}" (${newSocialCount} socials vs ${existingSocialCount})`);
+              acc[existingIdx] = creator;
+            } else {
+              console.log(`[Agency Scrape] Dedup by name: keeping "${existing.handle}" over "${creator.handle}" (${existingSocialCount} socials vs ${newSocialCount})`);
+            }
+          }
+          return acc;
+        }, [])
         .slice(0, 500); // Limit to 500 creators max
 
       console.log(`[Agency Scrape] Total unique creators extracted: ${validCreators.length}`);
