@@ -280,9 +280,9 @@ router.post('/scrape', async (req, res) => {
         await new Promise(resolve => setTimeout(resolve, 3000));
         attempts++;
 
-        // Fetch with 10 second timeout to prevent indefinite hangs
+        // Fetch with 60 second timeout to allow Firecrawl time to complete scrape
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
+        const timeout = setTimeout(() => controller.abort(), 60000);
         
         let statusData;
         try {
