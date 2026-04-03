@@ -1844,6 +1844,7 @@ textarea:focus-visible {
               <div style="font-size:16px;font-weight:700;margin-bottom:8px" id="creator-result-name">—</div>
               <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="creator-result-platforms"></div>
             </div>
+            <button class="run-btn" onclick="openCreatorGroupModal()" style="padding:8px 12px;font-size:12px;white-space:nowrap;margin-left:12px">Add to Group</button>
           </div>
           <div id="creator-result-bio" style="display:none;padding:12px;background:var(--surface2);border-radius:8px;margin-bottom:12px;border:1px solid var(--border);font-size:13px;line-height:1.5;color:var(--text1)"></div>
           <div id="creator-contacts" style="display:block"></div>
@@ -2349,6 +2350,7 @@ let currentUser = null;
 let scanHistory = [];
 let scanRange = 3;
 let autoRange = 3;
+let currentCreatorForGroup = null; // Store creator handle for group modal
 
 // ── PRICING CONFIGURATION ──
 const STRIPE_PRICES = {
@@ -4090,6 +4092,13 @@ async function lookupCreator() {
       contactsEl.innerHTML = linksHtml + emailsHtml;
     }
 
+    // Store creator info for group modal
+    currentCreatorForGroup = {
+      handle: creator.handle,
+      displayName: creator.displayName,
+      platform: 'tiktok'
+    };
+
     resultEl.style.display = 'block';
     statusEl.style.display = 'none';
 
@@ -4130,6 +4139,119 @@ async function lookupCreator() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Look Up Creator';
+  }
+}
+
+// ── AGENCY SEARCH: ADD CREATOR TO GROUP ──
+function openCreatorGroupModal() {
+  if (!currentCreatorForGroup) {
+    showStatusMsg('No creator selected', 'error');
+    return;
+  }
+
+  const creator = currentCreatorForGroup;
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.display = 'flex';
+  modal.id = 'creator-group-selector';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
+    <div class="modal-content" style="background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-width:500px">
+      <div class="modal-header" style="border-bottom:1px solid var(--border);padding:20px;margin:0"><h2 style="margin:0;font-size:18px;font-weight:600;color:var(--text)">Add Creator to Group</h2></div>
+      <div style="padding:20px">
+        <p style="font-size:13px;color:var(--text);margin-bottom:16px;line-height:1.5">Add <strong style="color:var(--accent)">@${escapeHtml(creator.handle)}</strong> to which group?</p>
+        
+        <!-- Create New Group Section -->
+        <button id="create-creator-group-btn" style="width:100%;padding:12px 14px;background:var(--accent);border:none;border-radius:8px;color:white;font-weight:600;font-size:13px;cursor:pointer;margin-bottom:16px;transition:all 0.15s" onmouseover="this.style.background='var(--accent-dark)'" onmouseout="this.style.background='var(--accent)'">
+          ✨ Create New Group
+        </button>
+        
+        <!-- Divider with Label -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;opacity:0.5">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:12px;color:var(--text2);font-weight:500">or add to existing group</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+        
+        <!-- Existing Groups List -->
+        <div id="creator-groups-list" style="display:grid;gap:8px;margin-bottom:16px;max-height:320px;overflow-y:auto"></div>
+        <div id="creator-group-msg" style="font-size:13px;display:none;margin-bottom:12px;padding:10px;border-radius:4px;background:var(--surface2)"></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;padding:16px;border-top:1px solid var(--border)">
+        <button id="creator-close-btn" class="btn-ghost" style="padding:10px 20px;border:1px solid var(--border);border-radius:6px;color:var(--text)" onclick="document.getElementById('creator-group-selector').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Set up "Create New Group" button handler
+  const createBtn = document.getElementById('create-creator-group-btn');
+  createBtn.addEventListener('click', async () => {
+    try {
+      const groupName = prompt('Enter group name:');
+      if (!groupName) return;
+      
+      const response = await api('/api/groups', 'POST', { name: groupName });
+      if (response && response.id) {
+        await addCreatorToGroup(response.id, groupName);
+        document.getElementById('creator-group-selector').style.display = 'none';
+        showStatusMsg(`✓ Added @${creator.handle} to "${groupName}"`, 'success');
+      }
+    } catch (e) {
+      showStatusMsg(`Error creating group: ${e.message}`, 'error');
+    }
+  });
+
+  // Load and display existing groups
+  loadCreatorGroupsList();
+}
+
+async function loadCreatorGroupsList() {
+  try {
+    const groups = await api('/api/groups', 'GET');
+    const listEl = document.getElementById('creator-groups-list');
+    
+    if (!groups || groups.length === 0) {
+      listEl.innerHTML = '<p style="font-size:13px;color:var(--text2);padding:20px;text-align:center">No groups yet. Create one above!</p>';
+      return;
+    }
+
+    listEl.innerHTML = groups.map(group => `
+      <button onclick="addCreatorToGroup('${group.id}', '${escapeHtml(group.name)}')" 
+              style="padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;cursor:pointer;text-align:left;transition:all 0.15s"
+              onmouseover="this.style.background='var(--surface1)';this.style.borderColor='var(--accent)'"
+              onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border)'">
+        <div style="font-weight:600">${escapeHtml(group.name)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">${group.memberCount || 0} member${(group.memberCount || 0) !== 1 ? 's' : ''}</div>
+      </button>
+    `).join('');
+  } catch (e) {
+    console.error('[Creator Groups] Error loading groups:', e);
+    document.getElementById('creator-groups-list').innerHTML = `<p style="color:var(--error);font-size:13px">Error loading groups: ${e.message}</p>`;
+  }
+}
+
+async function addCreatorToGroup(groupId, groupName) {
+  if (!currentCreatorForGroup) {
+    showStatusMsg('No creator selected', 'error');
+    return;
+  }
+
+  try {
+    const creator = currentCreatorForGroup;
+    const response = await api(`/api/groups/${groupId}/members`, 'POST', {
+      members: [{
+        platform: 'tiktok',
+        handle: creator.handle
+      }]
+    });
+
+    if (response && response.success) {
+      document.getElementById('creator-group-selector').style.display = 'none';
+      showStatusMsg(`✓ Added @${creator.handle} to "${groupName}"`, 'success');
+    }
+  } catch (e) {
+    showStatusMsg(`Error adding creator to group: ${e.message}`, 'error');
   }
 }
 
