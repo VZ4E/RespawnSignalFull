@@ -4123,6 +4123,20 @@ function openNicheGroupSelector(niche, creators) {
       <div class="modal-header" style="border-bottom:1px solid var(--border);padding:20px;margin:0"><h2 style="margin:0;font-size:18px;font-weight:600;color:var(--text)">Add Creators to Group</h2></div>
       <div style="padding:20px">
         <p style="font-size:13px;color:var(--text);margin-bottom:16px;line-height:1.5">Add all <strong>${creators.length} creator${creators.length !== 1 ? 's' : ''}</strong> from <strong style="color:var(--accent)">${escapeHtml(niche)}</strong> to which group?</p>
+        
+        <!-- Create New Group Section -->
+        <button id="create-niche-group-btn" style="width:100%;padding:12px 14px;background:var(--accent);border:none;border-radius:8px;color:white;font-weight:600;font-size:13px;cursor:pointer;margin-bottom:16px;transition:all 0.15s" onmouseover="this.style.background='var(--accent-dark)'" onmouseout="this.style.background='var(--accent)'">
+          ✨ Create New Group: ${escapeHtml(niche)}
+        </button>
+        
+        <!-- Divider with Label -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;opacity:0.5">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:12px;color:var(--text2);font-weight:500">or add to existing group</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+        
+        <!-- Existing Groups List -->
         <div id="niche-groups-list" style="display:grid;gap:8px;margin-bottom:16px;max-height:320px;overflow-y:auto"></div>
         <div id="niche-group-msg" style="font-size:13px;display:none;margin-bottom:12px;padding:10px;border-radius:4px;background:var(--surface2)"></div>
       </div>
@@ -4132,6 +4146,105 @@ function openNicheGroupSelector(niche, creators) {
     </div>
   `;
   document.body.appendChild(modal);
+
+  // Set up "Create New Group" button handler
+  const createBtn = document.getElementById('create-niche-group-btn');
+  createBtn.addEventListener('click', async () => {
+    try {
+      console.log('[Create Niche Group] Creating group:', niche);
+      createBtn.disabled = true;
+      createBtn.textContent = 'Creating...';
+      
+      // Get auth token
+      let authToken = null;
+      try {
+        authToken = await getValidToken();
+      } catch (tokenErr) {
+        authToken = token || localStorage.getItem('rs_token');
+      }
+      
+      const opts = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (authToken) {
+        opts.headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      opts.body = JSON.stringify({ name: niche });
+      
+      // Create the group
+      let resp = await fetch('/api/groups', opts);
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`HTTP ${resp.status}: ${errText}`);
+      }
+      
+      const groupResp = await resp.json();
+      console.log('[Create Niche Group] Group created:', groupResp);
+      const newGroupId = groupResp.id || groupResp.groupId;
+      
+      if (!newGroupId) {
+        throw new Error('No group ID returned from API');
+      }
+      
+      // Now add all creators to this new group
+      console.log('[Create Niche Group] Adding', creators.length, 'creators to new group');
+      const membersToAdd = creators.map(c => ({
+        platform: c.platform || c.mainPlatform || 'unknown',
+        handle: c.handle || c.socials?.[c.mainPlatform]?.handle || 'unknown'
+      }));
+      
+      const addOpts = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (authToken) {
+        addOpts.headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      addOpts.body = JSON.stringify({ members: membersToAdd });
+      
+      let addResp = await fetch(`/api/groups/${newGroupId}/members`, addOpts);
+      if (!addResp.ok) {
+        const errText = await addResp.text();
+        throw new Error(`Failed to add members: ${errText}`);
+      }
+      
+      const addResult = await addResp.json();
+      console.log('[Create Niche Group] Members added:', addResult);
+      
+      // Show success
+      const msgEl = document.getElementById('niche-group-msg');
+      msgEl.style.display = 'block';
+      msgEl.style.color = 'var(--accent)';
+      msgEl.innerHTML = `<strong style="color:var(--accent)">✓ Created!</strong><br><span style="font-size:12px;color:var(--text2)">Group "${escapeHtml(niche)}" created with ${creators.length} creator${creators.length !== 1 ? 's' : ''}</span>`;
+      msgEl.style.backgroundColor = 'rgba(59, 130, 246, 0.08)';
+      msgEl.style.borderLeft = '3px solid var(--accent)';
+      msgEl.style.paddingLeft = '12px';
+      
+      // Refresh groups list to show newly created group
+      if (typeof loadGroups === 'function') {
+        await loadGroups();
+      }
+      
+      // Close modal after 1.5s
+      setTimeout(() => {
+        document.getElementById('niche-group-selector').style.display = 'none';
+      }, 1500);
+      
+    } catch(e) {
+      console.error('[Create Niche Group] Error:', e);
+      createBtn.disabled = false;
+      createBtn.textContent = '✨ Create New Group: ' + escapeHtml(niche);
+      
+      const msgEl = document.getElementById('niche-group-msg');
+      msgEl.style.display = 'block';
+      msgEl.style.color = '#ef4444';
+      msgEl.innerHTML = `<strong style="color:#ef4444">✗ Error</strong><br><span style="font-size:12px;color:var(--text2)">${e.message}</span>`;
+      msgEl.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+      msgEl.style.borderLeft = '3px solid #ef4444';
+      msgEl.style.paddingLeft = '12px';
+    }
+  });
 
   // Fetch and populate groups
   (async () => {
