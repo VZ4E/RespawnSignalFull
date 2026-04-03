@@ -4080,18 +4080,37 @@ function openNicheGroupSelector(niche, creators) {
     try {
       console.log('[Niche Selector] Fetching groups from /api/groups...');
       
-      const validToken = await getValidToken();
+      let authToken = null;
+      try {
+        authToken = await getValidToken();
+        console.log('[Niche Selector] Got valid token from getValidToken()');
+      } catch (tokenErr) {
+        console.warn('[Niche Selector] getValidToken() failed:', tokenErr.message);
+        // Fallback to global token
+        authToken = token || localStorage.getItem('rs_token');
+        console.log('[Niche Selector] Using fallback token:', authToken ? 'YES (length: ' + authToken.length + ')' : 'NO');
+      }
+      
       const opts = {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       };
-      if (validToken) opts.headers['Authorization'] = `Bearer ${validToken}`;
+      if (authToken) {
+        opts.headers['Authorization'] = `Bearer ${authToken}`;
+        console.log('[Niche Selector] Authorization header set');
+      } else {
+        console.error('[Niche Selector] NO AUTH TOKEN AVAILABLE - request will fail');
+      }
       
       let resp = await fetch('/api/groups', opts);
       const rawText = await resp.text();
-      console.log('[Niche Selector] Raw response text:', rawText);
+      console.log('[Niche Selector] Raw response text length:', rawText.length);
+      console.log('[Niche Selector] Raw response text:', rawText.substring(0, 200));
       console.log('[Niche Selector] Response status:', resp.status);
-      console.log('[Niche Selector] Response headers:', resp.headers);
+      console.log('[Niche Selector] Response headers:', {
+        'content-type': resp.headers.get('content-type'),
+        'content-length': resp.headers.get('content-length')
+      });
       
       if (!resp.ok) {
         throw new Error(`HTTP ${resp.status}: ${rawText}`);
@@ -4134,9 +4153,14 @@ function openNicheGroupSelector(niche, creators) {
       console.log('[Niche Selector] Successfully populated', groupArray.length, 'groups');
     } catch(e) {
       console.error('[Niche Selector] Error loading groups:', e);
+      console.error('[Niche Selector] Error message:', e.message);
       console.error('[Niche Selector] Error stack:', e.stack);
-      document.getElementById('niche-group-msg').textContent = 'Error loading groups: ' + e.message;
-      document.getElementById('niche-group-msg').style.display = 'block';
+      const msgEl = document.getElementById('niche-group-msg');
+      if (msgEl) {
+        msgEl.textContent = 'Error loading groups: ' + e.message;
+        msgEl.style.display = 'block';
+        msgEl.style.color = 'var(--error, #ef4444)';
+      }
     }
   })();
 }

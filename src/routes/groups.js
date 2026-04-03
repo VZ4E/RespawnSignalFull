@@ -15,7 +15,17 @@ router.use(authMiddleware);
 // GET /api/groups - List all groups for user
 router.get('/', async (req, res) => {
   try {
-    console.log('[GET /api/groups] Fetching groups for user:', req.user.id);
+    console.log('[GET /api/groups] ========== REQUEST START ==========');
+    console.log('[GET /api/groups] User ID from req.user:', req.user?.id);
+    console.log('[GET /api/groups] User email from req.user:', req.user?.email);
+    console.log('[GET /api/groups] Auth header present:', !!req.headers.authorization);
+    
+    if (!req.user || !req.user.id) {
+      console.error('[GET /api/groups] MISSING USER - auth middleware failed');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    console.log('[GET /api/groups] Querying creator_groups for user:', req.user.id);
     
     const { data: groups, error } = await supabase
       .from('creator_groups')
@@ -32,11 +42,11 @@ router.get('/', async (req, res) => {
       .order('updated_at', { ascending: false });
 
     if (error) {
-      console.error('[GET /api/groups] Supabase error:', error);
+      console.error('[GET /api/groups] Supabase query error:', error);
       throw error;
     }
 
-    console.log('[GET /api/groups] Found', groups ? groups.length : 0, 'groups');
+    console.log('[GET /api/groups] Query success - found', groups ? groups.length : 0, 'groups');
 
     const result = {
       groups: (groups || []).map(g => ({
@@ -52,10 +62,17 @@ router.get('/', async (req, res) => {
       }))
     };
 
-    console.log('[GET /api/groups] Returning response:', JSON.stringify(result, null, 2));
+    console.log('[GET /api/groups] About to send response - size:', JSON.stringify(result).length, 'bytes');
+    console.log('[GET /api/groups] Response object:', JSON.stringify(result, null, 2));
+    
+    res.setHeader('Content-Type', 'application/json');
     res.json(result);
+    
+    console.log('[GET /api/groups] ========== REQUEST SUCCESS ==========');
   } catch (err) {
-    console.error('[GET /api/groups] Error:', err.message);
+    console.error('[GET /api/groups] ========== REQUEST ERROR ==========');
+    console.error('[GET /api/groups] Error message:', err.message);
+    console.error('[GET /api/groups] Error name:', err.name);
     console.error('[GET /api/groups] Stack:', err.stack);
     res.status(500).json({ 
       error: 'Failed to fetch groups',
