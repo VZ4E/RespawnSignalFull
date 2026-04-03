@@ -43,12 +43,16 @@ function cleanHandle(handle) {
  * Returns { hint, isDirectMatch } where isDirectMatch = true if hint maps directly to a niche category
  */
 function extractNicheHintFromUrl(pageUrl) {
-  if (!pageUrl) return { hint: null, isDirectMatch: false };
+  if (!pageUrl) {
+    console.log(`[extractNicheHintFromUrl] pageUrl is null/undefined`);
+    return { hint: null, isDirectMatch: false };
+  }
   
   try {
     const url = new URL(pageUrl);
     const path = url.pathname.toLowerCase();
     const segments = path.split('/').filter(Boolean);
+    console.log(`[extractNicheHintFromUrl] Parsing URL: "${pageUrl}" | pathname: "${path}" | segments: [${segments.join(', ')}]`);
     
     // Check for specific game/niche segments first
     const nicheMap = {
@@ -77,6 +81,7 @@ function extractNicheHintFromUrl(pageUrl) {
     // Check each segment against niche map
     for (const segment of segments) {
       if (nicheMap[segment]) {
+        console.log(`[extractNicheHintFromUrl] ✓ Found match: segment="${segment}" → hint="${nicheMap[segment]}"`);
         return { 
           hint: nicheMap[segment], 
           isDirectMatch: true 
@@ -86,9 +91,11 @@ function extractNicheHintFromUrl(pageUrl) {
     
     // Generic /gaming path maps to Variety Gaming
     if (segments.includes('gaming')) {
+      console.log(`[extractNicheHintFromUrl] ✓ Found /gaming segment → Variety Gaming`);
       return { hint: 'Variety Gaming', isDirectMatch: true };
     }
     
+    console.log(`[extractNicheHintFromUrl] ✗ No match found for segments: [${segments.join(', ')}]`);
     return { hint: null, isDirectMatch: false };
   } catch (e) {
     console.warn(`[extractNicheHintFromUrl] Failed to parse URL "${pageUrl}":`, e.message);
@@ -312,7 +319,9 @@ router.post('/scrape', async (req, res) => {
           handle = cleanHandle(handle);
           
           // Extract niche hint from source page URL
+          console.log(`[Agency Scrape] Processing creator ${c.name || c.handle}: _sourcePageUrl = "${c._sourcePageUrl}"`);
           const { hint: nicheHint, isDirectMatch } = extractNicheHintFromUrl(c._sourcePageUrl);
+          console.log(`[Agency Scrape] Niche hint result for ${c.name || c.handle}: hint="${nicheHint}", isDirectMatch=${isDirectMatch}`);
           
           return {
             handle: handle,
