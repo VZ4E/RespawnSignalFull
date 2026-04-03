@@ -38,6 +38,20 @@ function cleanHandle(handle) {
 }
 
 /**
+ * Extract path from URL for Firecrawl includePaths filter
+ * e.g., https://dulcedo.com/profiles/gaming/fortnite → /profiles/gaming/fortnite
+ */
+function extractPathFromUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.pathname || '/';
+  } catch (e) {
+    console.warn(`[extractPathFromUrl] Failed to parse URL "${url}":`, e.message);
+    return '/';
+  }
+}
+
+/**
  * Extract niche hint from page URL
  * Maps path segments to niche categories
  * Returns { hint, isDirectMatch } where isDirectMatch = true if hint maps directly to a niche category
@@ -142,8 +156,10 @@ async function enrichCreator(creator, nicheHint = null, isDirectMatch = false) {
     // Use direct niche match if available, otherwise use Perplexity response
     const finalNiche = isDirectMatch ? nicheHint : (enriched.niche || 'Uncategorized');
     
+    console.log(`[Enrichment] Creator: ${creator.name || creator.handle} | nicheHint: ${nicheHint} | isDirectMatch: ${isDirectMatch} | finalNiche: ${finalNiche} | perplexityNiche: ${enriched.niche}`);
+    
     if (isDirectMatch && nicheHint) {
-      console.log(`[Enrichment] Using direct niche hint "${nicheHint}" for ${creator.name || creator.handle} (skipped Perplexity niche classification)`);
+      console.log(`[Enrichment] ✓ Using direct niche hint "${nicheHint}" for ${creator.name || creator.handle} (skipped Perplexity niche classification)`);
     }
 
     return {
@@ -161,10 +177,11 @@ async function enrichCreator(creator, nicheHint = null, isDirectMatch = false) {
       mainPlatform: enriched.mainPlatform || null
     };
   } catch (e) {
-    console.warn(`[Enrichment] Error enriching creator ${creator.name || creator.handle}:`, e.message);
+    const fallbackNiche = isDirectMatch ? nicheHint : 'Uncategorized';
+    console.warn(`[Enrichment] Error enriching creator ${creator.name || creator.handle}: ${e.message} | Using fallback niche: ${fallbackNiche} (isDirectMatch: ${isDirectMatch})`);
     return { 
       ...creator, 
-      niche: isDirectMatch ? nicheHint : 'Uncategorized', 
+      niche: fallbackNiche, 
       platforms: creator.platforms || [], 
       socials: {},
       mainPlatform: null
@@ -212,6 +229,8 @@ router.post('/scrape', async (req, res) => {
       body: JSON.stringify({
         url: normalizedUrl,
         limit: 20,
+        allowExternalLinks: false,
+        includePaths: [extractPathFromUrl(normalizedUrl)],
         scrapeOptions: {
           formats: ['extract'],
           extract: {
