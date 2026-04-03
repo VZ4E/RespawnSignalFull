@@ -4504,10 +4504,20 @@ async function api(path, method = 'GET', body = null) {
       }
     }
     
-    const data = await resp.json();
+    let data;
+    try {
+      const responseText = await resp.text();
+      console.log(`[api] Response from ${path}: status=${resp.status}, text="${responseText.substring(0, 100)}..."`);
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (parseErr) {
+      console.error(`[api] Failed to parse response from ${path}:`, parseErr);
+      console.error(`[api] Response status:`, resp.status);
+      throw new Error(`Invalid response from ${path}: ${parseErr.message}`);
+    }
     if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
     return data;
   } catch (err) {
+    console.error('[api] Request error:', err);
     throw err;
   }
 }
