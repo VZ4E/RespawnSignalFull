@@ -3980,18 +3980,18 @@ async function scrapeAgency() {
   const emptyEl = document.getElementById('agency-empty-state');
 
   btn.disabled = true;
-  btn.textContent = 'Scraping...';
-  statusEl.textContent = 'Scraping agency roster...';
+  btn.textContent = 'Crawling...';
+  statusEl.textContent = 'Crawling site... this may take 30-60 seconds';
   statusEl.style.display = 'block';
   resultsEl.style.display = 'none';
   emptyEl.style.display = 'none';
 
   try {
-    const data = await api('/api/agency-search/scrape', 'POST', { url });
-    console.log('[Agency Search] Scrape result:', data);
+    const data = await api('/api/agency-search/scrape', 'POST', { url }, 120000); // 2 min timeout
+    console.log('[Agency Search] Crawl result:', data);
 
     if (!data.creators || data.creators.length === 0) {
-      statusEl.textContent = 'No creators found. Try another URL.';
+      statusEl.textContent = 'No creators found on this site. Try another URL.';
       emptyEl.style.display = 'block';
       return;
     }

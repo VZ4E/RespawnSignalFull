@@ -27,7 +27,7 @@ router.post('/scrape', async (req, res) => {
   }
 
   try {
-    console.log(`[Agency Scrape] Starting Firecrawl scrape for URL: ${url}`);
+    console.log(`[Agency Scrape] Starting Firecrawl crawl for URL: ${url}`);
 
     // Normalize the URL
     let normalizedUrl = url.toLowerCase().trim();
@@ -35,10 +35,10 @@ router.post('/scrape', async (req, res) => {
       normalizedUrl = `https://${normalizedUrl}`;
     }
 
-    console.log(`[Agency Scrape] Calling Firecrawl REST API for: ${normalizedUrl}`);
+    console.log(`[Agency Scrape] Initiating site crawl for: ${normalizedUrl}`);
 
-    // Call Firecrawl REST API directly
-    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    // Step 1: Initiate crawl with extraction on all pages
+    const crawlResponse = await fetch('https://api.firecrawl.dev/v1/crawl', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${firecrawlKey}`,
@@ -46,22 +46,25 @@ router.post('/scrape', async (req, res) => {
       },
       body: JSON.stringify({
         url: normalizedUrl,
-        formats: ['extract'],
-        extract: {
-          prompt: 'Extract all talent, creator, and influencer roster entries from this page. For each person return their social media handle, full name, platforms they are on, follower count if available, and a short description.',
-          schema: {
-            type: 'object',
-            properties: {
-              creators: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    handle: { type: 'string' },
-                    name: { type: 'string' },
-                    platforms: { type: 'array', items: { type: 'string' } },
-                    followerCount: { type: 'number' },
-                    description: { type: 'string' }
+        limit: 20,
+        scrapeOptions: {
+          formats: ['extract'],
+          extract: {
+            prompt: 'Extract all talent, creator, and influencer roster entries from this page. For each person return their social media handle, full name, platforms they are on, follower count if available, and a short description. Only return people who are talent/creators/influencers represented by this agency.',
+            schema: {
+              type: 'object',
+              properties: {
+                creators: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      handle: { type: 'string' },
+                      name: { type: 'string' },
+                      platforms: { type: 'array', items: { type: 'string' } },
+                      followerCount: { type: 'number' },
+                      description: { type: 'string' }
+                    }
                   }
                 }
               }
@@ -71,42 +74,84 @@ router.post('/scrape', async (req, res) => {
       })
     });
 
-    console.log(`[Agency Scrape] Firecrawl response status: ${response.status}`);
+    console.log(`[Agency Scrape] Crawl initiation response status: ${crawlResponse.status}`);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Agency Scrape] Firecrawl API error (${response.status}):`, errorText);
-      return res.status(response.status).json({ 
-        error: `Firecrawl API error (${response.status})`,
+    if (!crawlResponse.ok) {
+      const errorText = await crawlResponse.text();
+      console.error(`[Agency Scrape] Firecrawl crawl error (${crawlResponse.status}):`, errorText);
+      return res.status(crawlResponse.status).json({ 
+        error: `Firecrawl crawl error (${crawlResponse.status})`,
         details: errorText
       });
     }
 
-    const data = await response.json();
-    console.log(`[Agency Scrape] Firecrawl response data:`, JSON.stringify(data, null, 2));
+    const crawlData = await crawlResponse.json();
+    console.log(`[Agency Scrape] Crawl initiated with ID:`, crawlData.id);
 
-    const creators = data.extract?.creators || data.data?.extract?.creators || [];
-    
-    // Validate and normalize creator data
-    const validCreators = (creators || [])
-      .filter(c => c.handle && typeof c.handle === 'string')
-      .map(c => ({
-        handle: c.handle.toLowerCase().trim().replace(/^@/, ''),
-        name: c.name || c.handle,
-        platforms: (c.platforms || []).map(p => p.toLowerCase().trim()),
-        followerCount: c.followerCount || c.follower_count || 0,
-        description: c.description || '',
-        verified: false
-      }))
-      .slice(0, 200); // Limit to 200 creators per scrape
+    // Step 2: Poll for crawl completion
+    if (crawlData.success && crawlData.id) {
+      let completed = false;
+      let attempts = 0;
+      let allCreators = [];
 
-    console.log(`[Agency Scrape] Extracted ${validCreators.length} creators from ${normalizedUrl}`);
+      console.log(`[Agency Scrape] Polling for crawl completion (up to 30 attempts, 3s interval)...`);
 
-    res.json({
-      success: true,
-      creators: validCreators,
-      count: validCreators.length
-    });
+      while (!completed && attempts < 30) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        attempts++;
+
+        const statusResponse = await fetch(`https://api.firecrawl.dev/v1/crawl/${crawlData.id}`, {
+          headers: { 'Authorization': `Bearer ${firecrawlKey}` }
+        });
+        const statusData = await statusResponse.json();
+
+        console.log(`[Agency Scrape] Poll attempt ${attempts}: status=${statusData.status}, pages=${(statusData.data || []).length}`);
+
+        if (statusData.data && statusData.data.length > 0) {
+          // Extract creators from all crawled pages
+          for (const page of statusData.data) {
+            const pageCreators = page.extract?.creators || [];
+            console.log(`[Agency Scrape] Found ${pageCreators.length} creators on page: ${page.url}`);
+            allCreators = allCreators.concat(pageCreators);
+          }
+        }
+
+        if (statusData.status === 'completed') {
+          completed = true;
+          console.log(`[Agency Scrape] Crawl completed after ${attempts} polls`);
+        }
+      }
+
+      // Deduplicate by handle
+      const seen = new Set();
+      const uniqueCreators = allCreators.filter(c => {
+        if (!c.handle || seen.has(c.handle)) return false;
+        seen.add(c.handle);
+        return true;
+      });
+
+      // Validate and normalize creator data
+      const validCreators = uniqueCreators
+        .map(c => ({
+          handle: c.handle.toLowerCase().trim().replace(/^@/, ''),
+          name: c.name || c.handle,
+          platforms: (c.platforms || []).map(p => p.toLowerCase().trim()),
+          followerCount: c.followerCount || c.follower_count || 0,
+          description: c.description || '',
+          verified: false
+        }))
+        .slice(0, 500); // Limit to 500 creators max
+
+      console.log(`[Agency Scrape] Total unique creators extracted: ${validCreators.length}`);
+
+      res.json({
+        success: true,
+        creators: validCreators,
+        count: validCreators.length
+      });
+    } else {
+      throw new Error('Crawl initiation failed: no crawl ID received');
+    }
   } catch (err) {
     console.error('[Agency Scrape] ============ FIRECRAWL ERROR START ============');
     console.error('[Agency Scrape] Error message:', err.message);
