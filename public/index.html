@@ -4299,6 +4299,12 @@ async function addNicheToGroup(groupId, groupName, creators) {
     closeBtn.style.color = 'var(--accent)';
     closeBtn.style.borderColor = 'var(--accent)';
     
+    // Refresh groups list immediately so member counts update
+    if (typeof loadGroups === 'function') {
+      console.log('[addNicheToGroup] Refreshing groups list...');
+      await loadGroups();
+    }
+    
   } catch(e) {
     console.error('[addNicheToGroup] Error:', e);
     msgEl.style.color = '#ef4444';
