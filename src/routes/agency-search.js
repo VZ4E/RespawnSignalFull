@@ -37,15 +37,80 @@ function cleanHandle(handle) {
   return handle;
 }
 
+/**
+ * Extract niche hint from page URL
+ * Maps path segments to niche categories
+ * Returns { hint, isDirectMatch } where isDirectMatch = true if hint maps directly to a niche category
+ */
+function extractNicheHintFromUrl(pageUrl) {
+  if (!pageUrl) return { hint: null, isDirectMatch: false };
+  
+  try {
+    const url = new URL(pageUrl);
+    const path = url.pathname.toLowerCase();
+    const segments = path.split('/').filter(Boolean);
+    
+    // Check for specific game/niche segments first
+    const nicheMap = {
+      'fortnite': 'Fortnite/Battle Royale',
+      'valorant': 'FPS/Competitive',
+      'cs2': 'FPS/Competitive',
+      'csgo': 'FPS/Competitive',
+      'apex': 'FPS/Competitive',
+      'minecraft': 'Minecraft/Sandbox',
+      'roblox': 'Roblox/Family Gaming',
+      'fitness': 'Fitness/Gaming',
+      'lifestyle': 'Lifestyle/IRL',
+      'irl': 'Lifestyle/IRL',
+      'rpg': 'RPG/Story Games',
+      'strategy': 'Strategy/Esports',
+      'esports': 'Strategy/Esports',
+      'sports': 'Sports Games',
+      'variety': 'Variety Gaming',
+      'gaming': 'Variety Gaming',
+      'tech': 'Tech/Gaming',
+      'entertainment': 'Entertainment',
+      'influencer': 'Influencer',
+      'athlete': 'Athlete'
+    };
+    
+    // Check each segment against niche map
+    for (const segment of segments) {
+      if (nicheMap[segment]) {
+        return { 
+          hint: nicheMap[segment], 
+          isDirectMatch: true 
+        };
+      }
+    }
+    
+    // Generic /gaming path maps to Variety Gaming
+    if (segments.includes('gaming')) {
+      return { hint: 'Variety Gaming', isDirectMatch: true };
+    }
+    
+    return { hint: null, isDirectMatch: false };
+  } catch (e) {
+    console.warn(`[extractNicheHintFromUrl] Failed to parse URL "${pageUrl}":`, e.message);
+    return { hint: null, isDirectMatch: false };
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ENRICHMENT FUNCTION
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Enrich a creator with social media profiles and niche using Perplexity
+ * @param {Object} creator - Creator object
+ * @param {string} nicheHint - Optional niche hint extracted from page URL
+ * @param {boolean} isDirectMatch - If true, use niche hint directly without calling Perplexity for niche
  */
-async function enrichCreator(creator) {
+async function enrichCreator(creator, nicheHint = null, isDirectMatch = false) {
   try {
+    // If niche hint is a direct match, we only need to find social handles
+    const nicheContext = nicheHint ? `This creator was found on a ${nicheHint} agency page. Use this as strong context when determining their niche category.` : '';
+    
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -56,7 +121,7 @@ async function enrichCreator(creator) {
         model: 'sonar',
         messages: [{
           role: 'user',
-          content: `Find the social media profiles for the content creator or influencer named "${creator.name || creator.handle}". Return ONLY a JSON object with these fields: tiktok (handle without @), youtube (channel name or handle), instagram (handle without @), twitter (handle without @), followerCount (their largest platform follower count as a number), mainPlatform (their primary platform: TikTok/YouTube/Instagram/Twitch), niche (one of: Fortnite/Battle Royale, FPS/Competitive, Minecraft/Sandbox, Roblox/Family Gaming, Fitness/Gaming, Lifestyle/IRL, RPG/Story Games, Strategy/Esports, Sports Games, Variety Gaming, Tech/Gaming, Entertainment, Influencer, Athlete, Uncategorized). Return null for any field you cannot find. Return ONLY the JSON object, no other text.`
+          content: `Find the social media profiles for the content creator or influencer named "${creator.name || creator.handle}". ${nicheContext} Return ONLY a JSON object with these fields: tiktok (handle without @), youtube (channel name or handle), instagram (handle without @), twitter (handle without @), followerCount (their largest platform follower count as a number), mainPlatform (their primary platform: TikTok/YouTube/Instagram/Twitch)${isDirectMatch ? '' : ', niche (one of: Fortnite/Battle Royale, FPS/Competitive, Minecraft/Sandbox, Roblox/Family Gaming, Fitness/Gaming, Lifestyle/IRL, RPG/Story Games, Strategy/Esports, Sports Games, Variety Gaming, Tech/Gaming, Entertainment, Influencer, Athlete, Uncategorized)'}. Return null for any field you cannot find. Return ONLY the JSON object, no other text.`
         }],
         max_tokens: 200
       })
@@ -74,12 +139,19 @@ async function enrichCreator(creator) {
     if (enriched.instagram) platforms.push('Instagram');
     if (enriched.twitter) platforms.push('Twitter');
 
+    // Use direct niche match if available, otherwise use Perplexity response
+    const finalNiche = isDirectMatch ? nicheHint : (enriched.niche || 'Uncategorized');
+    
+    if (isDirectMatch && nicheHint) {
+      console.log(`[Enrichment] Using direct niche hint "${nicheHint}" for ${creator.name || creator.handle} (skipped Perplexity niche classification)`);
+    }
+
     return {
       ...creator,
       handle: enriched.tiktok || enriched.instagram || enriched.youtube || creator.handle,
       platforms,
       followerCount: enriched.followerCount || creator.followerCount,
-      niche: enriched.niche || 'Uncategorized',
+      niche: finalNiche,
       socials: {
         tiktok: enriched.tiktok || null,
         youtube: enriched.youtube || null,
@@ -92,7 +164,7 @@ async function enrichCreator(creator) {
     console.warn(`[Enrichment] Error enriching creator ${creator.name || creator.handle}:`, e.message);
     return { 
       ...creator, 
-      niche: 'Uncategorized', 
+      niche: isDirectMatch ? nicheHint : 'Uncategorized', 
       platforms: creator.platforms || [], 
       socials: {},
       mainPlatform: null
@@ -201,11 +273,13 @@ router.post('/scrape', async (req, res) => {
         console.log(`[Agency Scrape] Poll attempt ${attempts}: status=${statusData.status}, pages=${(statusData.data || []).length}`);
 
         if (statusData.data && statusData.data.length > 0) {
-          // Extract creators from all crawled pages
+          // Extract creators from all crawled pages, tracking source page for niche hints
           for (const page of statusData.data) {
             const pageCreators = page.extract?.creators || [];
             console.log(`[Agency Scrape] Found ${pageCreators.length} creators on page: ${page.url}`);
-            allCreators = allCreators.concat(pageCreators);
+            // Attach source page URL to each creator for niche hint extraction
+            const creatorsWithPageUrl = pageCreators.map(c => ({ ...c, _sourcePageUrl: page.url }));
+            allCreators = allCreators.concat(creatorsWithPageUrl);
           }
         }
 
@@ -231,6 +305,9 @@ router.post('/scrape', async (req, res) => {
           // Fix 1: Strip URL handles (safely handles malformed URLs)
           handle = cleanHandle(handle);
           
+          // Extract niche hint from source page URL
+          const { hint: nicheHint, isDirectMatch } = extractNicheHintFromUrl(c._sourcePageUrl);
+          
           return {
             handle: handle,
             name: (c.name || c.handle).trim(),
@@ -239,7 +316,10 @@ router.post('/scrape', async (req, res) => {
             description: c.description || '',
             verified: false,
             // Track social count for dedup priority
-            socialCount: [c.socials?.tiktok, c.socials?.youtube, c.socials?.instagram, c.socials?.twitter].filter(Boolean).length
+            socialCount: [c.socials?.tiktok, c.socials?.youtube, c.socials?.instagram, c.socials?.twitter].filter(Boolean).length,
+            // Niche hint from URL for Perplexity enrichment
+            _nicheHint: nicheHint,
+            _nicheIsDirectMatch: isDirectMatch
           };
         })
         // Fix 2: Filter garbage entries
@@ -288,16 +368,28 @@ router.post('/scrape', async (req, res) => {
       for (let i = 0; i < validCreators.length; i += 5) {
         const batch = validCreators.slice(i, i + 5);
         console.log(`[Agency Scrape] Enriching batch ${Math.floor(i / 5) + 1}/${Math.ceil(validCreators.length / 5)}`);
-        const results = await Promise.all(batch.map(enrichCreator));
+        const results = await Promise.all(batch.map(creator => 
+          enrichCreator(creator, creator._nicheHint, creator._nicheIsDirectMatch)
+        ));
         enriched.push(...results);
       }
 
       console.log(`[Agency Scrape] Enrichment complete. Returning ${enriched.length} enriched creators.`);
 
+      // Remove internal fields before sending to frontend
+      const cleanedCreators = enriched.map(c => {
+        const cleaned = { ...c };
+        delete cleaned._sourcePageUrl;
+        delete cleaned._nicheHint;
+        delete cleaned._nicheIsDirectMatch;
+        delete cleaned.socialCount;
+        return cleaned;
+      });
+
       res.json({
         success: true,
-        creators: enriched,
-        count: enriched.length
+        creators: cleanedCreators,
+        count: cleanedCreators.length
       });
     } else {
       throw new Error('Crawl initiation failed: no crawl ID received');
