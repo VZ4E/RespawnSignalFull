@@ -759,27 +759,40 @@ router.post('/lookup', async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'sonar',
+        model: 'sonar-pro',
         messages: [{
           role: 'user',
-          content: `Search the web for information about the content creator or influencer with handle "${cleanedHandle}". Find: their full name, all social media handles and follower counts, and most importantly whether they are represented by a talent agency or management company. Search specifically for "${cleanedHandle} talent agency", "${cleanedHandle} management", "${cleanedHandle} represented by", and any agency affiliations mentioned on their social media profiles.
+          content: `Search the web comprehensively for the content creator or influencer with handle @${cleanedHandle}. This handle likely belongs to a popular TikTok, YouTube, or Instagram creator. Find and return:
+1. Their real/full name
+2. All social media accounts (TikTok, YouTube, Instagram, Twitter) with exact handles and current follower counts
+3. Any talent agency or management company representing them (e.g., Dulcedo Management, TalentX, etc.)
+4. Agency website URL if applicable
 
-Return ONLY a JSON object with these exact fields:
-- name: full name (string or null)
-- tiktok: TikTok handle without @ (string or null)
-- youtube: YouTube channel name (string or null)
-- instagram: Instagram handle without @ (string or null)
-- twitter: Twitter handle without @ (string or null)
-- tiktokFollowers: TikTok follower count (number or null)
-- youtubeFollowers: YouTube subscriber count (number or null)
-- instagramFollowers: Instagram follower count (number or null)
-- twitterFollowers: Twitter follower count (number or null)
-- agencyName: name of representing talent agency or management company (string or null)
-- agencyWebsite: agency website URL (string or null)
+Search specifically for:
+- "${cleanedHandle}" on TikTok, YouTube, Instagram
+- "@${cleanedHandle}" across all major platforms  
+- "${cleanedHandle} talent agency", "${cleanedHandle} management", "${cleanedHandle} represented by"
+- "Dulcedo" or other agency names associated with this handle
+- Any verified profiles or official accounts
 
-Return null for any field you cannot find. Return ONLY valid JSON, no markdown, no other text.`
+Return ONLY valid JSON with these fields (set to null if not found):
+{
+  "name": "full name as a string",
+  "tiktok": "handle without @",
+  "youtube": "channel name",
+  "instagram": "handle without @",
+  "twitter": "handle without @",
+  "tiktokFollowers": 0,
+  "youtubeFollowers": 0,
+  "instagramFollowers": 0,
+  "twitterFollowers": 0,
+  "agencyName": "talent agency name",
+  "agencyWebsite": "https://agency-url.com"
+}
+
+Return ONLY the JSON object. Do not include markdown, code blocks, or any other text.`
         }],
-        max_tokens: 300
+        max_tokens: 400
       })
     });
 
@@ -794,7 +807,11 @@ Return null for any field you cannot find. Return ONLY valid JSON, no markdown, 
 
     console.log(`[Creator Lookup] Perplexity response for "${cleanedHandle}":`, creatorInfo);
 
-    if (!creatorInfo.name) {
+    // Only return 404 if we have NO data at all (all fields null including handles)
+    const hasAnyData = creatorInfo.name || creatorInfo.tiktok || creatorInfo.youtube || 
+                       creatorInfo.instagram || creatorInfo.twitter || creatorInfo.agencyName;
+    
+    if (!hasAnyData) {
       return res.status(404).json({ error: 'Creator not found', details: 'No creator information available' });
     }
 
