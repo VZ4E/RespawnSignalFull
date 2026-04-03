@@ -762,7 +762,22 @@ router.post('/lookup', async (req, res) => {
         model: 'sonar',
         messages: [{
           role: 'user',
-          content: `Find information about the content creator or influencer with handle "${cleanedHandle}". Return ONLY a JSON object with these exact fields: name (full name), tiktok (handle without @), youtube (channel name), instagram (handle without @), twitter (handle without @), tiktokFollowers (number or null), youtubeFollowers (number or null), instagramFollowers (number or null), twitterFollowers (number or null), agencyName (name of representing agency or null), agencyWebsite (agency website URL or null). Return null for any field you cannot find. Return ONLY valid JSON, no other text.`
+          content: `Search the web for information about the content creator or influencer with handle "${cleanedHandle}". Find: their full name, all social media handles and follower counts, and most importantly whether they are represented by a talent agency or management company. Search specifically for "${cleanedHandle} talent agency", "${cleanedHandle} management", "${cleanedHandle} represented by", and any agency affiliations mentioned on their social media profiles.
+
+Return ONLY a JSON object with these exact fields:
+- name: full name (string or null)
+- tiktok: TikTok handle without @ (string or null)
+- youtube: YouTube channel name (string or null)
+- instagram: Instagram handle without @ (string or null)
+- twitter: Twitter handle without @ (string or null)
+- tiktokFollowers: TikTok follower count (number or null)
+- youtubeFollowers: YouTube subscriber count (number or null)
+- instagramFollowers: Instagram follower count (number or null)
+- twitterFollowers: Twitter follower count (number or null)
+- agencyName: name of representing talent agency or management company (string or null)
+- agencyWebsite: agency website URL (string or null)
+
+Return null for any field you cannot find. Return ONLY valid JSON, no markdown, no other text.`
         }],
         max_tokens: 300
       })
@@ -823,9 +838,9 @@ router.post('/lookup', async (req, res) => {
     // Query scan history from the scans table
     const { data: scanHistory, error: scanError } = await supabase
       .from('scans')
-      .select('id, created_at, input_value, results')
+      .select('id, created_at, username, results')
       .eq('user_id', userId)
-      .filter('input_value', 'ilike', `%${cleanedHandle}%`)
+      .filter('username', 'ilike', `%${cleanedHandle}%`)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -840,7 +855,7 @@ router.post('/lookup', async (req, res) => {
         dealCount = Array.isArray(scan.results.deals) ? scan.results.deals.length : 0;
       }
       return {
-        handle: scan.input_value,
+        handle: scan.username,
         date: scan.created_at,
         dealCount: dealCount
       };
