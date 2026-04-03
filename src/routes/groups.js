@@ -15,6 +15,8 @@ router.use(authMiddleware);
 // GET /api/groups - List all groups for user
 router.get('/', async (req, res) => {
   try {
+    console.log('[GET /api/groups] Fetching groups for user:', req.user.id);
+    
     const { data: groups, error } = await supabase
       .from('creator_groups')
       .select(`
@@ -29,10 +31,15 @@ router.get('/', async (req, res) => {
       .eq('user_id', req.user.id)
       .order('updated_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[GET /api/groups] Supabase error:', error);
+      throw error;
+    }
 
-    res.json({
-      groups: groups.map(g => ({
+    console.log('[GET /api/groups] Found', groups ? groups.length : 0, 'groups');
+
+    const result = {
+      groups: (groups || []).map(g => ({
         id: g.id,
         name: g.name,
         description: g.description,
@@ -43,10 +50,17 @@ router.get('/', async (req, res) => {
         created_at: g.created_at,
         updated_at: g.updated_at
       }))
-    });
+    };
+
+    console.log('[GET /api/groups] Returning response:', JSON.stringify(result, null, 2));
+    res.json(result);
   } catch (err) {
-    console.error('GET /api/groups error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch groups' });
+    console.error('[GET /api/groups] Error:', err.message);
+    console.error('[GET /api/groups] Stack:', err.stack);
+    res.status(500).json({ 
+      error: 'Failed to fetch groups',
+      message: err.message 
+    });
   }
 });
 
