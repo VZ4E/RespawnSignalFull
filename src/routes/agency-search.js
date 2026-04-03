@@ -63,7 +63,7 @@ function isBusinessEmail(email) {
 
 /**
  * Fetch TikTok profile data using the RapidAPI endpoint
- * Returns: { displayName, bio, followers, following, bioLinks, emails }
+ * Returns: { displayName, bio, bioLinks, emails, socialHandles: { instagram, twitter, youtube } }
  */
 async function fetchTikTokProfile(username) {
   // Normalize username to lowercase for TikTok API
@@ -96,30 +96,26 @@ async function fetchTikTokProfile(username) {
       return null;
     }
     
-    // Debug: Log exact field keys and follower count paths
+    // Debug: Log exact field keys and social handles
     console.log(`[TikTok Profile] userData keys:`, Object.keys(userInfo || {}));
-    console.log(`[TikTok Profile] followerCount check:`, userInfo?.followerCount, userInfo?.fans, userInfo?.stats?.followerCount, userInfo?.statsV2?.followerCount);
+    console.log(`[TikTok Profile] Social handles - Instagram:`, userInfo?.ins_id, `Twitter:`, userInfo?.twitter_id, `YouTube:`, userInfo?.youtube_channel_id);
     
-    // Extract profile data with multiple field paths for follower count
+    // Extract profile data
     const displayName = userInfo.nickname || userInfo.user?.nickname || userInfo.uniqueId || normalizedUsername;
     const bio = userInfo.signature || userInfo.user?.signature || '';
     
-    // Try multiple paths for follower/following counts (check common variations)
-    const followers = userInfo.followerCount || 
-                     userInfo.fans || 
-                     userInfo.stats?.followerCount || 
-                     userInfo.statsV2?.followerCount ||
-                     userInfo.user?.followerCount || 
-                     userInfo.followers || 
-                     0;
-    const following = userInfo.followingCount || 
-                     userInfo.stats?.followingCount ||
-                     userInfo.statsV2?.followingCount ||
-                     userInfo.user?.followingCount || 
-                     userInfo.following || 
-                     0;
+    // Extract linked social media accounts
+    const socialHandles = {};
+    if (userInfo?.ins_id) socialHandles.instagram = userInfo.ins_id;
+    if (userInfo?.twitter_id) socialHandles.twitter = userInfo.twitter_id;
+    if (userInfo?.youtube_channel_id) {
+      socialHandles.youtube = {
+        channelId: userInfo.youtube_channel_id,
+        title: userInfo.youtube_channel_title || 'YouTube'
+      };
+    }
     
-    console.log(`[TikTok Profile] Extracted for @${normalizedUsername}: name="${displayName}", followers=${followers}, bio="${bio.substring(0, 100)}..."`);
+    console.log(`[TikTok Profile] Extracted for @${normalizedUsername}: name="${displayName}", bio="${bio.substring(0, 100)}...", socialHandles:`, socialHandles);
     
     // Extract links and emails from bio (raw data only)
     const bioLinks = [];
@@ -152,10 +148,9 @@ async function fetchTikTokProfile(username) {
     return {
       displayName,
       bio,
-      followers,
-      following,
       bioLinks,
-      emails
+      emails,
+      socialHandles
     };
   } catch (err) {
     console.error(`[TikTok Profile] Error fetching profile for @${username}:`, err.message);
@@ -951,10 +946,9 @@ router.post('/lookup', async (req, res) => {
         displayName: profileData.displayName || null,
         handle: normalizedHandle,
         bio: profileData.bio || null,
-        followers: profileData.followers || null,
-        following: profileData.following || null,
         bioLinks: profileData.bioLinks || [],
-        emails: profileData.emails || []
+        emails: profileData.emails || [],
+        socialHandles: profileData.socialHandles || {}
       },
       scanHistory: formattedScanHistory
     });

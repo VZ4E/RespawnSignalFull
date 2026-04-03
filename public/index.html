@@ -4060,10 +4060,15 @@ async function lookupCreator() {
     // Render creator card
     const creator = data.creator;
 
-    // Display creator name and follower count
+    // Display creator name
     document.getElementById('creator-result-name').textContent = escapeHtml(creator.displayName);
-    const followerText = creator.followers ? ` • ${(creator.followers / 1000).toFixed(1)}K followers` : '';
-    document.getElementById('creator-result-platforms').textContent = `TikTok${followerText}`;
+    
+    // Display platform badges from linked social accounts
+    const platforms = ['TikTok'];
+    if (creator.socialHandles?.instagram) platforms.push('Instagram');
+    if (creator.socialHandles?.twitter) platforms.push('Twitter/X');
+    if (creator.socialHandles?.youtube) platforms.push('YouTube');
+    document.getElementById('creator-result-platforms').textContent = platforms.join(' • ');
     
     // Display bio
     const bioEl = document.getElementById('creator-result-bio');
