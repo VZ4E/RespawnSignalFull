@@ -48,8 +48,22 @@ function cleanHandle(handle) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * Check if an email is a business/professional email (not a common personal domain)
+ */
+function isBusinessEmail(email) {
+  const commonPersonalDomains = [
+    'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com',
+    'protonmail.com', 'mail.com', 'yandex.com', 'qq.com', 'icloud.com',
+    'msn.com', 'live.com', 'gmx.com', 'mail.ru', 'inbox.com'
+  ];
+  
+  const domain = email.split('@')[1]?.toLowerCase();
+  return domain && !commonPersonalDomains.includes(domain);
+}
+
+/**
  * Fetch TikTok profile data using the RapidAPI endpoint
- * Returns: { displayName, bio, followers, following, bioLinks, emails, agencyMention }
+ * Returns: { displayName, bio, followers, following, bioLinks, emails }
  */
 async function fetchTikTokProfile(username) {
   console.log(`[TikTok Profile] Fetching profile for @${username}`);
@@ -88,33 +102,24 @@ async function fetchTikTokProfile(username) {
     
     console.log(`[TikTok Profile] Extracted for @${username}: name="${displayName}", followers=${followers}, bio="${bio.substring(0, 100)}..."`);
     
-    // Extract links and emails from bio
+    // Extract links and emails from bio (raw data only)
     const bioLinks = [];
     const emails = [];
-    const agencyMentions = [];
     
     if (bio) {
-      // Extract URLs from bio
+      // Extract URLs from bio (http/https or www)
       const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
-      const matches = bio.match(urlPattern);
-      if (matches) {
-        bioLinks.push(...matches.filter(url => !bioLinks.includes(url)));
+      const urlMatches = bio.match(urlPattern);
+      if (urlMatches) {
+        bioLinks.push(...urlMatches.filter(url => !bioLinks.includes(url)));
       }
       
-      // Extract emails from bio
-      const emailPattern = /[\w\.-]+@[\w\.-]+\.\w+/g;
+      // Extract emails from bio using provided regex
+      const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const emailMatches = bio.match(emailPattern);
       if (emailMatches) {
         emails.push(...emailMatches.filter(email => !emails.includes(email)));
       }
-      
-      // Check for agency mentions (case-insensitive)
-      const agencyKeywords = ['dulcedo', 'management', 'agency', 'talent', 'represented by', 'management group', 'talent group'];
-      agencyKeywords.forEach(keyword => {
-        if (bio.toLowerCase().includes(keyword)) {
-          agencyMentions.push(keyword);
-        }
-      });
     }
     
     return {
@@ -123,8 +128,7 @@ async function fetchTikTokProfile(username) {
       followers,
       following,
       bioLinks,
-      emails,
-      agencyMention: agencyMentions.length > 0 ? agencyMentions.join(', ') : null
+      emails
     };
   } catch (err) {
     console.error(`[TikTok Profile] Error fetching profile for @${username}:`, err.message);
@@ -888,6 +892,31 @@ router.post('/lookup', async (req, res) => {
 
     console.log(`[Creator Lookup] Found ${formattedScanHistory.length} scans for "${cleanedHandle}"`);
 
+    // SILENT LEAD LOGGING: Check if creator is unrepresented
+    const businessEmails = profileData.emails.filter(email => isBusinessEmail(email));
+    console.log(`[Lead Logging] @${cleanedHandle}: ${profileData.emails.length} emails found, ${businessEmails.length} business emails`);
+    
+    if (profileData.emails.length === 0 || businessEmails.length === 0) {
+      // No business email found — log as unrepresented creator (silently, no response change)
+      const { error: logError } = await supabase
+        .from('unrepresented_creators')
+        .insert([{
+          handle: cleanedHandle,
+          platform: 'tiktok',
+          name: profileData.displayName,
+          followers: profileData.followers,
+          bio: profileData.bio,
+          emails_found: profileData.emails.length > 0 ? profileData.emails : null,
+          looked_up_by: userId
+        }]);
+      
+      if (logError) {
+        console.warn(`[Lead Logging] Failed to log unrepresented creator @${cleanedHandle}:`, logError.message);
+      } else {
+        console.log(`[Lead Logging] Logged unrepresented creator: @${cleanedHandle}`);
+      }
+    }
+
     res.json({
       creator: {
         displayName: profileData.displayName || null,
@@ -896,8 +925,7 @@ router.post('/lookup', async (req, res) => {
         followers: profileData.followers || null,
         following: profileData.following || null,
         bioLinks: profileData.bioLinks || [],
-        emails: profileData.emails || [],
-        agencyMention: profileData.agencyMention || null
+        emails: profileData.emails || []
       },
       scanHistory: formattedScanHistory
     });
