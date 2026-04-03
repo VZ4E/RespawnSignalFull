@@ -3299,7 +3299,7 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
                 <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
                 ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
                 <div style="margin-top:8px">
-                  <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+                  <button class="explain-btn" data-deal-id="${dealId}" data-deal='${JSON.stringify(d)}' onclick="toggleExplanationFromButton(this)">ℹ️ What is this deal?</button>
                   <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
                     <span class="loading">Loading explanation...</span>
                   </div>
@@ -3324,7 +3324,7 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
         <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
         ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
         <div style="margin-top:8px">
-          <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+          <button class="explain-btn" data-deal-id="${dealId}" data-deal='${JSON.stringify(d)}' onclick="toggleExplanationFromButton(this)">ℹ️ What is this deal?</button>
           <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
             <span class="loading">Loading explanation...</span>
           </div>
@@ -3358,6 +3358,34 @@ function toggleCampaignBrands(campaignId) {
   } else {
     brandsDiv.style.display = 'none';
     btn.textContent = '▸';
+  }
+}
+
+// Wrapper function to safely call toggleExplanation from button data attributes
+async function toggleExplanationFromButton(btn) {
+  try {
+    const dealId = btn.getAttribute('data-deal-id');
+    const dealJson = btn.getAttribute('data-deal');
+    console.log('[toggleExplanationFromButton] Deal ID:', dealId);
+    console.log('[toggleExplanationFromButton] Deal JSON length:', dealJson ? dealJson.length : 0);
+    
+    if (!dealJson) {
+      console.error('[toggleExplanationFromButton] No deal data found');
+      return;
+    }
+    
+    let deal;
+    try {
+      deal = JSON.parse(dealJson);
+      console.log('[toggleExplanationFromButton] Parsed deal object');
+    } catch (parseErr) {
+      console.error('[toggleExplanationFromButton] Failed to parse deal JSON:', parseErr.message);
+      return;
+    }
+    
+    await toggleExplanation(dealId, deal);
+  } catch (e) {
+    console.error('[toggleExplanationFromButton] Error:', e.message);
   }
 }
 
@@ -3747,7 +3775,7 @@ function renderDealsPage() {
           <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
           ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
           <div style="margin-top:8px">
-            <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+            <button class="explain-btn" data-deal-id="${dealId}" data-deal='${JSON.stringify(d)}' onclick="toggleExplanationFromButton(this)">ℹ️ What is this deal?</button>
             <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
               <span class="loading">Loading explanation...</span>
             </div>
@@ -3905,7 +3933,7 @@ async function runManualAnalysis() {
           <div class="deal-type-lbl">${d.deal_type || 'Sponsorship'}</div>
           ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
           <div style="margin-top:8px">
-            <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+            <button class="explain-btn" data-deal-id="${dealId}" data-deal='${JSON.stringify(d)}' onclick="toggleExplanationFromButton(this)">ℹ️ What is this deal?</button>
             <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
               <span class="loading">Loading explanation...</span>
             </div>
@@ -4014,7 +4042,7 @@ async function scrapeAgency() {
             <div class="card-label">${escapeHtml(niche)}</div>
             <div style="font-size:12px;color:var(--text2)">${creators.length} creator${creators.length !== 1 ? 's' : ''}</div>
           </div>
-          <button class="btn-ghost" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600" onclick="openNicheGroupSelector('${escapeHtml(niche)}', ${JSON.stringify(creators).replace(/'/g, "&apos;")})">Add Niche to Group</button>
+          <button class="btn-ghost" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600" data-niche="${escapeHtml(niche)}" data-creators='${JSON.stringify(creators)}' onclick="openNicheGroupSelectorFromButton(this)">Add Niche to Group</button>
         </div>
         <div style="display:grid;gap:10px">
           ${creators.map(c => {
@@ -4052,6 +4080,34 @@ async function scrapeAgency() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Scrape Roster';
+  }
+}
+
+// Wrapper function to safely call openNicheGroupSelector from button data attributes
+function openNicheGroupSelectorFromButton(btn) {
+  try {
+    const niche = btn.getAttribute('data-niche');
+    const creatorsJson = btn.getAttribute('data-creators');
+    console.log('[openNicheGroupSelectorFromButton] Niche:', niche);
+    console.log('[openNicheGroupSelectorFromButton] Creators JSON length:', creatorsJson ? creatorsJson.length : 0);
+    
+    if (!creatorsJson) {
+      console.error('[openNicheGroupSelectorFromButton] No creators data found');
+      return;
+    }
+    
+    let creators;
+    try {
+      creators = JSON.parse(creatorsJson);
+      console.log('[openNicheGroupSelectorFromButton] Parsed creators:', creators.length, 'items');
+    } catch (parseErr) {
+      console.error('[openNicheGroupSelectorFromButton] Failed to parse creators JSON:', parseErr.message);
+      return;
+    }
+    
+    openNicheGroupSelector(niche, creators);
+  } catch (e) {
+    console.error('[openNicheGroupSelectorFromButton] Error:', e.message);
   }
 }
 
@@ -4144,7 +4200,7 @@ function openNicheGroupSelector(niche, creators) {
       }
 
       listEl.innerHTML = groupArray.map(g => `
-        <button class="btn-ghost" style="padding:12px;text-align:left;border:1px solid var(--border);border-radius:6px;background:var(--surface2);cursor:pointer;font-weight:600;color:var(--text)" onclick="addNicheToGroup('${g.id}', '${escapeHtml(g.name)}', ${JSON.stringify(creators).replace(/'/g, "&apos;")})">
+        <button class="btn-ghost" style="padding:12px;text-align:left;border:1px solid var(--border);border-radius:6px;background:var(--surface2);cursor:pointer;font-weight:600;color:var(--text)" data-group-id="${g.id}" data-group-name="${escapeHtml(g.name)}" data-creators='${JSON.stringify(creators)}' onclick="addNicheToGroupFromButton(this)">
           ${escapeHtml(g.name)}
           <div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:4px">${g.memberCount || g.members?.length || 0} members</div>
         </button>
@@ -4163,6 +4219,35 @@ function openNicheGroupSelector(niche, creators) {
       }
     }
   })();
+}
+
+// Wrapper function to safely call addNicheToGroup from button data attributes
+async function addNicheToGroupFromButton(btn) {
+  try {
+    const groupId = btn.getAttribute('data-group-id');
+    const groupName = btn.getAttribute('data-group-name');
+    const creatorsJson = btn.getAttribute('data-creators');
+    console.log('[addNicheToGroupFromButton] Group ID:', groupId, 'Name:', groupName);
+    console.log('[addNicheToGroupFromButton] Creators JSON length:', creatorsJson ? creatorsJson.length : 0);
+    
+    if (!creatorsJson) {
+      console.error('[addNicheToGroupFromButton] No creators data found');
+      return;
+    }
+    
+    let creators;
+    try {
+      creators = JSON.parse(creatorsJson);
+      console.log('[addNicheToGroupFromButton] Parsed creators:', creators.length, 'items');
+    } catch (parseErr) {
+      console.error('[addNicheToGroupFromButton] Failed to parse creators JSON:', parseErr.message);
+      return;
+    }
+    
+    await addNicheToGroup(groupId, groupName, creators);
+  } catch (e) {
+    console.error('[addNicheToGroupFromButton] Error:', e.message);
+  }
 }
 
 async function addNicheToGroup(groupId, groupName, creators) {
