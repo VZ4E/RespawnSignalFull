@@ -1,14 +1,8 @@
 const express = require('express');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
-const { default: FirecrawlApp } = require('@mendable/firecrawl-js');
 
 const router = express.Router();
-
-// Initialize Firecrawl client
-const firecrawl = new FirecrawlApp({ 
-  apiKey: process.env.FIRECRAWL_API_KEY 
-});
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
@@ -41,26 +35,48 @@ router.post('/scrape', async (req, res) => {
       normalizedUrl = `https://${normalizedUrl}`;
     }
 
-    // Use Firecrawl to scrape and extract creators
-    const result = await firecrawl.scrapeUrl(normalizedUrl, {
-      formats: ['extract'],
-      extract: {
-        prompt: 'Extract all talent/creator/influencer roster entries from this page. For each person return: handle (social media username), name (full name), platforms (array of platform names like TikTok, YouTube, Instagram, Twitch), followerCount (number if available), and description (short bio if available).',
-        schema: {
-          creators: [{
-            handle: 'string',
-            name: 'string',
-            platforms: ['string'],
-            followerCount: 'number',
-            description: 'string'
-          }]
+    console.log(`[Agency Scrape] Calling Firecrawl REST API for: ${normalizedUrl}`);
+
+    // Call Firecrawl REST API directly
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        url: normalizedUrl,
+        formats: ['extract'],
+        extract: {
+          prompt: 'Extract all talent/creator/influencer roster entries from this page. For each person return: handle (social media username), name (full name), platforms (array of platform names like TikTok, YouTube, Instagram, Twitch), followerCount (number if available), and description (short bio if available).',
+          schema: {
+            creators: [{
+              handle: 'string',
+              name: 'string',
+              platforms: ['string'],
+              followerCount: 'number',
+              description: 'string'
+            }]
+          }
         }
-      }
+      })
     });
 
-    console.log(`[Agency Scrape] Firecrawl result:`, result);
+    console.log(`[Agency Scrape] Firecrawl response status: ${response.status}`);
 
-    const creators = result.extract?.creators || [];
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Agency Scrape] Firecrawl API error (${response.status}):`, errorText);
+      return res.status(response.status).json({ 
+        error: `Firecrawl API error (${response.status})`,
+        details: errorText
+      });
+    }
+
+    const data = await response.json();
+    console.log(`[Agency Scrape] Firecrawl response data:`, JSON.stringify(data, null, 2));
+
+    const creators = data.extract?.creators || data.data?.extract?.creators || [];
     
     // Validate and normalize creator data
     const validCreators = (creators || [])
