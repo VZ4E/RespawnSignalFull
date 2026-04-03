@@ -1671,6 +1671,7 @@ textarea:focus-visible {
       <div class="nav-sec" style="margin-top:6px">Tools</div>
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
       <div class="nav-item" onclick="navTo('groups',this)">Groups</div>
+      <div class="nav-item" onclick="navTo('agency-search',this)">Agency Search</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
       <div class="nav-item" onclick="navTo('pricing',this)">Pricing</div>
       <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
@@ -1819,6 +1820,27 @@ textarea:focus-visible {
         <button class="run-btn" onclick="showCreateGroupModal()">+ New Group</button>
       </div>
       <div id="groups-page-list" style="display:grid;gap:12px"></div>
+    </div>
+
+    <!-- AGENCY SEARCH -->
+    <div class="page" id="page-agency-search">
+      <div class="sec-head"><h1>Agency Search</h1><p>Paste an agency URL to pull their creator roster.</p></div>
+      
+      <div class="card" style="margin-bottom:24px">
+        <div style="display:flex;gap:12px;margin-bottom:16px">
+          <input class="form-input" id="agency-url-input" type="text" placeholder="https://example-agency.com" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:6px" />
+          <button class="run-btn" id="agency-scrape-btn" onclick="scrapeAgency()" style="padding:12px 24px">Scrape Roster</button>
+        </div>
+        <div id="agency-scrape-status" style="display:none;font-size:12px;margin-bottom:12px"></div>
+      </div>
+
+      <div id="agency-results" style="display:none">
+        <div id="agency-niches-container" style="display:grid;gap:16px"></div>
+      </div>
+
+      <div id="agency-empty-state" style="text-align:center;padding:32px;color:var(--text2)">
+        <div style="font-size:14px">No results yet. Enter an agency URL and click "Scrape Roster".</div>
+      </div>
     </div>
 
     <!-- CREDITS -->
@@ -3940,6 +3962,172 @@ async function runManualAnalysis() {
     btn.textContent = 'Analyze for Deals';
   }
   btn.disabled = false;
+}
+
+// ── AGENCY SEARCH ──
+async function scrapeAgency() {
+  const urlInput = document.getElementById('agency-url-input');
+  const url = urlInput.value.trim();
+  
+  if (!url) {
+    showStatusMsg('Please enter an agency URL', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('agency-scrape-btn');
+  const statusEl = document.getElementById('agency-scrape-status');
+  const resultsEl = document.getElementById('agency-results');
+  const emptyEl = document.getElementById('agency-empty-state');
+
+  btn.disabled = true;
+  btn.textContent = 'Scraping...';
+  statusEl.textContent = 'Scraping agency roster...';
+  statusEl.style.display = 'block';
+  resultsEl.style.display = 'none';
+  emptyEl.style.display = 'none';
+
+  try {
+    const data = await api('/api/agency-search/scrape', 'POST', { url });
+    console.log('[Agency Search] Scrape result:', data);
+
+    if (!data.creators || data.creators.length === 0) {
+      statusEl.textContent = 'No creators found. Try another URL.';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    // Group creators by niche
+    const byNiche = {};
+    data.creators.forEach(c => {
+      const niche = c.niche || 'Uncategorized';
+      if (!byNiche[niche]) byNiche[niche] = [];
+      byNiche[niche].push(c);
+    });
+
+    // Render niche sections
+    const container = document.getElementById('agency-niches-container');
+    container.innerHTML = Object.entries(byNiche).map(([niche, creators]) => `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div class="card-label">${escapeHtml(niche)}</div>
+            <div style="font-size:12px;color:var(--text2)">${creators.length} creator${creators.length !== 1 ? 's' : ''}</div>
+          </div>
+          <button class="btn-ghost" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600" onclick="openNicheGroupSelector('${escapeHtml(niche)}', ${JSON.stringify(creators).replace(/'/g, "&apos;")})">Add Niche to Group</button>
+        </div>
+        <div style="display:grid;gap:10px">
+          ${creators.map(c => `
+            <div style="padding:12px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                <div>
+                  <div style="font-weight:600;font-size:13px">@${escapeHtml(c.handle)}</div>
+                  <div style="font-size:11px;color:var(--text2)">${escapeHtml(c.name || 'N/A')}</div>
+                </div>
+                <span style="font-size:11px;color:var(--text3);background:var(--surface3);padding:3px 8px;border-radius:4px">${c.platform}</span>
+              </div>
+              <div style="font-size:11px;color:var(--text2)">📊 ${c.followerCount ? (c.followerCount / 1000).toFixed(0) + 'K' : 'N/A'} followers</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    statusEl.textContent = `✓ Found ${data.creators.length} creators across ${Object.keys(byNiche).length} niche${Object.keys(byNiche).length !== 1 ? 's' : ''}`;
+    resultsEl.style.display = 'block';
+    emptyEl.style.display = 'none';
+  } catch(e) {
+    console.error('[Agency Search] Error:', e);
+    statusEl.textContent = `✗ Error: ${e.message || 'Scrape failed'}`;
+    emptyEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Scrape Roster';
+  }
+}
+
+function openNicheGroupSelector(niche, creators) {
+  // Fetch groups and show selection modal
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.display = 'flex';
+  modal.id = 'niche-group-selector';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
+    <div class="modal-content">
+      <div class="modal-header"><h2>Add to Group</h2></div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Add all ${creators.length} creators from <strong>${escapeHtml(niche)}</strong> to which group?</p>
+      <div id="niche-groups-list" style="display:grid;gap:8px;margin-bottom:16px;max-height:300px;overflow-y:auto"></div>
+      <div id="niche-group-msg" style="font-size:12px;display:none;margin-bottom:12px"></div>
+      <div style="display:flex;gap:12px;justify-content:flex-end">
+        <button class="btn-ghost" style="padding:10px 20px;border:1px solid var(--border);border-radius:6px" onclick="document.getElementById('niche-group-selector').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Fetch and populate groups
+  (async () => {
+    try {
+      const groups = await api('/api/groups', 'GET');
+      const listEl = document.getElementById('niche-groups-list');
+      
+      if (!groups || groups.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text2);font-size:12px">No groups yet. Create one first.</div>';
+        return;
+      }
+
+      listEl.innerHTML = groups.map(g => `
+        <button class="btn-ghost" style="padding:12px;text-align:left;border:1px solid var(--border);border-radius:6px;background:var(--surface2);cursor:pointer;font-weight:600;color:var(--text)" onclick="addNicheToGroup('${g.id}', '${escapeHtml(g.name)}', ${JSON.stringify(creators).replace(/'/g, "&apos;")})">
+          ${escapeHtml(g.name)}
+          <div style="font-size:11px;color:var(--text2);font-weight:400;margin-top:4px">${g.members ? g.members.length : 0} members</div>
+        </button>
+      `).join('');
+    } catch(e) {
+      console.error('[Niche Selector] Error loading groups:', e);
+      document.getElementById('niche-group-msg').textContent = 'Error loading groups: ' + e.message;
+      document.getElementById('niche-group-msg').style.display = 'block';
+    }
+  })();
+}
+
+async function addNicheToGroup(groupId, groupName, creators) {
+  const msgEl = document.getElementById('niche-group-msg');
+  msgEl.style.display = 'block';
+  msgEl.textContent = 'Adding creators...';
+
+  try {
+    // Add each creator to the group
+    let added = 0;
+    for (const creator of creators) {
+      try {
+        await api(`/api/groups/${groupId}/members`, 'POST', {
+          handle: creator.handle,
+          platform: creator.platform
+        });
+        added++;
+      } catch(e) {
+        console.warn(`Failed to add ${creator.handle}:`, e.message);
+      }
+    }
+
+    msgEl.style.color = 'var(--green)';
+    msgEl.textContent = `✓ Added ${added}/${creators.length} creators to ${groupName}`;
+    
+    setTimeout(() => {
+      document.getElementById('niche-group-selector').style.display = 'none';
+    }, 1500);
+  } catch(e) {
+    console.error('[Add Niche] Error:', e);
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+function showStatusMsg(text, type) {
+  const statusEl = document.getElementById('agency-scrape-status');
+  statusEl.textContent = text;
+  statusEl.style.display = 'block';
+  statusEl.style.color = type === 'error' ? 'var(--red)' : 'var(--text2)';
 }
 
 // ── ACCOUNT REFRESH ──
