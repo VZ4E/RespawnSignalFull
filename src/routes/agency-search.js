@@ -44,6 +44,95 @@ function cleanHandle(handle) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// TIKTOK PROFILE FETCH
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fetch TikTok profile data using the RapidAPI endpoint
+ * Returns: { displayName, bio, followers, following, bioLinks, emails, agencyMention }
+ */
+async function fetchTikTokProfile(username) {
+  console.log(`[TikTok Profile] Fetching profile for @${username}`);
+  
+  try {
+    const resp = await fetch(
+      `https://tiktok-scraper7.p.rapidapi.com/user/info?unique_id=${encodeURIComponent(username)}`,
+      {
+        headers: {
+          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+          'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
+        },
+      }
+    );
+    
+    const data = await resp.json();
+    console.log(`[TikTok Profile] Raw response for @${username}:`, JSON.stringify(data).substring(0, 500));
+    
+    if (!resp.ok) {
+      throw new Error(`API error: ${resp.status}`);
+    }
+    
+    // Extract user info from various possible response structures
+    const userInfo = data?.data?.user || data?.data || data?.user || data;
+    
+    if (!userInfo) {
+      console.warn(`[TikTok Profile] No user info found in response for @${username}`);
+      return null;
+    }
+    
+    // Extract profile data
+    const displayName = userInfo.nickname || userInfo.user?.nickname || userInfo.uniqueId || username;
+    const bio = userInfo.signature || userInfo.user?.signature || '';
+    const followers = userInfo.followerCount || userInfo.user?.followerCount || userInfo.followers || 0;
+    const following = userInfo.followingCount || userInfo.user?.followingCount || userInfo.following || 0;
+    
+    console.log(`[TikTok Profile] Extracted for @${username}: name="${displayName}", followers=${followers}, bio="${bio.substring(0, 100)}..."`);
+    
+    // Extract links and emails from bio
+    const bioLinks = [];
+    const emails = [];
+    const agencyMentions = [];
+    
+    if (bio) {
+      // Extract URLs from bio
+      const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+      const matches = bio.match(urlPattern);
+      if (matches) {
+        bioLinks.push(...matches.filter(url => !bioLinks.includes(url)));
+      }
+      
+      // Extract emails from bio
+      const emailPattern = /[\w\.-]+@[\w\.-]+\.\w+/g;
+      const emailMatches = bio.match(emailPattern);
+      if (emailMatches) {
+        emails.push(...emailMatches.filter(email => !emails.includes(email)));
+      }
+      
+      // Check for agency mentions (case-insensitive)
+      const agencyKeywords = ['dulcedo', 'management', 'agency', 'talent', 'represented by', 'management group', 'talent group'];
+      agencyKeywords.forEach(keyword => {
+        if (bio.toLowerCase().includes(keyword)) {
+          agencyMentions.push(keyword);
+        }
+      });
+    }
+    
+    return {
+      displayName,
+      bio,
+      followers,
+      following,
+      bioLinks,
+      emails,
+      agencyMention: agencyMentions.length > 0 ? agencyMentions.join(', ') : null
+    };
+  } catch (err) {
+    console.error(`[TikTok Profile] Error fetching profile for @${username}:`, err.message);
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // ENRICHMENT FUNCTION
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -739,10 +828,10 @@ router.delete('/:agencyId', async (req, res) => {
 
 /**
  * POST /api/agency-search/lookup
- * Look up a creator by handle or profile URL using Firecrawl scraping
+ * Look up a creator by TikTok handle using the RapidAPI endpoint
  * 
  * Body: { handle: string }
- * Returns: { creator: { name, bio, followers, bioLinks, emails, agencyMention }, scanHistory: [...] }
+ * Returns: { creator: { displayName, bio, followers, following, bioLinks, emails, agencyMention }, scanHistory: [...] }
  */
 router.post('/lookup', async (req, res) => {
   const { handle } = req.body;
@@ -756,51 +845,16 @@ router.post('/lookup', async (req, res) => {
     const cleanedHandle = cleanHandle(handle);
     console.log(`[Creator Lookup] Looking up: "${handle}" → cleaned to "${cleanedHandle}"`);
 
-    // Default to TikTok if no platform specified
-    const profileUrl = `https://www.tiktok.com/@${cleanedHandle}`;
-    console.log(`[Creator Lookup] Scraping profile: ${profileUrl}`);
-
-    // Scrape the TikTok profile with Firecrawl
-    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        url: profileUrl,
-        formats: ['extract'],
-        extract: {
-          prompt: 'Extract from this TikTok profile: the creator full name, bio text, follower count, following count, all links in the bio, any email addresses mentioned, any agency or management company mentioned, any other social media handles or links mentioned.',
-          schema: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              bio: { type: 'string' },
-              followers: { type: 'number' },
-              following: { type: 'number' },
-              bioLinks: { type: 'array', items: { type: 'string' } },
-              emails: { type: 'array', items: { type: 'string' } },
-              agencyMention: { type: 'string' },
-              otherSocials: { type: 'array', items: { type: 'string' } }
-            }
-          }
-        }
-      })
-    });
-
-    if (!scrapeResponse.ok) {
-      throw new Error(`Firecrawl API error: ${scrapeResponse.status}`);
-    }
-
-    const scrapeData = await scrapeResponse.json();
-    const profileData = scrapeData.data?.extract || {};
-
-    console.log(`[Creator Lookup] Firecrawl profile data for "${cleanedHandle}":`, profileData);
+    // Fetch TikTok profile data using the same API as the scanner
+    const profileData = await fetchTikTokProfile(cleanedHandle);
 
     // Check if we have any data at all
-    if (!profileData.name && !profileData.bio && !profileData.followers) {
-      return res.status(404).json({ error: 'Creator not found', details: 'No profile data available' });
+    if (!profileData) {
+      return res.status(404).json({ error: 'Creator not found', details: 'Could not fetch profile data' });
+    }
+
+    if (!profileData.displayName && !profileData.bio && !profileData.followers) {
+      return res.status(404).json({ error: 'Creator not found', details: 'Profile data is empty' });
     }
 
     // Query scan history from the scans table
@@ -836,15 +890,14 @@ router.post('/lookup', async (req, res) => {
 
     res.json({
       creator: {
-        name: profileData.name || null,
+        displayName: profileData.displayName || null,
         handle: cleanedHandle,
         bio: profileData.bio || null,
         followers: profileData.followers || null,
         following: profileData.following || null,
         bioLinks: profileData.bioLinks || [],
         emails: profileData.emails || [],
-        agencyMention: profileData.agencyMention || null,
-        otherSocials: profileData.otherSocials || []
+        agencyMention: profileData.agencyMention || null
       },
       scanHistory: formattedScanHistory
     });
