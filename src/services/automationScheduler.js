@@ -101,7 +101,7 @@ async function sendAutomationEmail(to, subject, newDeals, lastDeals, creatorHand
         <small style="color: #666;">View all automations: <a href="${process.env.APP_URL || 'https://app.respawnsignal.com'}/automation">Automation Center</a></small>`;
       
       const result = await resend.emails.send({
-        from: 'Respawn Signal <automations@respawnsignal.com>',
+        from: 'Respawn Signal <onboarding@resend.dev>',
         to,
         subject,
         html,
