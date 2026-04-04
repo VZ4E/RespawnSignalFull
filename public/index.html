@@ -2787,7 +2787,7 @@ function navTo(id, el) {
 function loadAutomationPage() {
   const container = document.getElementById('automation-content');
   if (!container) return;
-  container.innerHTML = '<iframe src="/automation" style="width:100%; height:100%; border:none; border-radius:8px;"></iframe>';
+  container.innerHTML = '<iframe src="/automation" style="width:100%; height:calc(100vh - 200px); border:none; border-radius:8px; overflow:auto;"></iframe>';
 }
 
 // ── SCANNER ──
