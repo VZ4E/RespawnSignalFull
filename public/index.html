@@ -2642,6 +2642,13 @@ function escapeHtml(text) {
   return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
 }
 
+// Check if email is a personal/common domain
+function isPersonalEmail(email) {
+  const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'msn.com', 'live.com', 'mail.com', 'yandex.com', 'qq.com', 'gmx.com', 'mail.ru', 'inbox.com'];
+  const domain = email.split('@')[1]?.toLowerCase();
+  return domain && personalDomains.includes(domain);
+}
+
 // ── PLAN LIMITS ──
 // Deployment timestamp: 2026-04-02 16:11 EDT - Agency tier fix
 let applyPlanLimits_callCount = 0;
@@ -4086,7 +4093,9 @@ async function lookupCreator() {
       ).join('')}</div>` : '';
     
     // Display emails if any found in bio
-    const emailsHtml = creator.emails && creator.emails.length > 0 ? 
+    // Check if all emails are personal domains (gmail, yahoo, etc.)
+    const hasBusinessEmail = creator.emails && creator.emails.some(email => !isPersonalEmail(email));
+    const emailsHtml = hasBusinessEmail ? 
       `<div style="margin-top:12px"><strong>Contact:</strong><br>${creator.emails.map(email => 
         `<a href="mailto:${escapeHtml(email)}" style="color:var(--accent);text-decoration:none">${escapeHtml(email)}</a><br>`
       ).join('')}</div>` : 

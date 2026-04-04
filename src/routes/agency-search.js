@@ -13,6 +13,21 @@ router.use(authMiddleware);
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * Decode HTML entities in text
+ */
+function decodeHtmlEntities(text) {
+  if (!text) return text;
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#x2F;/g, '/');
+}
+
+/**
  * Clean handle by extracting valid segment from URL or path
  * Safely handles malformed URLs that would crash URL() constructor
  */
@@ -199,7 +214,7 @@ async function fetchTikTokProfile(username) {
     
     return {
       displayName,
-      bio,
+      bio: decodeHtmlEntities(bio),
       bioLinks,
       emails,
       socialHandles
