@@ -112,49 +112,62 @@ function extractSocialHandlesFromUrls(urls) {
 async function searchCreatorSocialProfiles(handle, displayName) {
   console.log(`[Firecrawl Search] Searching for social profiles for ${displayName} (@${handle})`);
   
-  try {
-    const searchQuery = `${handle} creator instagram youtube linktree`;
-    const response = await fetch('https://api.firecrawl.dev/v1/search', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        query: searchQuery,
-        limit: 5
-      })
-    });
+  // Try multiple search queries (short queries work better with Firecrawl)
+  const searchQueries = [
+    handle,                    // First try just the handle
+    `${handle} tiktok`        // Then try handle + tiktok
+  ];
+  
+  for (const query of searchQueries) {
+    console.log(`[Firecrawl Search] Attempting query: "${query}"`);
     
-    if (!response.ok) {
-      console.warn(`[Firecrawl Search] API error: ${response.status}`);
-      return {};
+    try {
+      const response = await fetch('https://api.firecrawl.dev/v1/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: query,
+          limit: 5
+        })
+      });
+      
+      if (!response.ok) {
+        console.warn(`[Firecrawl Search] API error for query "${query}": ${response.status}`);
+        continue;
+      }
+      
+      const data = await response.json();
+      const resultCount = data.results?.length || 0;
+      console.log(`[Firecrawl Search] Query "${query}" returned ${resultCount} results`);
+      
+      if (data.results && data.results.length > 0) {
+        // Extract URLs from results
+        const urls = data.results
+          .map(result => result.url)
+          .filter(url => url && typeof url === 'string');
+        
+        console.log(`[Firecrawl Search] URLs found for @${handle}:`, urls);
+        
+        // Extract social handles from URLs
+        const socialHandles = extractSocialHandlesFromUrls(urls);
+        console.log(`[Firecrawl Search] Extracted handles for @${handle}:`, socialHandles);
+        
+        if (Object.keys(socialHandles).length > 0) {
+          console.log(`[Firecrawl Search] Successfully found handles for @${handle} with query: "${query}"`);
+          return socialHandles;
+        }
+      }
+    } catch (err) {
+      console.error(`[Firecrawl Search] Error with query "${query}":`, err.message);
+      continue;
     }
-    
-    const data = await response.json();
-    console.log(`[Firecrawl Search] Found ${data.results?.length || 0} results for @${handle}`);
-    
-    if (!data.results || data.results.length === 0) {
-      console.log(`[Firecrawl Search] No results found for @${handle}`);
-      return {};
-    }
-    
-    // Extract URLs from results
-    const urls = data.results
-      .map(result => result.url)
-      .filter(url => url && typeof url === 'string');
-    
-    console.log(`[Firecrawl Search] URLs found for @${handle}:`, urls);
-    
-    // Extract social handles from URLs
-    const socialHandles = extractSocialHandlesFromUrls(urls);
-    console.log(`[Firecrawl Search] Extracted handles for @${handle}:`, socialHandles);
-    
-    return socialHandles;
-  } catch (err) {
-    console.error(`[Firecrawl Search] Error searching for @${handle}:`, err.message);
-    return {};
   }
+  
+  console.log(`[Firecrawl Search] No social profiles found for @${handle} after all queries`);
+  return {};
 }
 
 /**
