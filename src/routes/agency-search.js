@@ -62,6 +62,102 @@ function isBusinessEmail(email) {
 }
 
 /**
+ * Extract social media handles from URLs found in Firecrawl search results
+ */
+function extractSocialHandlesFromUrls(urls) {
+  const handles = {};
+  
+  urls.forEach(url => {
+    const urlLower = url.toLowerCase();
+    
+    // Instagram: extract username from instagram.com/username
+    if (urlLower.includes('instagram.com/')) {
+      const match = url.match(/instagram\.com\/([a-zA-Z0-9._-]+)/i);
+      if (match && match[1]) {
+        handles.instagram = match[1];
+      }
+    }
+    
+    // YouTube: extract channel ID or custom URL
+    if (urlLower.includes('youtube.com/')) {
+      const channelMatch = url.match(/youtube\.com\/(@[a-zA-Z0-9_-]+|channel\/[a-zA-Z0-9_-]+)/i);
+      if (channelMatch && channelMatch[1]) {
+        handles.youtube = { channelId: channelMatch[1], title: 'YouTube' };
+      }
+    }
+    
+    // Twitter/X: extract username from twitter.com or x.com
+    if (urlLower.includes('twitter.com/') || urlLower.includes('x.com/')) {
+      const match = url.match(/(?:twitter|x)\.com\/([a-zA-Z0-9_]+)/i);
+      if (match && match[1]) {
+        handles.twitter = match[1];
+      }
+    }
+    
+    // Linktree: just note it exists
+    if (urlLower.includes('linktree.com/')) {
+      const match = url.match(/linktree\.com\/([a-zA-Z0-9_-]+)/i);
+      if (match && match[1]) {
+        handles.linktree = match[1];
+      }
+    }
+  });
+  
+  return handles;
+}
+
+/**
+ * Search for creator social profiles using Firecrawl when TikTok doesn't have them linked
+ */
+async function searchCreatorSocialProfiles(handle, displayName) {
+  console.log(`[Firecrawl Search] Searching for social profiles for ${displayName} (@${handle})`);
+  
+  try {
+    const searchQuery = `${handle} creator instagram youtube linktree`;
+    const response = await fetch('https://api.firecrawl.dev/v1/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: searchQuery,
+        limit: 5
+      })
+    });
+    
+    if (!response.ok) {
+      console.warn(`[Firecrawl Search] API error: ${response.status}`);
+      return {};
+    }
+    
+    const data = await response.json();
+    console.log(`[Firecrawl Search] Found ${data.results?.length || 0} results for @${handle}`);
+    
+    if (!data.results || data.results.length === 0) {
+      console.log(`[Firecrawl Search] No results found for @${handle}`);
+      return {};
+    }
+    
+    // Extract URLs from results
+    const urls = data.results
+      .map(result => result.url)
+      .filter(url => url && typeof url === 'string');
+    
+    console.log(`[Firecrawl Search] URLs found for @${handle}:`, urls);
+    
+    // Extract social handles from URLs
+    const socialHandles = extractSocialHandlesFromUrls(urls);
+    console.log(`[Firecrawl Search] Extracted handles for @${handle}:`, socialHandles);
+    
+    return socialHandles;
+  } catch (err) {
+    console.error(`[Firecrawl Search] Error searching for @${handle}:`, err.message);
+    return {};
+  }
+}
+
+/**
  * Fetch TikTok profile data using the RapidAPI endpoint
  * Returns: { displayName, bio, bioLinks, emails, socialHandles: { instagram, twitter, youtube } }
  */
@@ -115,7 +211,15 @@ async function fetchTikTokProfile(username) {
       };
     }
     
-    console.log(`[TikTok Profile] Extracted for @${normalizedUsername}: name="${displayName}", bio="${bio.substring(0, 100)}...", socialHandles:`, socialHandles);
+    // If no social handles found, use Firecrawl to search for creator's other profiles
+    if (Object.keys(socialHandles).length === 0 && process.env.FIRECRAWL_API_KEY) {
+      console.log(`[TikTok Profile] No linked accounts found for @${normalizedUsername}, searching with Firecrawl...`);
+      const firecrawlHandles = await searchCreatorSocialProfiles(normalizedUsername, displayName);
+      Object.assign(socialHandles, firecrawlHandles);
+      console.log(`[TikTok Profile] Firecrawl search completed for @${normalizedUsername}, found:`, socialHandles);
+    }
+    
+    console.log(`[TikTok Profile] Final social handles for @${normalizedUsername}:`, socialHandles);
     
     // Extract links and emails from bio (raw data only)
     const bioLinks = [];
