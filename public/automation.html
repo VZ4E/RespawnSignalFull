@@ -425,12 +425,28 @@
     // Fetch automations
     async function fetchAutomations() {
       try {
+        // Check if token exists before fetching
+        const token = localStorage.getItem('rs_token');
+        if (!token) {
+          console.warn('[AutoRefresh] No token found, redirecting to login');
+          window.location.href = '/';
+          return;
+        }
+        
         document.getElementById('automationsList').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
         
-        const token = localStorage.getItem('rs_token');
         const response = await fetch(`${API_BASE}/automations`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        // If 401, token is invalid/expired - redirect to login instead of spam retrying
+        if (response.status === 401) {
+          console.warn('[AutoRefresh] Got 401 Unauthorized, token expired. Redirecting to login.');
+          localStorage.removeItem('rs_token');
+          window.location.href = '/';
+          return;
+        }
+        
         if (!response.ok) throw new Error('Failed to fetch automations');
         
         automations = await response.json();
@@ -674,8 +690,8 @@
     fetchAccountEmail();
     fetchAutomations();
 
-    // Refresh every 30 seconds
-    setInterval(fetchAutomations, 30000);
+    // Refresh every 5 minutes (300000 ms), with auth token validation
+    setInterval(fetchAutomations, 300000);
   </script>
 </body>
 </html>
