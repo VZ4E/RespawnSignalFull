@@ -3364,8 +3364,16 @@ async function startScan() {
     
     // Stop progress animation and complete the progress bar
     clearInterval(progressInterval);
-    document.getElementById('scan-progress-fill').style.width = '100%';
-    document.getElementById('scan-progress-text').textContent = 'Scan complete!';
+    
+    const progressFill = document.getElementById('scan-progress-fill');
+    if (progressFill) {
+      progressFill.style.width = '100%';
+    }
+    
+    const progressText = document.getElementById('scan-progress-text');
+    if (progressText) {
+      progressText.textContent = 'Scan complete!';
+    }
     
     // Clear progress bar after a brief moment
     setTimeout(() => {
