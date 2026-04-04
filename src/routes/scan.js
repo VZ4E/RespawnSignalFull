@@ -122,7 +122,19 @@ router.post('/', authMiddleware, async (req, res) => {
         const items = twitchData.data?.user?.videos || twitchData.data?.videos || [];
 
         console.log(`[Scan] Parsed ${items.length} videos from Twitch API`);
-        videos = items.slice(0, safeRange);
+        
+        // Filter VODs by max length (6 hours) and take up to safeRange
+        const MAX_VOD_HOURS = 6;
+        videos = items
+          .filter(v => {
+            const hours = (v.lengthSeconds || v.node?.lengthSeconds || v.duration || 0) / 3600;
+            if (hours > MAX_VOD_HOURS) {
+              console.log(`[Scan] Skipping VOD ${v.id || v.node?.id} — ${hours.toFixed(1)}h exceeds ${MAX_VOD_HOURS}h limit`);
+              return false;
+            }
+            return true;
+          })
+          .slice(0, safeRange);
 
         if (!videos.length) {
           const apiMsg = twitchData?.message || twitchData?.msg || twitchData?.error || '';
@@ -160,7 +172,18 @@ router.post('/', authMiddleware, async (req, res) => {
         if (found) items = found;
       }
 
-      videos = items.slice(0, safeRange);
+      // Filter videos by max length (6 hours for TikTok as well for consistency) and take up to safeRange
+      const MAX_VIDEO_HOURS = 6;
+      videos = items
+        .filter(v => {
+          const hours = (v.duration || v.lengthSeconds || 0) / 60; // TikTok duration is typically in seconds
+          if (hours > MAX_VIDEO_HOURS) {
+            console.log(`[Scan] Skipping TikTok video ${v.aweme_id || v.id} — ${hours.toFixed(1)}h exceeds ${MAX_VIDEO_HOURS}h limit`);
+            return false;
+          }
+          return true;
+        })
+        .slice(0, safeRange);
 
       if (!videos.length) {
         const apiMsg = ttData?.message || ttData?.msg || ttData?.error || '';
