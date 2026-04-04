@@ -4,6 +4,7 @@ const fetch = require('node-fetch');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
 const { notifyOnScanComplete, notifyOnLowCredits } = require('../services/notificationService');
+const { getTwitchVodTranscript } = require('../services/twitchTranscriber');
 
 /**
  * Decode HTML entities in text
@@ -210,58 +211,22 @@ router.post('/', authMiddleware, async (req, res) => {
         videoUrl = `https://www.tiktok.com/@${username}/video/${videoId}`;
       }
 
-      // Use TranscriptHQ for Twitch, Transcript24 for TikTok
+      // Use AssemblyAI + yt-dlp for Twitch, Transcript24 for TikTok
       if (platform === 'twitch') {
-        console.log(`[Transcribe] Submitting Twitch VOD to TranscriptHQ for ${videoId}`);
-        const tr = await fetch('https://api.transcripthq.io/v1/transcripts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': process.env.TRANSCRIPTHQ_KEY,
-          },
-          body: JSON.stringify({ 
-            service_type: 'twitch',
-            videos: [videoId]
-          }),
-        });
-        console.log(`[Transcribe] TranscriptHQ submission status: ${tr.status}`);
-        const td = await tr.json();
-        console.log(`[Transcribe] TranscriptHQ response:`, JSON.stringify(td).substring(0, 500));
-        
-        // TranscriptHQ is async: 202 means job submitted, poll poll_url for results
-        // For now, fall back to title-only (users can review full transcripts later via poll_url if needed)
-        if (tr.status === 202 && td?.poll_url) {
-          console.log(`[Transcribe] ⏳ Job queued (async): ${td.poll_url}`);
-          console.log(`[Transcribe] Job ID: ${td.job_id} — will complete in background`);
-          // Don't block the scan; use title-only fallback
-        } else if (td?.transcripts && Array.isArray(td.transcripts) && td.transcripts[0]) {
-          // Completed/instant response
-          transcript = td.transcripts[0].text || td.transcripts[0].transcript || td.transcripts[0].content || '';
-          totalCredits += td.transcripts[0].credits || 1;
-          if (transcript) {
+        try {
+          console.log(`[Scan] Fetching Twitch transcript for VOD: ${videoId}`);
+          const twitchTranscript = await getTwitchVodTranscript(videoId);
+          if (twitchTranscript) {
+            transcript = twitchTranscript;
             transcribed = true;
-            console.log(`[Transcribe] ✓ Transcribed via TranscriptHQ: ${transcript.length} chars`);
+            console.log(`[Scan] Got transcript for ${videoId} — ${transcript.length} chars`);
+          } else {
+            console.log(`[Scan] No transcript for ${videoId} — using title only`);
+            transcript = title || '';
           }
-        } else if (td?.text) {
-          transcript = td.text;
-          totalCredits += 1;
-          transcribed = true;
-        } else if (td?.transcript) {
-          transcript = td.transcript;
-          totalCredits += 1;
-          transcribed = true;
-        } else if (td?.content) {
-          transcript = td.content;
-          totalCredits += 1;
-          transcribed = true;
-        } else if (Array.isArray(td) && td[0]) {
-          // Direct array response
-          transcript = td[0].text || td[0].transcript || td[0].content || '';
-          totalCredits += td[0].credits || 1;
-          if (transcript) transcribed = true;
-        } else if (tr.status !== 202) {
-          // Not async, and no transcript — log error
-          console.error(`[Transcribe] TranscriptHQ returned unexpected format (status ${tr.status}):`, JSON.stringify(td).substring(0, 300));
+        } catch (err) {
+          console.error(`[Scan] Transcript error for ${videoId}:`, err.message);
+          transcript = title || '';
         }
       } else {
         // Use Transcript24 for TikTok
@@ -303,9 +268,10 @@ router.post('/', authMiddleware, async (req, res) => {
   let deals = [];
   let analysisError = false;
   try {
-    // Cap each transcript at 2000 chars (sponsor reads often in last 20s, were cut off at 800)
+    // Cap each transcript — Twitch has longer transcripts, TikTok is shorter
+    const transcriptCap = platform === 'twitch' ? 8000 : 2000;
     const text = withTranscripts
-      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, 2000)}`)
+      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, transcriptCap)}`)
       .join('\n\n---\n\n');
 
     const platformLabel = platform === 'twitch' ? 'Twitch' : 'TikTok';
