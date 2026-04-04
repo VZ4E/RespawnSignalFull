@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agency Search — Signal</title>
+  <link rel="stylesheet" href="/globals.css">
+  <link rel="stylesheet" href="/css/agency-search.css">
+  <style>
+    /* Simple layout wrapper */
+    body {
+      background: #f8fafc;
+    }
+    .agency-search-page {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (optional, customize per your app) -->
+  <nav style="background: white; border-bottom: 1px solid #e2e8f0; padding: 16px 24px;">
+    <div style="max-width: 1400px; margin: 0 auto;">
+      <a href="/" style="text-decoration: none; color: #5aa0e8; font-weight: 600;">← Back to Dashboard</a>
+    </div>
+  </nav>
+
+  <!-- Agency Search Component Container -->
+  <div class="agency-search-page">
+    <div id="agency-search-container"></div>
+  </div>
+
+  <!-- Supabase Client (if not included globally) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Set Supabase globals (or pass in config) -->
+  <script>
+    window.SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+    window.SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'your-key';
+    window.PERPLEXITY_API_KEY = import.meta.env?.VITE_PERPLEXITY_API_KEY || '';
+  </script>
+
+  <!-- Agency Search Scripts -->
+  <script src="/js/agency-search-data.js"></script>
+  <script src="/js/agency-search-ui.js"></script>
+
+  <!-- Initialize Component -->
+  <script>
+    // Get user ID from session/auth
+    // This is a placeholder — customize per your auth system
+    const userId = localStorage.getItem('userId') || 'demo-user-123';
+
+    // Initialize the component
+    const agencySearch = new AgencySearchUI('agency-search-container', {
+      userId,
+      supabaseUrl: window.SUPABASE_URL,
+      supabaseAnonKey: window.SUPABASE_ANON_KEY,
+      perplexityKey: window.PERPLEXITY_API_KEY,
+    });
+
+    // ─── EVENT LISTENERS ───────────────────────────────────────────────────────
+
+    /**
+     * When agency is saved
+     */
+    window.addEventListener('agencySearch:saveComplete', (e) => {
+      const { agency, creators } = e.detail;
+      console.log(`✓ Imported ${creators.length} creators from ${agency.name}`);
+
+      // Example: Show success toast
+      showNotification({
+        type: 'success',
+        title: `${agency.name} imported`,
+        message: `${creators.length} creators added to your library`,
+        duration: 4000,
+      });
+
+      // Example: Update sidebar count
+      updateAgencyCount();
+    });
+
+    /**
+     * When creators added to watchlist
+     */
+    window.addEventListener('agencySearch:watchlistAdd', (e) => {
+      const { creators } = e.detail;
+      console.log(`✓ Added ${creators.length} creators to watchlist`);
+
+      showNotification({
+        type: 'success',
+        title: 'Watchlist Updated',
+        message: `${creators.length} creators now being monitored for new posts`,
+        duration: 4000,
+      });
+
+      // Optional: Trigger watchlist alerts
+      // triggerWatchlistAlerts(creators.map(c => c.id));
+    });
+
+    /**
+     * When group scan is created
+     */
+    window.addEventListener('agencySearch:groupScanAdd', (e) => {
+      const { creators, groupId, groupName } = e.detail;
+      console.log(`✓ Created group "${groupName}" with ${creators.length} creators`);
+
+      showNotification({
+        type: 'success',
+        title: 'Group Created',
+        message: `"${groupName}" — Ready to scan ${creators.length} creators`,
+        duration: 4000,
+      });
+
+      // Example: Trigger scan immediately
+      // triggerGroupScan(groupId, creators.map(c => c.id));
+
+      // Example: Navigate to group page
+      // window.location.href = `/dashboard/groups/${groupId}`;
+    });
+
+    /**
+     * When agency is deleted
+     */
+    window.addEventListener('agencySearch:deleteAgency', (e) => {
+      const { agencyId } = e.detail;
+      console.log(`✓ Deleted agency ${agencyId}`);
+
+      showNotification({
+        type: 'info',
+        title: 'Agency Removed',
+        duration: 2000,
+      });
+
+      updateAgencyCount();
+    });
+
+    // ─── HELPER FUNCTIONS ──────────────────────────────────────────────────────
+
+    /**
+     * Simple notification/toast (customize per your UI system)
+     */
+    function showNotification(opts) {
+      const { type = 'info', title, message, duration = 3000 } = opts;
+
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: white;
+        border-left: 4px solid #5aa0e8;
+        padding: 16px;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-width: 400px;
+        animation: slideIn 300ms ease;
+      `;
+
+      if (type === 'success') {
+        toast.style.borderLeftColor = '#22c55e';
+      } else if (type === 'error') {
+        toast.style.borderLeftColor = '#ef4444';
+      }
+
+      toast.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 4px;">${title}</div>
+        ${message ? `<div style="font-size: 13px; color: #64748b;">${message}</div>` : ''}
+      `;
+
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 300ms ease';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    /**
+     * Update agency count in sidebar (if exists)
+     */
+    function updateAgencyCount() {
+      const countEl = document.querySelector('[data-sidebar-agency-count]');
+      if (countEl) {
+        // Re-fetch count or increment
+        // For now, just show a visual update
+        countEl.style.animation = 'pulse 500ms ease';
+      }
+    }
+
+    /**
+     * Example: Trigger a group scan job
+     * (connect to your backend scan API)
+     */
+    function triggerGroupScan(groupId, creatorIds) {
+      fetch('/api/scans/group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupId, creatorIds }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log('Scan started:', data.jobId);
+        // Show scan progress modal, navigate to results, etc.
+      })
+      .catch(err => {
+        console.error('Scan failed:', err);
+        showNotification({
+          type: 'error',
+          title: 'Scan Failed',
+          message: err.message,
+        });
+      });
+    }
+
+    // ─── KEYBOARD SHORTCUTS (optional) ─────────────────────────────────────────
+
+    document.addEventListener('keydown', (e) => {
+      // Alt+A = Open Add Agency modal
+      if (e.altKey && e.key === 'a') {
+        agencySearch.openImportModal();
+      }
+    });
+
+    // ─── CSS ANIMATION ─────────────────────────────────────────────────────────
+
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

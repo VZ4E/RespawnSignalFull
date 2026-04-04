@@ -79,8 +79,26 @@ router.post('/logout', authMiddleware, async (req, res) => {
 
 // GET /api/auth/me
 router.get('/me', authMiddleware, async (req, res) => {
-  const { email, plan, credits_remaining, created_at } = req.dbUser;
-  return res.json({ email, plan, credits_remaining, created_at });
+  // Always fetch fresh from DB instead of using cached req.dbUser
+  const { data: freshUser, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', req.user.email)
+    .single();
+  
+  if (error) {
+    console.error('[/api/auth/me] Fresh fetch error:', error.message);
+    // Fall back to middleware-loaded user
+    const { email, plan, credits_remaining, created_at } = req.dbUser;
+    return res.json({ email, plan, credits_remaining, created_at });
+  }
+  
+  if (freshUser) {
+    const { email, plan, credits_remaining, created_at } = freshUser;
+    return res.json({ email, plan, credits_remaining, created_at });
+  }
+  
+  return res.status(500).json({ error: 'User not found' });
 });
 
 // POST /api/auth/refresh — refresh access token using refresh token
@@ -98,6 +116,46 @@ router.post('/refresh', async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ error: 'Refresh error: ' + err.message });
+  }
+});
+
+// POST /api/auth/admin/set-plan — Admin endpoint to set plan by stripe_customer_id
+// ⚠️ SECURITY: Remove this endpoint in production or add proper authentication
+router.post('/admin/set-plan', async (req, res) => {
+  const { stripe_customer_id, plan } = req.body;
+  if (!stripe_customer_id || !plan) {
+    return res.status(400).json({ error: 'stripe_customer_id and plan required' });
+  }
+
+  const validPlans = ['none', 'starter', 'pro', 'agency', 'enterprise'];
+  if (!validPlans.includes(plan)) {
+    return res.status(400).json({ error: `Invalid plan. Must be one of: ${validPlans.join(', ')}` });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        plan,
+        credits_remaining: plan === 'agency' ? 5000 : plan === 'pro' ? 2500 : plan === 'starter' ? 1000 : 0,
+        credits_reset_at: new Date().toISOString(),
+      })
+      .eq('stripe_customer_id', stripe_customer_id)
+      .select();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'No user found with that stripe_customer_id' });
+    }
+
+    console.log(`[Admin] Updated ${data[0].email} to plan=${plan}`);
+    return res.json({ success: true, user: data[0] });
+  } catch (err) {
+    console.error('[Admin] Error:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 

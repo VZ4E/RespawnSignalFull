@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - RespawnSignal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface2: #f1f5f9;
+      --border: #e2e8f0;
+      --accent: #5AA0E8;
+      --text: #0f172a;
+      --text2: #475569;
+      --text3: #94a3b8;
+      --sans: 'Sora', sans-serif;
+      --serif: 'Instrument Serif', serif;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+    
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 48px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    
+    .logo span {
+      color: var(--accent);
+    }
+    
+    nav a {
+      color: var(--text2);
+      text-decoration: none;
+      margin-left: 24px;
+      transition: color 0.3s;
+    }
+    
+    nav a:hover {
+      color: var(--accent);
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 60px 48px;
+    }
+    
+    h1 {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 42px;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    
+    .last-updated {
+      color: var(--text3);
+      font-size: 13px;
+      margin-bottom: 40px;
+    }
+    
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    
+    p {
+      margin-bottom: 16px;
+      color: var(--text2);
+      line-height: 1.8;
+    }
+    
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+    
+    li {
+      margin-bottom: 8px;
+      color: var(--text2);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: var(--surface2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    th {
+      background: var(--surface2);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .highlight {
+      background: var(--accent-dim);
+      padding: 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    .contact-info {
+      background: var(--surface2);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .contact-form-section {
+      background: var(--surface2);
+      padding: 28px;
+      border-radius: 12px;
+      margin: 28px 0;
+      border: 1px solid var(--border);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 11px 14px;
+      outline: none;
+      transition: all 0.15s;
+      box-sizing: border-box;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(90, 160, 232, 0.1);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .form-success {
+      background: rgba(5, 150, 105, 0.1);
+      border: 1px solid rgba(5, 150, 105, 0.2);
+      color: #059669;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .form-error-msg {
+      color: #dc2626;
+      font-size: 12px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 11px 18px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(90, 160, 232, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: #3b82c4;
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    footer {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 60px 48px 30px;
+      margin-top: 100px;
+      text-align: center;
+    }
+    
+    footer p {
+      color: #b0b0b0;
+      margin-bottom: 8px;
+    }
+    
+    footer a {
+      color: #b0b0b0;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    footer a:hover {
+      color: #fff;
+    }
+    
+    @media (max-width: 768px) {
+      header {
+        padding: 16px 24px;
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      nav {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      
+      nav a {
+        margin-left: 0;
+      }
+      
+      .container {
+        padding: 40px 24px;
+      }
+      
+      h1 {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Respawn<span>Signal</span></div>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/terms-of-service">Terms of Service</a>
+      <a href="/refund-policy">Refund Policy</a>
+      <a href="/settings">Settings</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1>Privacy Policy</h1>
+    <p class="last-updated"><strong>Last Updated:</strong> March 26, 2026</p>
+
+    <h2>1. Introduction</h2>
+    <p>RespawnSignal LLC ("we," "us," "our," or "Company") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website at <strong>respawnmedia.co</strong> and use our SaaS platform (the "Service").</p>
+    <p>Please read this Privacy Policy carefully. If you do not agree with our policies and practices, please do not use our Service.</p>
+
+    <h2>2. Business Information</h2>
+    <div class="contact-info">
+      <p><strong>Legal Business Name:</strong> RespawnSignal LLC</p>
+      <p><strong>State of Registration:</strong> New York</p>
+      <p><strong>Location:</strong> New York, USA</p>
+      <p><strong>Contact Email:</strong> <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a></p>
+      <p><strong>Support Email:</strong> <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a></p>
+    </div>
+
+    <h2>3. Data We Collect</h2>
+    
+    <h3>3.1 Information You Provide Directly</h3>
+    <ul>
+      <li><strong>Account Information:</strong> Name, email address, password, payment method</li>
+      <li><strong>Profile Data:</strong> Company name (if applicable), subscription tier, account creation date</li>
+      <li><strong>Billing Information:</strong> Payment details processed through Stripe (we do not store full credit card numbers)</li>
+      <li><strong>Support Communications:</strong> Messages, emails, and support requests</li>
+      <li><strong>User-Generated Content:</strong> TikTok creator handles, scan queries, notes, and bookmarks</li>
+    </ul>
+
+    <h3>3.2 Automatically Collected Information</h3>
+    <ul>
+      <li><strong>Usage Data:</strong> Pages visited, features used, clicks, time spent on platform</li>
+      <li><strong>Device Information:</strong> IP address, browser type, operating system, device identifiers</li>
+      <li><strong>Scan Results:</strong> Brand deal detection results, AI analysis outputs, historical scan records</li>
+      <li><strong>Cookies & Tracking:</strong> Session cookies for account authentication and security</li>
+    </ul>
+
+    <h3>3.3 Third-Party Platform Data</h3>
+    <p>To provide our Service, we access public data from:</p>
+    <ul>
+      <li><strong>TikTok:</strong> Creator profiles, video captions, engagement metrics (via RapidAPI's tiktok-scraper7)</li>
+      <li><strong>YouTube:</strong> Channel data, video transcripts (via Transcript24 API)</li>
+      <li><strong>Instagram:</strong> Creator profiles, public posts (where accessible)</li>
+    </ul>
+    <p>We do not store personal data of TikTok/YouTube/Instagram creators unless you explicitly save it in your RespawnSignal account.</p>
+
+    <h2>4. How We Use Your Data</h2>
+    <p>We use your information for the following purposes:</p>
+    
+    <h3>1. Service Delivery</h3>
+    <ul>
+      <li>Creating and maintaining your account</li>
+      <li>Processing payments and billing</li>
+      <li>Delivering brand deal detection and AI analysis</li>
+      <li>Providing customer support</li>
+    </ul>
+
+    <h3>2. Product Improvement</h3>
+    <ul>
+      <li>Analyzing how you use RespawnSignal to improve features</li>
+      <li>Training our AI model to improve accuracy (unless you opt-out)</li>
+      <li>Identifying bugs and performance issues</li>
+    </ul>
+
+    <h3>3. Legal & Security</h3>
+    <ul>
+      <li>Detecting and preventing fraud, abuse, and unauthorized access</li>
+      <li>Complying with legal obligations</li>
+      <li>Enforcing our Terms of Service</li>
+    </ul>
+
+    <h3>4. Communication</h3>
+    <ul>
+      <li>Sending account updates, billing notifications, and service announcements</li>
+      <li>Responding to your support requests</li>
+      <li>Sending newsletters (only with your consent)</li>
+    </ul>
+
+    <h2>5. Third-Party Services</h2>
+    <p>We share your data with the following services to operate our platform:</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Purpose</th>
+          <th>Data Shared</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Stripe</strong></td>
+          <td>Payment processing & billing</td>
+          <td>Email, name, payment info (processed only)</td>
+        </tr>
+        <tr>
+          <td><strong>Supabase</strong></td>
+          <td>Database & authentication</td>
+          <td>Account data, scan history, profile info</td>
+        </tr>
+        <tr>
+          <td><strong>RapidAPI</strong></td>
+          <td>TikTok data access</td>
+          <td>Creator handles you scan</td>
+        </tr>
+        <tr>
+          <td><strong>Transcript24</strong></td>
+          <td>YouTube transcript retrieval</td>
+          <td>Video URLs you query</td>
+        </tr>
+        <tr>
+          <td><strong>Perplexity AI</strong></td>
+          <td>AI analysis & brand detection</td>
+          <td>Scan results (for analysis)</td>
+        </tr>
+        <tr>
+          <td><strong>Google OAuth</strong></td>
+          <td>Account authentication</td>
+          <td>Email, name, profile picture</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><strong>We do not sell your personal data to third parties.</strong></p>
+
+    <h2>6. Data Retention</h2>
+    <ul>
+      <li><strong>Account Data:</strong> Retained while your account is active. Deleted within 30 days of account cancellation.</li>
+      <li><strong>Billing Records:</strong> Retained for 7 years (tax compliance).</li>
+      <li><strong>Scan Results:</strong> Retained while your account is active. You may request deletion at any time.</li>
+      <li><strong>Support Tickets:</strong> Retained for 2 years unless you request earlier deletion.</li>
+      <li><strong>Cookies:</strong> Session cookies expire after 24 hours of inactivity.</li>
+    </ul>
+
+    <h2>7. Your Rights & Choices</h2>
+    
+    <h3>7.1 Access & Portability</h3>
+    <p>You can request a copy of all data we hold about you by emailing <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a>.</p>
+
+    <h3>7.2 Correction</h3>
+    <p>You can update your account information at any time in your account settings.</p>
+
+    <h3>7.3 Deletion</h3>
+    <p>You can request deletion of your account and associated data by contacting <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a>. We will delete your data within 30 days.</p>
+
+    <h3>7.4 Opt-Out</h3>
+    <ul>
+      <li><strong>Marketing Emails:</strong> Unsubscribe via the link in any newsletter email.</li>
+      <li><strong>AI Training:</strong> You can request that your scan data not be used to improve our AI model by contacting support.</li>
+    </ul>
+
+    <h3>7.5 GDPR & CCPA Rights</h3>
+    <p>If you are in the EU (GDPR) or California (CCPA), you have additional rights including the right to access, correct, delete, and port your data. Contact <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a> to exercise these rights.</p>
+
+    <h2>8. AI & Machine Learning</h2>
+    <ul>
+      <li>Our brand deal detection model is trained on historical scan data and public creator information.</li>
+      <li>User scan data may be used to improve detection accuracy <strong>unless you opt-out</strong>.</li>
+      <li>We do not use your personal data (name, email) for AI training—only anonymized scan patterns.</li>
+      <li>Our AI model produces results that may contain false positives or negatives. Always verify independently.</li>
+    </ul>
+
+    <h2>9. Security</h2>
+    <p>We implement industry-standard security measures to protect your data:</p>
+    <ul>
+      <li><strong>HTTPS/SSL Encryption:</strong> All traffic is encrypted in transit</li>
+      <li><strong>Password Hashing:</strong> Passwords are hashed using bcrypt (never stored in plaintext)</li>
+      <li><strong>Secure Sessions:</strong> Session tokens expire and require re-authentication</li>
+      <li><strong>API Key Protection:</strong> All secrets stored in server-side environment variables</li>
+      <li><strong>Database Security:</strong> Supabase provides encrypted database storage</li>
+    </ul>
+    <p>However, no security system is 100% secure. We cannot guarantee absolute security of your data.</p>
+
+    <h2>10. International Data Transfers</h2>
+    <p>If you are in the EU, we comply with GDPR when transferring your data to our US-based servers (New York). We use Standard Contractual Clauses (SCCs) as the legal basis for such transfers. Our Data Processing Agreement is available upon request.</p>
+
+    <h2>11. Third-Party Links</h2>
+    <p>Our website may contain links to third-party websites (TikTok, YouTube, Instagram, Stripe, etc.). We are not responsible for their privacy practices. Please review their privacy policies before providing personal information.</p>
+
+    <h2>12. Children's Privacy</h2>
+    <p>RespawnSignal is intended for users 18 years and older. We do not knowingly collect data from children under 18. If we become aware of such collection, we will delete the data immediately.</p>
+
+    <h2>13. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy at any time. We will notify you of material changes via email or by updating the "Last Updated" date. Continued use of the Service constitutes acceptance of the updated policy.</p>
+
+    <h2>14. Contact Us</h2>
+    <p>If you have questions about this Privacy Policy or our privacy practices, contact us using the form below or reach us directly:</p>
+    
+    <div class="contact-form-section">
+      <h3 style="font-size: 18px; margin-bottom: 20px;">Send us a Message</h3>
+      <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="privacy-contact-name" placeholder="Your name" /></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="privacy-contact-email" type="email" placeholder="your@email.com" /></div>
+      <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="privacy-contact-subject" placeholder="What is this about?" /></div>
+      <div class="form-group"><label class="form-label">Message</label><textarea class="form-input form-textarea" id="privacy-contact-message" placeholder="Your message..."></textarea></div>
+      <button class="btn-primary" style="width:100%;padding:12px;font-size:14px" onclick="submitPrivacyContact()">Send Message</button>
+      <div class="form-success" id="privacy-contact-success">✓ Message sent! We'll respond within 24 hours.</div>
+      <div class="form-error-msg" id="privacy-contact-error"></div>
+    </div>
+
+    <div class="contact-info" style="margin-top: 40px;">
+      <h3 style="font-size: 16px; margin-bottom: 16px;">Direct Contact</h3>
+      <p><strong>RespawnSignal LLC</strong></p>
+      <p>New York, USA</p>
+      <p>📧 <a href="mailto:legal@respawnmedia.co">legal@respawnmedia.co</a></p>
+      <p>📧 <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a></p>
+    </div>
+
+    <p style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text3); font-size: 12px;">
+      © 2026 RespawnSignal LLC. All rights reserved.
+    </p>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 RespawnSignal LLC. All rights reserved.</p>
+    <p>Based in New York, USA</p>
+    <p>Questions? Email us at <a href="mailto:support@respawnmedia.co">support@respawnmedia.co</a></p>
+  </footer>
+
+  <script>
+    async function submitPrivacyContact() {
+      const name = document.getElementById('privacy-contact-name').value.trim();
+      const email = document.getElementById('privacy-contact-email').value.trim();
+      const subject = document.getElementById('privacy-contact-subject').value.trim();
+      const message = document.getElementById('privacy-contact-message').value.trim();
+      const errEl = document.getElementById('privacy-contact-error');
+      const successEl = document.getElementById('privacy-contact-success');
+
+      if (!name || !email || !subject || !message) {
+        errEl.textContent = 'All fields are required.';
+        errEl.style.display = 'block';
+        successEl.style.display = 'none';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/billing/contact-enterprise', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            company: 'Privacy Inquiry',
+            message: `Subject: ${subject}\n\n${message}`
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send message');
+        }
+
+        successEl.style.display = 'block';
+        errEl.style.display = 'none';
+        
+        // Clear form
+        document.getElementById('privacy-contact-name').value = '';
+        document.getElementById('privacy-contact-email').value = '';
+        document.getElementById('privacy-contact-subject').value = '';
+        document.getElementById('privacy-contact-message').value = '';
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          successEl.style.display = 'none';
+        }, 5000);
+      } catch (error) {
+        errEl.textContent = error.message || 'Failed to send message. Please try again.';
+        errEl.style.display = 'block';
+        successEl.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

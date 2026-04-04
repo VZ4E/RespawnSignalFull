@@ -1,3 +1,4 @@
+<!-- DEPLOYMENT_VERSION: 65ccb19 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -210,6 +211,9 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); }
 
 .page { display:none; padding:28px 30px; max-width:820px; }
 .page.active { display:block; }
+#page-automation { max-width:none; padding:0; }
+#page-automation .sec-head { margin:28px 30px 24px 30px; }
+#automation-content { width:100%; }
 .sec-head { margin-bottom:24px; }
 .sec-head h1 { font-family:var(--serif); font-style:italic; font-size:26px; margin-bottom:4px; }
 .sec-head p { font-size:13px; color:var(--text2); }
@@ -242,6 +246,8 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 .range-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); background:#fff; }
 .range-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 8px var(--accent-glow); }
 .range-btn:disabled { opacity:0.35; cursor:not-allowed; }
+/* AGENCY TIER OVERRIDE: Ensure agency users see enabled range buttons */
+[data-agency-enabled="true"] .range-btn:not(:first-child) { opacity:1 !important; cursor:pointer !important; }
 
 .platform-selector {
   background:var(--surface2); border:2px solid var(--border); border-radius:10px;
@@ -442,6 +448,1036 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
 }
 .form-input:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px var(--accent-dim); }
 .form-input::placeholder { color:var(--text3); }
+
+/* ── ONBOARDING ─────────────────────────────────────────── */
+#ob-overlay { position:fixed; inset:0; z-index:9000; opacity:0; transition:opacity 0.25s; pointer-events:none; }
+#ob-overlay.ob-visible { opacity:1; pointer-events:all; }
+#ob-backdrop { position:absolute; inset:0; background:rgba(15,23,42,0.55); transition:background 0.2s; }
+
+.ob-card {
+  position:fixed;
+  width:340px;
+  background:#fff;
+  border-radius:14px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1);
+  z-index:9001;
+  transition:top 0.22s ease, left 0.22s ease, transform 0.22s ease;
+  pointer-events:all;
+}
+.ob-card-center {
+  top:50% !important;
+  left:50% !important;
+  transform:translate(-50%,-50%) !important;
+}
+
+.ob-skip {
+  position:absolute; top:14px; right:16px;
+  background:none; border:none; font-size:11px; color:var(--text3);
+  cursor:pointer; padding:3px 6px; border-radius:4px; font-family:var(--mono);
+  transition:color 0.13s;
+}
+.ob-skip:hover { color:var(--text); }
+
+.ob-title {
+  font-size:16px; font-weight:700; color:var(--text); margin-bottom:10px;
+  padding-right:48px; line-height:1.3;
+}
+.ob-body {
+  font-size:13px; color:var(--text2); line-height:1.6; margin-bottom:20px;
+}
+.ob-body code {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:4px; padding:1px 5px; font-family:var(--mono); font-size:11px; color:var(--accent);
+}
+.ob-body b { color:var(--text); font-weight:600; }
+
+.ob-footer { display:flex; flex-direction:column; gap:14px; }
+
+.ob-dots { display:flex; gap:6px; justify-content:center; }
+.ob-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--border); transition:all 0.15s;
+}
+.ob-dot-active { background:var(--accent); transform:scale(1.3); }
+
+.ob-btns { display:flex; align-items:center; gap:8px; }
+.ob-step-indicator { flex:1; text-align:center; font-family:var(--mono); font-size:10px; color:var(--text3); }
+
+.ob-btn-prev {
+  padding:7px 14px; border-radius:7px; border:1.5px solid var(--border);
+  background:transparent; color:var(--text2); font-size:12px; font-weight:600;
+  cursor:pointer; transition:all 0.13s; font-family:var(--sans);
+}
+.ob-btn-prev:hover { border-color:var(--accent); color:var(--accent); }
+
+.ob-btn-next {
+  padding:8px 18px; border-radius:7px; border:none;
+  background:var(--accent); color:#fff; font-size:13px; font-weight:700;
+  cursor:pointer; transition:all 0.13s; font-family:var(--sans);
+  flex:1;
+}
+.ob-btn-next:hover { background:#4a90d9; }
+
+/* Highlighted element ring */
+.ob-highlight {
+  position:relative;
+  z-index:8999 !important;
+  box-shadow:0 0 0 3px var(--accent), 0 0 0 6px rgba(90,160,232,0.25) !important;
+  border-radius:10px;
+}
+/* ── END ONBOARDING ─────────────────────────────────────── */
+
+/* ── PRICING PAGE ────────────────────────────────────────── */
+.pricing-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.pricing-card:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+  transform: translateY(-2px);
+}
+.plan-badge {
+  background: var(--accent);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.plan-btn {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+.plan-btn:hover {
+  background: var(--border);
+  border-color: var(--text2);
+}
+.plan-btn-accent {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
+.plan-btn-accent:hover {
+  background: rgba(90, 160, 232, 0.9) !important;
+}
+.topup-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+}
+.topup-card:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+  transform: translateY(-2px);
+}
+.topup-card:active {
+  transform: translateY(0);
+}
+/* ── END PRICING PAGE ────────────────────────────────────── */
+</style>
+
+<!-- ══════════════════════════════════════════════════════
+     RESPAWN SIGNAL UI REFINEMENTS — Phases 2–15
+     Only CSS/styling changes — no layout or functionality altered
+     ══════════════════════════════════════════════════════ -->
+<style>
+
+/* ── Phase 1 additions: Sidebar polish ── */
+
+.sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.logo-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.logo-tag {
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+
+/* Nav items: left-border accent on active */
+.nav-item {
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  margin-left: -10px;
+  padding-left: 13px;
+  transition: all 0.15s ease-out;
+}
+.nav-item:hover {
+  background: #f1f5f9;
+  color: var(--text);
+  border-left-color: transparent;
+}
+.nav-item.active {
+  background: var(--accent-dim);
+  border-left-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Nav badge: solid pill style */
+.nav-badge {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+}
+
+/* Sidebar footer: credits bar */
+.sf-bar-wrap {
+  height: 4px;
+  margin-bottom: 6px;
+}
+.sf-label {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.sf-row {
+  align-items: center;
+}
+.sf-num {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sf-total {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ── Phase 2: Typography & Spacing ── */
+
+/* Page headings: sans-serif, 22px, weight 600 (was 26px serif italic) */
+.sec-head h1 {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.2px;
+  padding-top: 6px;
+}
+
+/* Section labels: 11px, tracking 0.08em, weight 500, muted gray */
+.card-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+/* Body text: relaxed line-height */
+.sec-head p {
+  line-height: 1.7;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+/* ── Phase 3: Scanner Page ── */
+
+/* Scan button: 48px height, font-weight 600, brightness on hover */
+.scan-btn {
+  height: 48px;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+}
+.scan-btn:hover:not(:disabled) {
+  background: var(--accent);
+  filter: brightness(1.06);
+  transform: none;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.scan-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  filter: none;
+}
+
+/* Scan mode buttons: proper filled/outlined segmented control */
+#mode-single,
+#mode-group {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text2) !important;
+  padding: 10px 16px !important;
+  transition: all 0.15s !important;
+}
+#mode-single.active,
+#mode-group.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px var(--accent-glow) !important;
+}
+
+/* Scan range buttons: clean outlined style */
+.range-btn {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.range-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface);
+  box-shadow: none;
+}
+.range-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+/* Platform selector: cleaner sizing */
+.platform-selector {
+  border-width: 1px;
+  padding: 12px 8px;
+  border-radius: 8px;
+}
+.platform-selector.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+/* Detection banner: cleaner inline style */
+#input-detected {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--sans);
+  font-weight: 500;
+}
+
+/* Video list items: left border accent on hover */
+.video-item {
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.video-item:hover {
+  border-left-color: var(--accent);
+  background: var(--accent-dim);
+  border-top-color: var(--border);
+  border-right-color: var(--border);
+  border-bottom-color: var(--border);
+}
+
+/* ── Phase 4: Deals Found Section ── */
+
+/* Deal company label: colored dot before brand */
+.deal-co-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.deal-co-label::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Confidence pills: filled solid style */
+.conf-pill {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--sans);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.conf-high {
+  background: #dcfce7;
+  color: #16a34a;
+  border: none;
+}
+.conf-mid {
+  background: #fef3c7;
+  color: #d97706;
+  border: none;
+}
+.conf-low {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+}
+
+/* "What is this deal?" button: text-only info style */
+.explain-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--sans);
+  padding: 4px 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.13s;
+}
+.explain-btn:hover {
+  background: transparent;
+  border: none;
+  text-decoration: underline;
+  color: var(--accent-dark);
+}
+
+/* Accordion headers: hover bg, clean look */
+.video-group-header {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.video-group-header:hover {
+  background: #f0f7ff;
+}
+
+/* ── Phase 5: Scan History Page ── */
+
+/* History items: cleaner card rows */
+.history-item {
+  border-radius: 10px;
+  padding: 16px 18px;
+  transition: all 0.15s;
+}
+.history-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px var(--accent-dim);
+  background: #fafcff;
+}
+.hi-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.hi-meta {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  gap: 4px;
+}
+.hi-deals {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+
+/* History expand rows */
+.he-brand {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.he-type {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.he-evidence {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── Phase 6: All Deals Page ── */
+
+/* Stat cards: blue-tinted bg + bottom accent border */
+.stat-card {
+  background: #f0f7ff;
+  border: 1px solid #d0e8ff;
+  border-bottom: 4px solid var(--accent);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+.stat-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  margin-bottom: 8px;
+}
+/* Stat value: large bold sans (was serif italic) */
+.stat-val {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.stat-sub {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* Brand master list items: rank circle, filled badge */
+.bml-item {
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+.bml-rank {
+  width: 32px;
+  height: 32px;
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.bml-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.bml-creators {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: #94a3b8;
+}
+.bml-count {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+/* ── Phase 7: Automation Page ── */
+
+/* Run/Scan All button: filled blue (was dark/black) */
+.run-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  height: auto;
+  min-height: 44px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.run-btn:hover {
+  background: var(--accent-dark);
+  filter: brightness(1.05);
+  transform: none;
+}
+.run-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+/* Import textarea: proper font size */
+.import-textarea-wrap textarea {
+  font-size: 14px;
+  min-height: 128px;
+  line-height: 1.6;
+}
+.import-count-float {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ── Phase 8: Groups Page ── */
+
+/* Group cards: more padding, creator count badge */
+#groups-page-list .card,
+#groups-list .card {
+  padding: 22px;
+}
+
+/* ── Phase 9: Credits Page ── */
+
+/* Credits big card: polish typography */
+.cred-big-card {
+  border-radius: 14px;
+  padding: 28px;
+}
+.cbc-num {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: white;
+}
+.cbc-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  margin-top: 4px;
+  margin-bottom: 18px;
+}
+.cbc-bar-wrap {
+  height: 6px;
+  margin-bottom: 10px;
+}
+.cbc-sub {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Usage history rows */
+.uh-row {
+  padding: 12px 16px;
+  border-radius: 9px;
+  margin-bottom: 6px;
+}
+.uh-lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.uh-date {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.uh-cost {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Phase 10: Account Page ── */
+
+/* Account rows: more breathing room */
+.acct-row {
+  padding: 18px 0;
+}
+.acct-lbl {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.acct-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Plan chip: proper pill badge */
+.plan-chip {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+/* Danger button: lowercase, red outlined, less aggressive */
+.danger-btn {
+  background: transparent;
+  border: 1px solid rgba(220,38,38,0.4);
+  border-radius: 7px;
+  color: var(--red);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: all 0.13s;
+}
+.danger-btn:hover {
+  background: var(--red-dim);
+  border-color: var(--red);
+}
+
+/* ── Phase 11: Settings Page ── */
+
+/* Settings tabs: clean modern underline */
+.settings-tab {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-bottom-width: 2px;
+  color: var(--text3);
+  transition: all 0.15s;
+}
+.settings-tab:hover {
+  color: var(--text2);
+  border-bottom-color: var(--border);
+}
+.settings-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Phases 12–15: Global polish & consistency ── */
+
+/* All pill badges: consistent rounded-full style */
+.count-pill {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+/* Deal brand tags: slightly softer */
+.brand-tag {
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Deal evidence quote: clean left border */
+.deal-evidence {
+  border-left: 2px solid var(--accent-mid);
+  padding-left: 12px;
+  font-size: 12px;
+  line-height: 1.65;
+  font-style: italic;
+  color: var(--text2);
+}
+
+/* Queue items in automation: clean status */
+.q-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.q-status {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: #94a3b8;
+}
+.q-pill {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Empty state: cleaner look */
+.empty-state {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 48px 20px;
+  border: 1px dashed var(--border2);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+/* Global transition smoothness */
+* {
+  transition-timing-function: ease-out;
+}
+
+/* Input height: 40px minimum */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Textarea: no min-height override needed, keep as is */
+
+/* Platform badge in settings */
+.platform-badge {
+  background: #e8f2fd;
+  color: #3a7bc8;
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 10px;
+  padding: 3px 8px;
+  font-weight: 500;
+}
+
+/* Modal footer buttons: consistent */
+.modal-footer .run-btn {
+  margin-top: 0;
+}
+
+/* Topbar title: clean */
+.topbar-title {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Topbar pill: clean indicator */
+.topbar-pill {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* ── Phase 7 additional: Automation page polish ── */
+
+/* Scan all creators button and queue action buttons: consistent blue */
+#page-automation .run-btn,
+#page-automation button.run-btn {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+#page-automation .run-btn:hover {
+  background: var(--accent-dark);
+}
+
+/* Credit cost estimate hint text */
+#page-automation p[style*="font-size:11px"],
+#page-automation .card p {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* ── Phase 8: Groups page polish ── */
+
+/* Groups page new group button: filled blue */
+#page-groups .run-btn {
+  background: var(--accent);
+  color: white;
+}
+
+/* ── Phase 9: Credits page usage history ── */
+
+/* Platform color dots in usage rows */
+.uh-platform-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Phase 10: Account page log out ── */
+
+/* Log Out / danger button text normalize */
+.danger-btn {
+  text-transform: none;
+}
+
+/* ── Phase 11: Settings page add creator/group buttons ── */
+
+/* All run-btn in settings: blue */
+#page-settings .run-btn,
+#settings-creators-tab .run-btn,
+#settings-groups-tab .run-btn,
+#settings-configs-tab .run-btn {
+  background: var(--accent);
+  color: white;
+}
+#page-settings .run-btn:hover,
+#settings-creators-tab .run-btn:hover,
+#settings-groups-tab .run-btn:hover,
+#settings-configs-tab .run-btn:hover {
+  background: var(--accent-dark);
+}
+
+/* Creator/config cards: clean hover */
+.creator-card,
+.config-card {
+  transition: all 0.15s;
+  border-radius: 12px;
+}
+.creator-card:hover,
+.config-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px var(--accent-dim);
+  background: var(--surface);
+}
+
+/* Creator name / config name: consistent */
+.creator-name,
+.config-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Creator/config action buttons */
+.creator-actions button,
+.config-actions button {
+  font-family: var(--sans);
+  font-size: 12px;
+  border-radius: 7px;
+  transition: all 0.13s;
+}
+
+/* ── Phase 12-15: Final polish ── */
+
+/* Fix input height to only affect scanner inputs, not auth */
+.page input[type="text"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Prevent height override on form-inputs with explicit padding */
+.form-input {
+  height: auto;
+  min-height: 38px;
+}
+.form-input[type="email"],
+.form-input[type="password"],
+.form-input[type="text"] {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* Remove the overly broad input height rule above */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  height: auto;
+  min-height: 40px;
+}
+
+/* Apply consistent transition to interactive elements */
+button,
+.nav-item,
+.history-item,
+.deal-card,
+.bml-item,
+.video-item {
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
+/* Accessibility: ensure focus styles are visible */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Result count pill consistency */
+.results-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Upgrade prompt: clean look */
+.upgrade-prompt {
+  border-radius: 12px;
+  padding: 32px;
+}
+.upgrade-prompt h3 {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.upgrade-prompt p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
 </style>
 </head>
 <body>
@@ -468,53 +1504,89 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
     <div class="pricing-sub">No hidden fees. Credits reset monthly.</div>
     <div class="pricing-grid">
 
-      <!-- PRO -->
+      <!-- STARTER -->
       <div class="plan-card">
-        <div class="plan-name">Pro</div>
-        <div class="plan-price">$29<span>/mo</span></div>
-        <div class="plan-desc">For individual researchers and marketers.</div>
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">$299<span>/mo</span></div>
+        <div class="plan-desc">Perfect to get started.</div>
         <ul class="plan-features">
-          <li><span class="feat-check">✓</span> 300 credits / month</li>
-          <li><span class="feat-check">✓</span> Scan last 14 videos</li>
-          <li><span class="feat-check">✓</span> Full scan history (30 days)</li>
-          <li><span class="feat-check">✓</span> Brand deal leaderboard</li>
-          <li><span class="feat-x">✗</span> Bulk automation</li>
-          <li><span class="feat-x">✗</span> Multi-seat</li>
+          <li><span class="feat-check">✓</span> 1,000 video scans per month</li>
+          <li><span class="feat-check">✓</span> TikTok + YouTube + Instagram</li>
+          <li><span class="feat-check">✓</span> Brand deal detection via AI</li>
+          <li><span class="feat-check">✓</span> CSV export</li>
         </ul>
-        <button class="plan-btn plan-btn-outline" onclick="startCheckout('pro')">Get Started</button>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono)">+$0.25/credit overage</div>
+        <button class="plan-btn plan-btn-outline" onclick="startCheckout('starter')">Get Started</button>
       </div>
 
-      <!-- MAX -->
+      <!-- PRO (FEATURED) -->
       <div class="plan-card featured">
         <div class="plan-badge">Most Popular</div>
-        <div class="plan-name">Max</div>
-        <div class="plan-price">$79<span>/mo</span></div>
-        <div class="plan-desc">For power users and small agencies.</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$599<span>/mo</span></div>
+        <div class="plan-desc">For growing teams.</div>
         <ul class="plan-features">
-          <li><span class="feat-check">✓</span> 1,000 credits / month</li>
-          <li><span class="feat-check">✓</span> Scan last 30 videos</li>
-          <li><span class="feat-check">✓</span> Unlimited scan history</li>
-          <li><span class="feat-check">✓</span> Brand deal leaderboard</li>
-          <li><span class="feat-check">✓</span> Bulk automation queue</li>
-          <li><span class="feat-x">✗</span> Multi-seat</li>
+          <li><span class="feat-check">✓</span> 2,500 video scans per month</li>
+          <li><span class="feat-check">✓</span> All platforms included</li>
+          <li><span class="feat-check">✓</span> Priority processing</li>
+          <li><span class="feat-check">✓</span> Campaign history + reporting</li>
+          <li><span class="feat-check">✓</span> Slack/webhook notifications</li>
         </ul>
-        <button class="plan-btn plan-btn-accent" onclick="startCheckout('max')">Get Started</button>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono)">+$0.22/credit overage</div>
+        <button class="plan-btn plan-btn-accent" onclick="startCheckout('pro')">Get Started</button>
       </div>
 
-      <!-- ENTERPRISE -->
+      <!-- AGENCY -->
       <div class="plan-card">
-        <div class="plan-name">Enterprise</div>
-        <div class="plan-price" style="font-size:32px;margin-top:8px">Contact Us</div>
-        <div class="plan-desc">For agencies managing multiple clients and teams.</div>
+        <div class="plan-name">Agency</div>
+        <div class="plan-price">$999<span>/mo</span></div>
+        <div class="plan-desc">For agencies and enterprises.</div>
         <ul class="plan-features">
-          <li><span class="feat-check">✓</span> Custom credits</li>
-          <li><span class="feat-check">✓</span> Unlimited scan range</li>
-          <li><span class="feat-check">✓</span> Unlimited history</li>
-          <li><span class="feat-check">✓</span> Bulk automation</li>
-          <li><span class="feat-check">✓</span> Multi-seat access</li>
-          <li><span class="feat-check">✓</span> Custom onboarding</li>
+          <li><span class="feat-check">✓</span> 5,000 video scans per month</li>
+          <li><span class="feat-check">✓</span> Multi-user seats (up to 5)</li>
+          <li><span class="feat-check">✓</span> White-label ready</li>
+          <li><span class="feat-check">✓</span> Dedicated support</li>
+          <li><span class="feat-check">✓</span> Custom integrations</li>
         </ul>
-        <button class="plan-btn plan-btn-outline" onclick="document.getElementById('enterprise-form').scrollIntoView({behavior:'smooth'})">Contact Us</button>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono)">+$0.18/credit overage</div>
+        <button class="plan-btn plan-btn-outline" onclick="startCheckout('agency')">Get Started</button>
+      </div>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div style="text-align:center;margin-top:48px;padding-top:48px;border-top:1px solid var(--border)">
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Enterprise</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:24px">For very large teams and custom requirements.</div>
+      <button class="btn-primary" onclick="document.getElementById('enterprise-form').scrollIntoView({behavior:'smooth'})">Contact Us</button>
+    </div>
+
+    <!-- CREDIT EXPLAINER -->
+    <div style="text-align:center;margin-top:48px;padding:24px;background:var(--surface2);border-radius:12px;font-size:13px;color:var(--text2);line-height:1.6">
+      <strong>How credits work:</strong> 1 credit = 1 video scanned. A typical campaign run (20 creators × 30 videos) uses 600 credits. All unused credits expire at the end of the billing period.
+    </div>
+
+    <!-- TOP-UP PACKS -->
+    <div style="margin-top:48px">
+      <div style="text-align:center;font-size:18px;font-weight:700;color:var(--text);margin-bottom:24px">Need more credits?</div>
+      <div class="pricing-grid">
+        <div class="plan-card">
+          <div class="plan-name" style="font-size:14px">500 Credits</div>
+          <div class="plan-price">$119<span style="font-size:14px">/pack</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">$0.24 per credit</div>
+          <button class="plan-btn plan-btn-accent" onclick="startCheckout('topup_500')">Buy Now</button>
+        </div>
+        <div class="plan-card">
+          <div class="plan-name" style="font-size:14px">1,500 Credits</div>
+          <div class="plan-price">$299<span style="font-size:14px">/pack</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">$0.20 per credit</div>
+          <button class="plan-btn plan-btn-accent" onclick="startCheckout('topup_1500')">Buy Now</button>
+        </div>
+        <div class="plan-card">
+          <div class="plan-name" style="font-size:14px">3,000 Credits</div>
+          <div class="plan-price">$499<span style="font-size:14px">/pack</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">$0.17 per credit</div>
+          <button class="plan-btn plan-btn-accent" onclick="startCheckout('topup_3000')">Buy Now</button>
+        </div>
       </div>
     </div>
   </div>
@@ -555,6 +1627,26 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
   </div>
 </div>
 
+<!-- ── ONBOARDING OVERLAY ── -->
+<div id="ob-overlay" style="display:none">
+  <div id="ob-backdrop"></div>
+  <div id="ob-card" class="ob-card ob-card-center">
+    <button class="ob-skip" onclick="finishOnboarding()">Skip tour</button>
+    <div id="ob-title" class="ob-title"></div>
+    <div id="ob-body" class="ob-body"></div>
+    <div class="ob-footer">
+      <div class="ob-dots" id="ob-dots">
+        <!-- dots injected by JS -->
+      </div>
+      <div class="ob-btns">
+        <button class="ob-btn-prev" id="ob-prev-btn" onclick="onboardPrev()">← Back</button>
+        <div class="ob-step-indicator" id="ob-step-indicator">1 of 7</div>
+        <button class="ob-btn-next" id="ob-next-btn" onclick="onboardNext()">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- FORGOT PASSWORD MODAL -->
 <div id="forgot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center">
   <div class="auth-card" style="max-width:400px">
@@ -583,7 +1675,9 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <div class="nav-sec" style="margin-top:6px">Tools</div>
       <div class="nav-item" onclick="navTo('automation',this)">Automation</div>
       <div class="nav-item" onclick="navTo('groups',this)">Groups</div>
+      <div class="nav-item" onclick="navTo('agency-search',this)">Agency Search</div>
       <div class="nav-item" onclick="navTo('credits',this)">Credits</div>
+      <div class="nav-item" onclick="navTo('pricing',this)">Pricing</div>
       <div class="nav-item" onclick="navTo('settings',this)">Settings</div>
       <div class="nav-item" onclick="navTo('account',this)">Account</div>
     </nav>
@@ -732,6 +1826,54 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       <div id="groups-page-list" style="display:grid;gap:12px"></div>
     </div>
 
+    <!-- AGENCY SEARCH -->
+    <div class="page" id="page-agency-search">
+      <div class="sec-head"><h1>Agency Search</h1><p>Look up a creator by their handle or profile URL to find their agency representation.</p></div>
+      
+      <!-- Creator Lookup Input -->
+      <div class="card" style="margin-bottom:24px">
+        <div style="display:flex;gap:12px;margin-bottom:16px">
+          <input class="form-input" id="creator-lookup-input" type="text" placeholder="Enter a creator handle or profile URL" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:6px" />
+          <button class="run-btn" id="creator-lookup-btn" onclick="lookupCreator()" style="padding:12px 24px">Look Up Creator</button>
+        </div>
+        <div id="creator-lookup-status" style="display:none;font-size:12px;margin-bottom:12px"></div>
+      </div>
+
+      <!-- Creator Card Results -->
+      <div id="creator-result" style="display:none;margin-bottom:24px">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+            <div style="flex:1">
+              <div style="font-size:16px;font-weight:700;margin-bottom:8px" id="creator-result-name">—</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="creator-result-platforms"></div>
+            </div>
+            <button class="run-btn" onclick="openCreatorGroupModal()" style="padding:8px 12px;font-size:12px;white-space:nowrap;margin-left:12px">Add to Group</button>
+          </div>
+          <div id="creator-result-bio" style="display:none;padding:12px;background:var(--surface2);border-radius:8px;margin-bottom:12px;border:1px solid var(--border);font-size:13px;line-height:1.5;color:var(--text1)"></div>
+          <div id="creator-contacts" style="display:block"></div>
+        </div>
+      </div>
+
+      <!-- Scan History Section -->
+      <div id="scan-history-section" style="display:none">
+        <div style="margin-bottom:16px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px">Scan History</div>
+          <div id="creator-scan-history" style="display:flex;flex-direction:column;gap:7px"></div>
+        </div>
+      </div>
+
+      <!-- No Scans Prompt -->
+      <div id="no-scans-prompt" style="display:none;text-align:center;padding:32px;background:var(--surface2);border-radius:12px;border:1px dashed var(--border)">
+        <div style="font-size:14px;margin-bottom:16px">No scans found for this creator yet.</div>
+        <button class="run-btn" onclick="scanThisCreator()" style="padding:12px 24px">Scan This Creator</button>
+      </div>
+
+      <!-- Empty State -->
+      <div id="agency-empty-state" style="text-align:center;padding:32px;color:var(--text2)">
+        <div style="font-size:14px">Enter a creator's handle or profile URL to look them up.</div>
+      </div>
+    </div>
+
     <!-- CREDITS -->
     <div class="page" id="page-credits">
       <div class="sec-head"><h1>Credits</h1><p>Analysis usage — billed at ~1 credit per minute of video.</p></div>
@@ -782,6 +1924,114 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
       </div>
     </div>
 
+    <!-- PRICING -->
+    <div class="page" id="page-pricing">
+      <div class="sec-head"><h1>Subscription & Billing</h1><p>Choose your plan, upgrade, or buy credits.</p></div>
+      
+      <div style="background:var(--surface2);border-radius:12px;padding:24px;margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:4px">Current Plan</div>
+            <div style="font-size:24px;font-weight:700" id="pricing-current-plan">—</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px;color:var(--text2);margin-bottom:4px">Available Credits</div>
+            <div style="font-size:24px;font-weight:700" id="pricing-credits">—</div>
+          </div>
+        </div>
+        <div style="height:8px;background:var(--surface);border-radius:4px;overflow:hidden;margin-bottom:12px">
+          <div id="pricing-credit-bar" style="height:100%;background:var(--accent);transition:width 0.3s ease"></div>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">Credits reset monthly on your subscription renewal date</div>
+      </div>
+
+      <!-- PLAN SELECTOR -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">Choose Your Plan</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+          <!-- STARTER -->
+          <div class="pricing-card" id="plan-starter">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+              <div>
+                <div style="font-size:18px;font-weight:700">Starter</div>
+                <div style="font-size:28px;font-weight:700;margin-top:4px">$299<span style="font-size:16px;color:var(--text2)">/mo</span></div>
+              </div>
+              <div class="plan-badge" id="badge-starter" style="display:none">Current</div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Great for individuals exploring brand deals</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;font-size:13px">
+              <div><span style="color:var(--accent)">✓</span> 1,000 credits/month</div>
+              <div><span style="color:var(--accent)">✓</span> Scan up to 30 videos</div>
+              <div><span style="color:var(--text3)">✗</span> Bulk automation</div>
+              <div><span style="color:var(--text3)">✗</span> Team seats</div>
+            </div>
+            <button class="plan-btn" id="btn-starter" onclick="selectPlan('starter')" style="width:100%;padding:10px">Select Plan</button>
+          </div>
+
+          <!-- PRO -->
+          <div class="pricing-card" id="plan-pro" style="border:2px solid var(--accent)">
+            <div style="background:var(--accent);color:white;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;display:inline-block;margin-bottom:12px">MOST POPULAR</div>
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+              <div>
+                <div style="font-size:18px;font-weight:700">Pro</div>
+                <div style="font-size:28px;font-weight:700;margin-top:4px">$599<span style="font-size:16px;color:var(--text2)">/mo</span></div>
+              </div>
+              <div class="plan-badge" id="badge-pro" style="display:none">Current</div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Perfect for agencies and power users</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;font-size:13px">
+              <div><span style="color:var(--accent)">✓</span> 2,500 credits/month</div>
+              <div><span style="color:var(--accent)">✓</span> Scan up to 30 videos</div>
+              <div><span style="color:var(--accent)">✓</span> Bulk automation</div>
+              <div><span style="color:var(--accent)">✓</span> Campaign history</div>
+            </div>
+            <button class="plan-btn plan-btn-accent" id="btn-pro" onclick="selectPlan('pro')" style="width:100%;padding:10px">Select Plan</button>
+          </div>
+
+          <!-- AGENCY -->
+          <div class="pricing-card" id="plan-agency">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+              <div>
+                <div style="font-size:18px;font-weight:700">Agency</div>
+                <div style="font-size:28px;font-weight:700;margin-top:4px">$999<span style="font-size:16px;color:var(--text2)">/mo</span></div>
+              </div>
+              <div class="plan-badge" id="badge-agency" style="display:none">Current</div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px">For large teams managing multiple clients</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;font-size:13px">
+              <div><span style="color:var(--accent)">✓</span> 5,000 credits/month</div>
+              <div><span style="color:var(--accent)">✓</span> Scan up to 30 videos</div>
+              <div><span style="color:var(--accent)">✓</span> Bulk automation</div>
+              <div><span style="color:var(--accent)">✓</span> Team seats (up to 5)</div>
+            </div>
+            <button class="plan-btn" id="btn-agency" onclick="selectPlan('agency')" style="width:100%;padding:10px">Select Plan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP-UP CREDITS -->
+      <div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">Buy Additional Credits</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+          <button class="topup-card" onclick="selectTopup('topup_500')">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">500 Credits</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:12px">$119</div>
+            <div style="font-size:12px;color:var(--text3)">$0.24 per credit</div>
+          </button>
+          <button class="topup-card" onclick="selectTopup('topup_1500')">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">1,500 Credits</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:12px">$299</div>
+            <div style="font-size:12px;color:var(--text3)">$0.20 per credit</div>
+          </button>
+          <button class="topup-card" onclick="selectTopup('topup_3000')">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">3,000 Credits</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:12px">$499</div>
+            <div style="font-size:12px;color:var(--text3)">$0.17 per credit</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="sec-head"><h1>Settings</h1><p>Manage creators, scan configs, and account preferences.</p></div>
@@ -791,6 +2041,9 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
         <button class="settings-tab active" onclick="switchSettingsTab('creators',this)">Creators</button>
         <button class="settings-tab" onclick="switchSettingsTab('groups',this)">Groups</button>
         <button class="settings-tab" onclick="switchSettingsTab('configs',this)">Scan Configs</button>
+        <button class="settings-tab" onclick="switchSettingsTab('manual',this)">Manual</button>
+        <button class="settings-tab" onclick="switchSettingsTab('notifications',this)">Notifications</button>
+        <button class="settings-tab" onclick="switchSettingsTab('reports',this)">Reports</button>
         <button class="settings-tab" onclick="switchSettingsTab('account',this)">Account</button>
       </div>
 
@@ -818,6 +2071,110 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
         <div id="configs-list" style="display:grid;gap:12px"></div>
       </div>
 
+      <!-- NOTIFICATIONS TAB -->
+      <div id="settings-notifications-tab" class="settings-content" style="display:none">
+        <div class="card">
+          <div style="margin-bottom:24px">
+            <h3 style="margin-bottom:12px;font-size:14px;font-weight:600">Slack Notifications</h3>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Get alerts when scans complete, deals are found, or credits are low.</p>
+            
+            <label style="display:block;margin-bottom:8px">
+              <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px">Slack Webhook URL</div>
+              <input class="form-input" id="slack-webhook" type="text" placeholder="https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXX" style="width:100%;font-family:var(--mono);font-size:11px" />
+              <div style="font-size:10px;color:var(--text3);margin-top:4px">
+                Get this from <a href="https://api.slack.com/apps" target="_blank" style="color:var(--accent)">api.slack.com/apps</a> → Incoming Webhooks
+              </div>
+            </label>
+            
+            <button class="btn-ghost" style="font-size:12px;padding:6px 12px;margin-top:8px" onclick="testSlackWebhook()">🧪 Test Connection</button>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:24px">
+            <h3 style="margin-bottom:12px;font-size:14px;font-weight:600">Notification Preferences</h3>
+            
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer">
+              <input type="checkbox" id="notify-on-deals" />
+              <span style="font-size:13px">Notify when scan completes with deals</span>
+            </label>
+            
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer">
+              <input type="checkbox" id="notify-every-deal" />
+              <span style="font-size:13px">Notify on every deal (not just scans)</span>
+            </label>
+            
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="notify-low-credits" />
+              <span style="font-size:13px">Notify when credits are running low</span>
+            </label>
+          </div>
+
+          <button class="run-btn" style="width:100%;margin-top:12px" onclick="saveNotificationSettings()">Save Preferences</button>
+          <div id="notification-settings-msg" style="font-size:12px;margin-top:8px;text-align:center;display:none"></div>
+        </div>
+      </div>
+
+      <!-- REPORTS TAB -->
+      <div id="settings-reports-tab" class="settings-content" style="display:none">
+        <div class="card">
+          <h3 style="margin-top:0;font-size:16px;font-weight:600">Monthly Creator Reports</h3>
+          <p style="color:var(--text2);font-size:13px;margin-bottom:20px">Generate and email detailed monthly activity reports for your creators.</p>
+
+          <div style="display:grid;gap:16px">
+            <!-- Email Input -->
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text3);margin-bottom:6px">Recipient Email</label>
+              <input class="form-input" id="report-email" type="email" placeholder="you@example.com" style="width:100%" />
+            </div>
+
+            <!-- Creator Selection -->
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text3);margin-bottom:6px">Select Creator(s)</label>
+              <div id="reports-creators-list" style="display:grid;gap:8px;max-height:200px;overflow-y:auto"></div>
+              <button class="btn-ghost" style="font-size:12px;margin-top:8px;width:100%;text-align:left;padding:8px" onclick="selectAllCreators()">Select All</button>
+            </div>
+
+            <!-- Date Range -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--text3);margin-bottom:6px">Month</label>
+                <select class="form-input" id="report-month" style="width:100%;padding:8px">
+                  <option value="0">January</option>
+                  <option value="1">February</option>
+                  <option value="2">March</option>
+                  <option value="3">April</option>
+                  <option value="4">May</option>
+                  <option value="5">June</option>
+                  <option value="6">July</option>
+                  <option value="7">August</option>
+                  <option value="8">September</option>
+                  <option value="9">October</option>
+                  <option value="10">November</option>
+                  <option value="11">December</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--text3);margin-bottom:6px">Year</label>
+                <select class="form-input" id="report-year" style="width:100%;padding:8px"></select>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+              <button class="btn-ghost" style="padding:10px;font-size:13px" onclick="generateReportPDF()">📥 Download PDF</button>
+              <button class="run-btn" style="padding:10px;font-size:13px" onclick="sendReportEmail()">📧 Send Email</button>
+            </div>
+
+            <div id="report-status-msg" style="font-size:12px;margin-top:8px;text-align:center;display:none;padding:8px;border-radius:4px"></div>
+          </div>
+
+          <!-- Report History -->
+          <div style="border-top:1px solid var(--border);margin-top:24px;padding-top:20px">
+            <h4 style="margin-top:0;font-size:13px;font-weight:600">Recent Reports</h4>
+            <div id="reports-history" style="display:grid;gap:8px;max-height:300px;overflow-y:auto;font-size:12px"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- ACCOUNT TAB -->
       <div id="settings-account-tab" class="settings-content" style="display:none">
         <div class="card">
@@ -840,6 +2197,45 @@ input::placeholder, textarea::placeholder { color:var(--text3); }
             <div><div class="acct-lbl">Session</div><div class="acct-val" style="font-size:13px;color:var(--text2)">Sign out of your account</div></div>
             <button class="danger-btn" onclick="logout()">Log Out</button>
           </div>
+        </div>
+      </div>
+
+      <!-- MANUAL TAB -->
+      <div id="settings-manual-tab" class="settings-content" style="display:none">
+        <!-- BULK SCAN CARD -->
+        <div class="card">
+          <div class="card-label">Bulk Scan — one username per line</div>
+          <div class="import-textarea-wrap">
+            <textarea id="import-textarea" rows="7" placeholder="cracklyy&#10;khaby.lame&#10;bellapoarch" oninput="updateImportCount()"></textarea>
+            <div class="import-count-float" id="import-count"></div>
+          </div>
+          <div style="margin-top:14px">
+            <div class="card-label" style="margin-bottom:9px">Scan Range</div>
+            <div class="range-group">
+              <button class="range-btn active" onclick="setAutoRange(3,this)">Last 3</button>
+              <button class="range-btn" onclick="setAutoRange(14,this)">Last 14</button>
+              <button class="range-btn" onclick="setAutoRange(30,this)">Last 30</button>
+            </div>
+          </div>
+          <button class="run-btn" id="import-run-btn" onclick="runImportList()">Scan All Creators</button>
+        </div>
+        
+        <div id="import-queue" style="margin-top:16px;display:none">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:9px">Queue Progress</div>
+          <div id="queue-items"></div>
+        </div>
+
+        <!-- MANUAL LINK ANALYSIS CARD -->
+        <div class="card" style="margin-top:24px">
+          <div class="card-label">Manual Link Analysis</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Paste a TikTok video link or content text to analyze for brand deals.</p>
+          <textarea id="manual-input" rows="5" placeholder="https://www.tiktok.com/@username/video/123456&#10;&#10;or paste content text directly..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 14px;outline:none;margin-bottom:12px;transition:all 0.15s"></textarea>
+          <button class="run-btn" id="manual-run-btn" onclick="runManualAnalysis()">Analyze for Deals</button>
+        </div>
+        
+        <div id="manual-results" style="margin-top:16px;display:none">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:9px">Analysis Results</div>
+          <div id="manual-results-content"></div>
         </div>
       </div>
     </div>
@@ -957,10 +2353,21 @@ let currentUser = null;
 let scanHistory = [];
 let scanRange = 3;
 let autoRange = 3;
+let currentCreatorForGroup = null; // Store creator handle for group modal
 
-const PLAN_MAX_RANGE = { none: 0, pro: 14, max: 30, enterprise: 30 };
-const PLAN_CREDITS = { none: 0, pro: 300, max: 1000, enterprise: 9999 };
-const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', credits:'Credits', settings:'Settings', account:'Account' };
+// ── PRICING CONFIGURATION ──
+const STRIPE_PRICES = {
+  starter: 'price_1TEP9mBVOMJTwlq1LnkpaaXH',
+  pro: 'price_1TEP9nBVOMJTwlq1AsNSiqCd',
+  agency: 'price_1TEP9nBVOMJTwlq1Ta0wBwjd',
+  topup_500: 'price_1TEP9oBVOMJTwlq1UIoVwhTv',
+  topup_1500: 'price_1TEP9oBVOMJTwlq11ED5EViJ',
+  topup_3000: 'price_1TEP9oBVOMJTwlq1wgfx5Fov'
+};
+
+const PLAN_MAX_RANGE = { none: 0, starter: 30, pro: 30, agency: 30, enterprise: 30 };
+const PLAN_CREDITS = { none: 0, starter: 1000, pro: 2500, agency: 5000, enterprise: 9999 };
+const PAGE_TITLES = { scan:'Scanner', history:'Scan History', deals:'All Deals', automation:'Automation', groups:'Groups', credits:'Credits', pricing:'Pricing & Billing', settings:'Settings', account:'Account' };
 
 // ── INIT ──
 async function init() {
@@ -1007,9 +2414,12 @@ async function init() {
   if (token) {
     try {
       const me = await api('/api/auth/me');
+      console.log('[init] /api/auth/me response:', me);
       currentUser = me;
+      console.log('[init] currentUser set to:', currentUser);
       showApp();
     } catch(_) {
+      console.error('[init] Error fetching /api/auth/me:', _);
       localStorage.removeItem('rs_token');
       showLanding();
     }
@@ -1027,11 +2437,16 @@ function showAuth(tab = 'signup') {
   switchAuthTab(tab);
 }
 function showApp() {
+  console.log('[showApp] Called. currentUser=%o', currentUser);
   setView('app');
   applyPlanLimits();
   loadHistory();
   updateCreditsUI();
   loadRecentActivity();
+  // Trigger onboarding for new users
+  setTimeout(() => {
+    if (!localStorage.getItem('rs_onboarding_done')) startOnboarding();
+  }, 600);
 }
 function setView(v) {
   ['landing','auth','app'].forEach(id => {
@@ -1168,17 +2583,105 @@ async function logout() {
   showLanding();
 }
 
+// ── NOTIFICATIONS ──
+async function loadNotificationSettings() {
+  try {
+    const prefs = await api('/api/notifications/preferences');
+    document.getElementById('slack-webhook').value = prefs.slack_webhook_url || '';
+    document.getElementById('notify-on-deals').checked = prefs.notification_on_deals !== false;
+    document.getElementById('notify-every-deal').checked = prefs.notification_on_every_deal === true;
+    document.getElementById('notify-low-credits').checked = prefs.notification_on_low_credits !== false;
+  } catch (err) {
+    console.error('Failed to load notification settings:', err);
+  }
+}
+
+async function saveNotificationSettings() {
+  try {
+    const msg = document.getElementById('notification-settings-msg');
+    msg.style.display = 'block';
+    msg.textContent = 'Saving...';
+    msg.style.color = 'var(--text2)';
+    
+    await api('/api/notifications/preferences', 'POST', {
+      slack_webhook_url: document.getElementById('slack-webhook').value,
+      notification_on_deals: document.getElementById('notify-on-deals').checked,
+      notification_on_every_deal: document.getElementById('notify-every-deal').checked,
+      notification_on_low_credits: document.getElementById('notify-low-credits').checked,
+    });
+    
+    msg.textContent = '✓ Settings saved!';
+    msg.style.color = 'var(--green)';
+    setTimeout(() => msg.style.display = 'none', 3000);
+  } catch (err) {
+    const msg = document.getElementById('notification-settings-msg');
+    msg.style.display = 'block';
+    msg.textContent = '✗ ' + (err.message || 'Failed to save settings');
+    msg.style.color = 'var(--red)';
+  }
+}
+
+async function testSlackWebhook() {
+  try {
+    const webhookUrl = document.getElementById('slack-webhook').value;
+    if (!webhookUrl) {
+      alert('Please enter a Slack webhook URL first');
+      return;
+    }
+    
+    await api('/api/notifications/test-slack', 'POST', {
+      slack_webhook_url: webhookUrl,
+    });
+    
+    alert('✓ Test message sent to your Slack workspace!');
+  } catch (err) {
+    alert('✗ Failed to send test message:\n' + err.message);
+  }
+}
+
 // ── UTILITIES ––
 function escapeHtml(text) {
   const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
   return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
 }
 
+// Check if email is a personal/common domain
+function isPersonalEmail(email) {
+  const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'msn.com', 'live.com', 'mail.com', 'yandex.com', 'qq.com', 'gmx.com', 'mail.ru', 'inbox.com'];
+  const domain = email.split('@')[1]?.toLowerCase();
+  return domain && personalDomains.includes(domain);
+}
+
 // ── PLAN LIMITS ──
+// Deployment timestamp: 2026-04-02 16:11 EDT - Agency tier fix
+let applyPlanLimits_callCount = 0;
+let applyPlanLimits_inProgress = false;
 function applyPlanLimits() {
-  if (!currentUser) return;
-  const plan = currentUser.plan || 'none';
-  const maxRange = PLAN_MAX_RANGE[plan] || 0;
+  // Guard against recursion
+  if (applyPlanLimits_inProgress) {
+    console.log('[applyPlanLimits] SKIPPING: Already in progress (recursion guard)');
+    return;
+  }
+  
+  applyPlanLimits_inProgress = true;
+  try {
+    applyPlanLimits_callCount++;
+    console.log('[applyPlanLimits] Call #%d START: currentUser=%o', applyPlanLimits_callCount, currentUser);
+    if (!currentUser) {
+      console.log('[applyPlanLimits] EARLY RETURN: no currentUser');
+      return;
+    }
+  const plan = (currentUser.plan || 'none').toLowerCase().trim();
+  let maxRange = PLAN_MAX_RANGE[plan] || 0;
+  
+  // EMERGENCY FIX: Ensure all paid plans (including agency) get maxRange of at least 30
+  if (['starter', 'pro', 'agency', 'enterprise'].includes(plan)) {
+    maxRange = Math.max(maxRange, 30);
+    console.log('[applyPlanLimits] EMERGENCY FIX: Upgraded maxRange to 30 for paid plan "%s"', plan);
+  }
+  
+  console.log('[applyPlanLimits] currentUser.plan=%s (raw), plan=%s (with fallback), maxRange=%d', currentUser.plan, plan, maxRange);
+  console.log('[applyPlanLimits] PLAN_MAX_RANGE=%o', PLAN_MAX_RANGE);
 
   // No plan — show paywall over the whole app
   if (plan === 'none') {
@@ -1188,24 +2691,68 @@ function applyPlanLimits() {
         <h3>Choose a plan to start scanning</h3>
         <p>Get access to TikTok brand deal detection, scan history, and more.</p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="btn-primary" style="padding:12px 24px" onclick="startCheckout('pro')">Pro — $29/mo</button>
-          <button class="btn-primary" style="padding:12px 24px;background:var(--text)" onclick="startCheckout('max')">Max — $79/mo</button>
+          <button class="btn-primary" style="padding:12px 24px" onclick="startCheckout('starter')">Starter — $299/mo</button>
+          <button class="btn-primary" style="padding:12px 24px;background:var(--text)" onclick="startCheckout('pro')">Pro — $599/mo</button>
         </div>
       </div>`;
     return;
   }
   const r14 = document.getElementById('range-14');
   const r30 = document.getElementById('range-30');
-  if (maxRange < 14) r14.disabled = true;
-  if (maxRange < 30) r30.disabled = true;
+  console.log('[applyPlanLimits] Elements found: r14=%o, r30=%o', !!r14, !!r30);
+  if (!r14 || !r30) {
+    console.error('[applyPlanLimits] ERROR: One or both buttons missing from DOM!');
+    return;
+  }
+  console.log('[applyPlanLimits] Before any changes: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
+  console.log('[applyPlanLimits] Disabling logic: maxRange=%d < 14? %s, maxRange=%d < 30? %s', maxRange, maxRange < 14, maxRange, maxRange < 30);
+  
+  if (maxRange < 14) {
+    console.log('[applyPlanLimits] Disabling r14 because maxRange(%d) < 14', maxRange);
+    r14.disabled = true;
+  } else {
+    console.log('[applyPlanLimits] NOT disabling r14 because maxRange(%d) >= 14', maxRange);
+  }
+  
+  if (maxRange < 30) {
+    console.log('[applyPlanLimits] Disabling r30 because maxRange(%d) < 30', maxRange);
+    r30.disabled = true;
+  } else {
+    console.log('[applyPlanLimits] NOT disabling r30 because maxRange(%d) >= 30', maxRange);
+  }
+  
+  // SAFETY: For agency tier, forcefully enable all range buttons  
+  if (plan === 'agency') {
+    console.log('[applyPlanLimits] SAFETY CHECK: Forcing agency tier to have all ranges enabled');
+    // Only modify if currently disabled to avoid triggering unnecessary events
+    if (r14.disabled) {
+      r14.disabled = false;
+      console.log('[applyPlanLimits] Enabled r14');
+    }
+    if (r30.disabled) {
+      r30.disabled = false;
+      console.log('[applyPlanLimits] Enabled r30');
+    }
+    
+    // Mark the range group with agency data attribute for CSS override
+    const rangeGroup = document.getElementById('range-group');
+    if (rangeGroup && !rangeGroup.hasAttribute('data-agency-enabled')) {
+      rangeGroup.setAttribute('data-agency-enabled', 'true');
+    }
+    
+    console.log('[applyPlanLimits] SAFETY CHECK COMPLETE: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
+  }
+  
+  console.log('[applyPlanLimits] FINAL STATE: r14.disabled=%s, r30.disabled=%s', r14.disabled, r30.disabled);
+  console.log('[applyPlanLimits] Call #%d COMPLETE', applyPlanLimits_callCount);
 
   // Automation
   const autoEl = document.getElementById('automation-content');
-  if (plan === 'pro') {
+  if (plan === 'starter') {
     autoEl.innerHTML = `<div class="upgrade-prompt">
-      <h3>Upgrade to Max</h3>
-      <p>Bulk automation is available on the Max and Enterprise plans. Scan dozens of creators at once with a single queue.</p>
-      <button class="btn-primary" onclick="startCheckout('max')">Upgrade to Max — $79/mo</button>
+      <h3>Upgrade to Pro or Agency</h3>
+      <p>Bulk automation is available on the Pro and Agency plans. Scan dozens of creators at once with a single queue.</p>
+      <button class="btn-primary" onclick="startCheckout('pro')">Upgrade to Pro — $599/mo</button>
     </div>`;
   } else {
     autoEl.innerHTML = automationHTML();
@@ -1213,6 +2760,9 @@ function applyPlanLimits() {
 
   // Account
   refreshAccount();
+  } finally {
+    applyPlanLimits_inProgress = false;
+  }
 }
 
 // ── NAV ──
@@ -1226,7 +2776,29 @@ function navTo(id, el) {
   if (id === 'deals') loadHistory();
   if (id === 'credits') loadHistory();
   if (id === 'groups') loadGroupsUI();
+  if (id === 'pricing') renderPricingPage();
+  if (id === 'automation') loadAutomationPage();
   if (id === 'account') refreshAccount();
+  if (id === 'settings') {
+    // Initialize creators tab on settings page load
+    const creatorsBtn = document.querySelector('[onclick*="switchSettingsTab"][onclick*="creators"]');
+    if (creatorsBtn) switchSettingsTab('creators', creatorsBtn);
+  }
+}
+
+// Load automation page via iframe
+function loadAutomationPage() {
+  const container = document.getElementById('automation-content');
+  if (!container) return;
+  container.innerHTML = '<iframe src="/automation" style="width:100%; min-height:600px; border:none; border-radius:8px; overflow:auto;"></iframe>';
+  // Set iframe height dynamically based on content
+  const iframe = container.querySelector('iframe');
+  iframe.onload = function() {
+    try {
+      const height = iframe.contentDocument.body.scrollHeight;
+      iframe.style.height = (height + 20) + 'px';
+    } catch(e) {}
+  };
 }
 
 // ── SCANNER ──
@@ -1234,6 +2806,7 @@ function setRange(n, el) {
   scanRange = n;
   el.closest('.range-group').querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  updateCreditPreview();
 }
 
 function setStatus(msg) {
@@ -1326,15 +2899,35 @@ let selectedGroupCreators = [];
 
 function setScanMode(mode, btn) {
   scanMode = mode;
+  console.log('[setScanMode] Changed to:', mode);
   
-  // Update button styles
-  document.getElementById('mode-single').style.background = mode === 'single' ? 'var(--accent-dim)' : 'var(--surface)';
-  document.getElementById('mode-single').style.color = mode === 'single' ? 'var(--accent)' : 'var(--text)';
-  document.getElementById('mode-single').style.borderColor = mode === 'single' ? 'var(--accent)' : 'var(--border)';
+  // Update button styles and active classes
+  const singleBtn = document.getElementById('mode-single');
+  const groupBtn = document.getElementById('mode-group');
   
-  document.getElementById('mode-group').style.background = mode === 'group' ? 'var(--accent-dim)' : 'var(--surface)';
-  document.getElementById('mode-group').style.color = mode === 'group' ? 'var(--accent)' : 'var(--text)';
-  document.getElementById('mode-group').style.borderColor = mode === 'group' ? 'var(--accent)' : 'var(--border)';
+  // Remove active class from both
+  singleBtn.classList.remove('active');
+  groupBtn.classList.remove('active');
+  
+  // Add active class and styles to selected button
+  if (mode === 'single') {
+    singleBtn.classList.add('active');
+    singleBtn.style.background = 'var(--accent-dim)';
+    singleBtn.style.color = 'var(--accent)';
+    singleBtn.style.borderColor = 'var(--accent)';
+    groupBtn.style.background = 'var(--surface)';
+    groupBtn.style.color = 'var(--text)';
+    groupBtn.style.borderColor = 'var(--border)';
+  } else if (mode === 'group') {
+    groupBtn.classList.add('active');
+    groupBtn.style.background = 'var(--accent-dim)';
+    groupBtn.style.color = 'var(--accent)';
+    groupBtn.style.borderColor = 'var(--accent)';
+    singleBtn.style.background = 'var(--surface)';
+    singleBtn.style.color = 'var(--text)';
+    singleBtn.style.borderColor = 'var(--border)';
+  }
+  console.log('[setScanMode] Active:', { single: singleBtn.classList.contains('active'), group: groupBtn.classList.contains('active') });
   
   // Toggle UI elements
   document.getElementById('single-mode-card').style.display = mode === 'single' ? 'block' : 'none';
@@ -1449,11 +3042,6 @@ function updateCreditPreview() {
 
 // Override setRange to update credit preview
 const originalSetRange = window.setRange || function() {};
-function setRange(range, btn) {
-  if (originalSetRange) originalSetRange(range, btn);
-  updateCreditPreview();
-}
-
 async function startGroupBulkScan() {
   if (!selectedGroupId) {
     setError('Select a group');
@@ -1493,6 +3081,23 @@ async function startGroupBulkScan() {
     // Start progress tracking
     setStatus(`Starting bulk scan of ${members.length} creators...`);
     
+    // Create parent group scan record
+    console.log('[Group Scan] Creating parent group scan record...');
+    let groupScanId = null;
+    try {
+      const groupScanRecord = await api('/api/group-scans', 'POST', {
+        group_id: selectedGroupId,
+        group_name: group.name,
+        creator_count: members.length,
+        scan_range: scanRange
+      });
+      groupScanId = groupScanRecord.id;
+      console.log('[Group Scan] Parent group scan created:', groupScanId);
+    } catch (e) {
+      console.error('[Group Scan] Failed to create parent record:', e.message);
+      // Continue anyway - we'll try to link scans retroactively
+    }
+    
     // Scan each creator sequentially
     let successCount = 0;
     let failedCount = 0;
@@ -1516,7 +3121,8 @@ async function startGroupBulkScan() {
             channelInput: handle, 
             scanDepth,
             groupId: selectedGroupId,
-            groupName: group.name
+            groupName: group.name,
+            groupScanId: groupScanId
           });
         } else if (platform === 'tiktok' || platform === 'instagram' || platform === 'twitch') {
           // TikTok, Instagram, Twitch all use /api/scan
@@ -1525,7 +3131,8 @@ async function startGroupBulkScan() {
             handle,
             range: scanRange,
             groupId: selectedGroupId,
-            groupName: group.name
+            groupName: group.name,
+            groupScanId: groupScanId
           });
         } else {
           throw new Error(`Unsupported platform: ${platform}`);
@@ -1636,6 +3243,10 @@ async function startScan() {
       data = await api('/api/scan', 'POST', { platform, handle, range: scanRange });
     }
 
+    console.log('[Scan Result] Full response from API:', data);
+    console.log('[Scan Result] business_email:', data.business_email);
+    console.log('[Scan Result] bio_links:', data.bio_links);
+
     const { videos, deals, creditsUsed } = data;
 
     // Show cached notice or video list
@@ -1668,10 +3279,20 @@ async function startScan() {
       warnings += `<div style="background:var(--red-dim);border:1px solid rgba(220,38,38,0.2);border-radius:9px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:9px">Analysis failed — could not extract deals.</div>`;
     }
 
-    renderDeals(deals, listHtml + warnings);
+    renderDeals(deals, listHtml + warnings, true, { businessEmail: data.business_email, bioLinks: data.bio_links });
 
-    // Add to local history cache
-    scanHistory.unshift({ id: Date.now(), label: `${platform.toUpperCase()} @${handle}`, platform, handle, deals, meta: { range: scanRange, videoCount: (videos||[]).length, credits: creditsUsed }, timestamp: new Date().toISOString() });
+    // Add to local history cache (include business_email and bio_links from scan)
+    scanHistory.unshift({ 
+      id: Date.now(), 
+      label: `${platform.toUpperCase()} @${handle}`, 
+      platform, 
+      handle, 
+      deals, 
+      business_email: data.business_email,
+      bio_links: data.bio_links,
+      meta: { range: scanRange, videoCount: (videos||[]).length, credits: creditsUsed }, 
+      timestamp: new Date().toISOString() 
+    });
     updateBadges();
 
     // Refresh credits
@@ -1702,16 +3323,43 @@ async function forceFreshScan(handle, platform, range) {
   await startScan();
 }
 
-function renderDeals(deals, prefix = '', groupByVideo = true) {
+function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) {
+  // Track call count
+  renderDeals.callCount = (renderDeals.callCount || 0) + 1;
+  console.log(`[renderDeals] CALL #${renderDeals.callCount} with creatorInfo:`, creatorInfo);
+  console.log('[renderDeals] businessEmail:', creatorInfo?.businessEmail);
+  console.log('[renderDeals] bioLinks:', creatorInfo?.bioLinks);
+  
   const r = document.getElementById('scan-results');
+  console.log(`[renderDeals] Target DOM element exists:`, !!r, `| Element ID: ${r?.id}`);
+  
   if (!deals || !deals.length) {
-    r.innerHTML = prefix + `<div class="no-results"><div style="font-size:28px;margin-bottom:9px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:3px">No brand deals detected</div><div>Content may be organic or contains no flagged partnerships.</div></div>`;
+    const noResultsHtml = prefix + `<div class="no-results"><div style="font-size:28px;margin-bottom:9px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:3px">No brand deals detected</div><div>Content may be organic or contains no flagged partnerships.</div></div>`;
+    r.innerHTML = noResultsHtml;
+    console.log(`[renderDeals] Set no-results, innerHTML length: ${r.innerHTML.length}`);
     return;
   }
   const norm = deals.map(d => ({ ...d, brands: d.brands?.length ? d.brands : (d.brand ? [d.brand] : ['Unknown']) }));
   const totalBrands = norm.reduce((a,d) => a + d.brands.length, 0);
   
-  let html = '';
+  // Build Creator Info section
+  let creatorInfoHtml = '';
+  const hasBusinessEmail = creatorInfo?.businessEmail;
+  const hasBioLinks = creatorInfo?.bioLinks && Array.isArray(creatorInfo.bioLinks) && creatorInfo.bioLinks.length > 0;
+  console.log('[renderDeals] hasBusinessEmail:', hasBusinessEmail, 'hasBioLinks:', hasBioLinks);
+  
+  if (hasBusinessEmail || hasBioLinks) {
+    console.log('[renderDeals] Building Creator Info card');
+    creatorInfoHtml = `<div class="card" style="margin-bottom:13px">
+      <div class="card-label">Creator Info</div>
+      ${hasBusinessEmail ? `<div style="margin-bottom:8px"><strong>Contact:</strong> <a href="mailto:${escapeHtml(creatorInfo.businessEmail)}" style="color:var(--accent);text-decoration:none">${escapeHtml(creatorInfo.businessEmail)}</a></div>` : ''}
+      ${hasBioLinks ? `<div><strong>Links:</strong><br>${creatorInfo.bioLinks.map(link => `<a href="${escapeHtml(link)}" target="_blank" style="color:var(--accent);text-decoration:none;word-break:break-all">${escapeHtml(link)}</a><br>`).join('')}</div>` : ''}
+    </div>`;
+  } else {
+    console.log('[renderDeals] No creator info to display');
+  }
+  
+  let html = creatorInfoHtml;
   
   if (groupByVideo && norm.some(d => d.video_ref)) {
     // Group by video_ref
@@ -1723,7 +3371,8 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
     });
     
     let idx = 0;
-    html = Object.entries(grouped).map(([video, videoDeal]) => {
+    // PREPEND creatorInfoHtml to grouped deals instead of overwriting
+    const groupedHtml = Object.entries(grouped).map(([video, videoDeal]) => {
       const videoId = 'video-' + video.replace(/\s/g, '-');
       return `
         <div class="video-group" style="margin-bottom:13px">
@@ -1746,7 +3395,7 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
                 <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
                 ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
                 <div style="margin-top:8px">
-                  <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+                  <button class="explain-btn" data-deal-id="${dealId}" data-deal='${JSON.stringify(d)}' onclick="toggleExplanationFromButton(this)">ℹ️ What is this deal?</button>
                   <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
                     <span class="loading">Loading explanation...</span>
                   </div>
@@ -1756,9 +3405,11 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
           </div>
         </div>`;
     }).join('');
+    // Append grouped deals to creator info HTML
+    html = html + groupedHtml;
   } else {
     // Flat list (no grouping)
-    html = norm.map((d, i) => {
+    const flatHtml = norm.map((d, i) => {
       const cc = d.confidence === 'high' ? 'conf-high' : d.confidence === 'medium' ? 'conf-mid' : 'conf-low';
       const dealId = 'deal-' + i;
       return `<div class="deal-card" style="animation-delay:${i*0.05}s">
@@ -1771,17 +3422,33 @@ function renderDeals(deals, prefix = '', groupByVideo = true) {
         <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
         ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
         <div style="margin-top:8px">
-          <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+          <button class="explain-btn" data-deal-id="${dealId}" data-deal='${JSON.stringify(d)}' onclick="toggleExplanationFromButton(this)">ℹ️ What is this deal?</button>
           <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
             <span class="loading">Loading explanation...</span>
           </div>
         </div>
       </div>`;
     }).join('');
+    // Append flat deals to creator info HTML
+    html = html + flatHtml;
   }
 
-  r.innerHTML = prefix +
+  const finalHtml = prefix +
     `<div class="results-hdr"><div class="results-title">Deals Found</div><div class="count-pill">${norm.length} post${norm.length!==1?'s':''} · ${totalBrands} brand${totalBrands!==1?'s':''}</div></div>` + html;
+  
+  console.log(`[renderDeals] CALL #${renderDeals.callCount} - Concatenating HTML`);
+  console.log(`[renderDeals]   creatorInfoHtml length: ${creatorInfoHtml.length}`);
+  console.log(`[renderDeals]   deals HTML length: ${html.length}`);
+  console.log(`[renderDeals]   final HTML includes "Creator Info": ${html.includes('Creator Info')}`);
+  console.log(`[renderDeals] About to insert into DOM`);
+  console.log(`[renderDeals] Final HTML length:`, finalHtml.length);
+  console.log(`[renderDeals] First 300 chars:`, finalHtml.substring(0, 300));
+  
+  r.innerHTML = finalHtml;
+  
+  console.log(`[renderDeals] CALL #${renderDeals.callCount} - HTML inserted. Checking DOM:`);
+  console.log(`[renderDeals] r.innerHTML now has length:`, r.innerHTML.length);
+  console.log(`[renderDeals] Does r.innerHTML contain "Creator Info"?`, r.innerHTML.includes('Creator Info'));
 }
 
 function toggleVideoGroup(videoId) {
@@ -1805,6 +3472,34 @@ function toggleCampaignBrands(campaignId) {
   } else {
     brandsDiv.style.display = 'none';
     btn.textContent = '▸';
+  }
+}
+
+// Wrapper function to safely call toggleExplanation from button data attributes
+async function toggleExplanationFromButton(btn) {
+  try {
+    const dealId = btn.getAttribute('data-deal-id');
+    const dealJson = btn.getAttribute('data-deal');
+    console.log('[toggleExplanationFromButton] Deal ID:', dealId);
+    console.log('[toggleExplanationFromButton] Deal JSON length:', dealJson ? dealJson.length : 0);
+    
+    if (!dealJson) {
+      console.error('[toggleExplanationFromButton] No deal data found');
+      return;
+    }
+    
+    let deal;
+    try {
+      deal = JSON.parse(dealJson);
+      console.log('[toggleExplanationFromButton] Parsed deal object');
+    } catch (parseErr) {
+      console.error('[toggleExplanationFromButton] Failed to parse deal JSON:', parseErr.message);
+      return;
+    }
+    
+    await toggleExplanation(dealId, deal);
+  } catch (e) {
+    console.error('[toggleExplanationFromButton] Error:', e.message);
   }
 }
 
@@ -1835,14 +3530,54 @@ async function toggleExplanation(dealId, deal) {
 async function loadHistory() {
   try {
     const data = await api('/api/scans');
-    scanHistory = data.map(s => ({
-      id: s.id,
-      label: s.username,
-      deals: s.deals || [],
-      videos: s.videos || [],
-      meta: { range: s.range, videoCount: s.video_count, credits: s.credits_used },
-      timestamp: s.created_at,
-    }));
+    
+    // Map individual scans
+    const individualScans = data
+      .filter(s => !s.group_scan_id) // Only individual scans, not part of a group
+      .map(s => ({
+        id: s.id,
+        label: s.username,
+        deals: s.deals || [],
+        videos: s.videos || [],
+        meta: { range: s.range, videoCount: s.video_count, credits: s.credits_used },
+        timestamp: s.created_at,
+      }));
+    
+    // Group scans by group_scan_id
+    const groupedScans = {};
+    data.filter(s => s.group_scan_id).forEach(s => {
+      const gid = s.group_scan_id;
+      if (!groupedScans[gid]) {
+        groupedScans[gid] = {
+          id: gid,
+          label: s.group_name || 'Group Scan',
+          isGroupScan: true,
+          childScans: [],
+          deals: [],
+          videos: [],
+          meta: { videoCount: 0, credits: 0 },
+          timestamp: s.created_at,
+        };
+      }
+      groupedScans[gid].childScans.push({
+        username: s.username,
+        deals: s.deals || [],
+        videos: s.videos || [],
+        platform: s.platform
+      });
+      groupedScans[gid].deals = [...groupedScans[gid].deals, ...(s.deals || [])];
+      groupedScans[gid].videos = [...groupedScans[gid].videos, ...(s.videos || [])];
+      groupedScans[gid].meta.videoCount += s.video_count || 0;
+      groupedScans[gid].meta.credits += s.credits_used || 0;
+    });
+    
+    // Combine: group scans first (most recent), then individual scans
+    scanHistory = [
+      ...Object.values(groupedScans).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+      ...individualScans.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    ];
+    
+    console.log('[loadHistory] Loaded', scanHistory.length, 'scans:', groupedScans, individualScans);
     updateBadges();
     renderHistory();
     renderDealsPage();
@@ -1859,6 +3594,62 @@ function renderHistory() {
   c.innerHTML = scanHistory.map(e => {
     const d = new Date(e.timestamp);
     const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    
+    // For group scans, show a special group header
+    if (e.isGroupScan) {
+      const allB = (e.deals||[]).flatMap(d => d.brands||(d.brand?[d.brand]:[])).filter(Boolean);
+      const uniq = [...new Set(allB)];
+      const preview = uniq.slice(0,3).join(', ') + (uniq.length > 3 ? ` +${uniq.length-3}` : '');
+      
+      const childHtml = (e.childScans || []).map(cs => `
+        <div style="background:var(--surface2);padding:8px;border-radius:4px;border-left:3px solid var(--accent-dim);margin-bottom:6px;font-size:11px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-weight:600">@${cs.username}</span>
+            <span style="color:var(--text3)">${cs.platform || 'unknown'}</span>
+          </div>
+          <div style="color:var(--text3)">${(cs.deals || []).length} deal${(cs.deals || []).length !== 1 ? 's' : ''}</div>
+        </div>
+      `).join('');
+      
+      return `
+        <div class="history-item" style="border-left:4px solid var(--accent-dim)" onclick="toggleExpand('${e.id}')">
+          <div>
+            <div class="hi-name" style="color:var(--accent)">📦 ${e.label}</div>
+            <div class="hi-meta">
+              <span>${ds}</span>
+              ${e.childScans?.length ? `<span>${e.childScans.length} creators</span>` : ''}
+              ${e.meta?.videoCount ? `<span>${e.meta.videoCount} videos</span>` : ''}
+              ${e.meta?.credits ? `<span>${e.meta.credits} credits</span>` : ''}
+            </div>
+          </div>
+          <div class="hi-right">
+            <div class="hi-deals">${(e.deals||[]).length} deal${(e.deals||[]).length!==1?'s':''}</div>
+            ${preview?`<div style="font-size:11px;color:var(--text3);text-align:right;margin-bottom:4px">${preview}</div>`:''}
+          </div>
+        </div>
+        <div class="history-expand" id="he-${e.id}">
+          <div style="margin-bottom:16px">
+            <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Creators Scanned</div>
+            ${childHtml}
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Deals Found (${(e.deals||[]).length})</div>
+            ${!(e.deals?.length) ? '<div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text3);border-left:3px solid var(--border2)">No deals found in this group scan</div>' : e.deals.map(d => `
+              <div class="he-row">
+                <div style="flex:1">
+                  <div class="he-brand">${(d.brands||(d.brand?[d.brand]:['?'])).join(', ')}</div>
+                  <div class="he-type">${d.deal_type||''}${d.video_ref?' · '+d.video_ref:''}</div>
+                  ${d.evidence?`<div class="he-evidence">"${d.evidence.slice(0,85)}${d.evidence.length>85?'...':''}"</div>`:''}
+                </div>
+                <div class="conf-pill ${d.confidence==='high'?'conf-high':d.confidence==='medium'?'conf-mid':'conf-low'}" style="margin-top:0">${d.confidence||'?'}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    // Individual scan rendering
     const allB = (e.deals||[]).flatMap(d => d.brands||(d.brand?[d.brand]:[])).filter(Boolean);
     const uniq = [...new Set(allB)];
     const preview = uniq.slice(0,3).join(', ') + (uniq.length > 3 ? ` +${uniq.length-3}` : '');
@@ -1894,6 +3685,11 @@ function renderHistory() {
         </div>
       </div>
       <div class="history-expand" id="he-${e.id}">
+        ${e.business_email || (e.bio_links?.length > 0) ? `<div style="margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent)">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Creator Info</div>
+          ${e.business_email ? `<div style="margin-bottom:6px"><strong>Contact:</strong> <a href="mailto:${escapeHtml(e.business_email)}" style="color:var(--accent);text-decoration:none">${escapeHtml(e.business_email)}</a></div>` : ''}
+          ${e.bio_links && e.bio_links.length > 0 ? `<div><strong>Links:</strong><br>${e.bio_links.map(link => `<a href="${escapeHtml(link)}" target="_blank" style="color:var(--accent);text-decoration:none;word-break:break-all;font-size:11px">${escapeHtml(link)}</a><br>`).join('')}</div>` : ''}
+        </div>` : ''}
         <div style="margin-bottom:16px">
           <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Videos (${(e.meta?.videoCount||0)})</div>
           ${!(e.videos?.length) ? '<div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text3);border-left:3px solid var(--border2)">📹 Detailed analysis not available for this scan. Run a fresh scan to see individual video re-analysis.</div>' : 
@@ -2098,7 +3894,7 @@ function renderDealsPage() {
           <div class="deal-type-lbl">${d.deal_type||'Sponsorship'}</div>
           ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
           <div style="margin-top:8px">
-            <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+            <button class="explain-btn" data-deal-id="${dealId}" data-deal='${JSON.stringify(d)}' onclick="toggleExplanationFromButton(this)">ℹ️ What is this deal?</button>
             <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
               <span class="loading">Loading explanation...</span>
             </div>
@@ -2117,8 +3913,8 @@ function renderDealsPage() {
 // ── CREDITS ──
 function updateCreditsUI() {
   if (!currentUser) return;
-  const plan = currentUser.plan || 'pro';
-  const total = PLAN_CREDITS[plan] || 300;
+  const plan = currentUser.plan || 'starter';
+  const total = PLAN_CREDITS[plan] || 1000;
   const remaining = currentUser.credits_remaining || 0;
   const pct = Math.min(100, (remaining / total) * 100);
   document.getElementById('sb-bar').style.width = pct + '%';
@@ -2129,8 +3925,8 @@ function updateCreditsUI() {
 
 function renderCreditsPage() {
   if (!currentUser) return;
-  const plan = currentUser.plan || 'pro';
-  const total = PLAN_CREDITS[plan] || 300;
+  const plan = currentUser.plan || 'starter';
+  const total = PLAN_CREDITS[plan] || 1000;
   const remaining = currentUser.credits_remaining || 0;
   const pct = Math.min(100, (remaining / total) * 100);
   document.getElementById('cbc-num').textContent = remaining;
@@ -2153,39 +3949,7 @@ function renderCreditsPage() {
 
 // ── AUTOMATION ──
 function automationHTML() {
-  return `<div class="card">
-    <div class="card-label">Bulk Scan — one username per line</div>
-    <div class="import-textarea-wrap">
-      <textarea id="import-textarea" rows="7" placeholder="cracklyy&#10;khaby.lame&#10;bellapoarch" oninput="updateImportCount()"></textarea>
-      <div class="import-count-float" id="import-count"></div>
-    </div>
-    <div style="margin-top:14px">
-      <div class="card-label" style="margin-bottom:9px">Scan Range</div>
-      <div class="range-group">
-        <button class="range-btn active" onclick="setAutoRange(3,this)">Last 3</button>
-        <button class="range-btn" onclick="setAutoRange(14,this)">Last 14</button>
-        <button class="range-btn" onclick="setAutoRange(30,this)">Last 30</button>
-      </div>
-    </div>
-    <button class="run-btn" id="import-run-btn" onclick="runImportList()">Scan All Creators</button>
-  </div>
-
-  <div class="card" style="margin-top:16px">
-    <div class="card-label">Manual Link Analysis</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Paste a TikTok video link or content text to analyze for brand deals.</p>
-    <textarea id="manual-input" rows="5" placeholder="https://www.tiktok.com/@username/video/123456&#10;&#10;or paste content text directly..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 14px;outline:none;margin-bottom:12px;transition:all 0.15s"></textarea>
-    <button class="run-btn" id="manual-run-btn" onclick="runManualAnalysis()">Analyze for Deals</button>
-  </div>
-  
-  <div id="import-queue" style="margin-top:16px;display:none">
-    <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:9px">Queue Progress</div>
-    <div id="queue-items"></div>
-  </div>
-
-  <div id="manual-results" style="margin-top:16px;display:none">
-    <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:9px">Analysis Results</div>
-    <div id="manual-results-content"></div>
-  </div>`;
+  return ``;
 }
 
 function updateImportCount() {
@@ -2288,7 +4052,7 @@ async function runManualAnalysis() {
           <div class="deal-type-lbl">${d.deal_type || 'Sponsorship'}</div>
           ${d.evidence ? `<div class="deal-evidence">"${d.evidence}"</div>` : ''}
           <div style="margin-top:8px">
-            <button class="explain-btn" onclick="toggleExplanation('${dealId}', ${JSON.stringify(d).replace(/'/g, '&#39;')})">ℹ️ What is this deal?</button>
+            <button class="explain-btn" data-deal-id="${dealId}" data-deal='${JSON.stringify(d)}' onclick="toggleExplanationFromButton(this)">ℹ️ What is this deal?</button>
             <div id="explain-${dealId}" class="deal-explanation" style="display:none;margin-top:8px;padding:9px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:12px;line-height:1.5;border-left:2px solid rgba(59,130,246,0.5)">
               <span class="loading">Loading explanation...</span>
             </div>
@@ -2348,6 +4112,736 @@ async function runManualAnalysis() {
   btn.disabled = false;
 }
 
+// ── AGENCY SEARCH: CREATOR LOOKUP ──
+async function lookupCreator() {
+  const input = document.getElementById('creator-lookup-input');
+  const handle = input.value.trim();
+  
+  if (!handle) {
+    showStatusMsg('Please enter a creator handle or profile URL', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('creator-lookup-btn');
+  const statusEl = document.getElementById('creator-lookup-status');
+  const resultEl = document.getElementById('creator-result');
+  const historyEl = document.getElementById('scan-history-section');
+  const noScansEl = document.getElementById('no-scans-prompt');
+  const emptyEl = document.getElementById('agency-empty-state');
+
+  btn.disabled = true;
+  btn.textContent = 'Looking up...';
+  statusEl.textContent = 'Searching for creator information...';
+  statusEl.style.display = 'block';
+  resultEl.style.display = 'none';
+  historyEl.style.display = 'none';
+  noScansEl.style.display = 'none';
+  emptyEl.style.display = 'none';
+
+  try {
+    const data = await api('/api/agency-search/lookup', 'POST', { handle }, 30000);
+    console.log('[Creator Lookup] Result:', data);
+
+    if (!data.creator || !data.creator.displayName) {
+      statusEl.textContent = '✗ Creator not found. Try a different handle or URL.';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    // Render creator card
+    const creator = data.creator;
+
+    // Display creator name
+    document.getElementById('creator-result-name').textContent = escapeHtml(creator.displayName);
+    
+    // Display platform badges from linked social accounts
+    const platforms = ['TikTok'];
+    if (creator.socialHandles?.instagram) platforms.push('Instagram');
+    if (creator.socialHandles?.twitter) platforms.push('Twitter/X');
+    if (creator.socialHandles?.youtube) platforms.push('YouTube');
+    document.getElementById('creator-result-platforms').textContent = platforms.join(' • ');
+    
+    // Display bio
+    const bioEl = document.getElementById('creator-result-bio');
+    if (bioEl && creator.bio) {
+      bioEl.textContent = escapeHtml(creator.bio);
+      bioEl.style.display = 'block';
+    } else if (bioEl) {
+      bioEl.style.display = 'none';
+    }
+
+    // Display links if any found in bio
+    const linksHtml = creator.bioLinks && creator.bioLinks.length > 0 ? 
+      `<div style="margin-top:12px"><strong>Links:</strong><br>${creator.bioLinks.map(link => 
+        `<a href="${escapeHtml(link)}" target="_blank" style="color:var(--accent);text-decoration:none;word-break:break-all">${escapeHtml(link)}</a><br>`
+      ).join('')}</div>` : '';
+    
+    // Display emails if any found in bio
+    // Check if all emails are personal domains (gmail, yahoo, etc.)
+    const hasBusinessEmail = creator.emails && creator.emails.some(email => !isPersonalEmail(email));
+    const emailsHtml = hasBusinessEmail ? 
+      `<div style="margin-top:12px"><strong>Contact:</strong><br>${creator.emails.map(email => 
+        `<a href="mailto:${escapeHtml(email)}" style="color:var(--accent);text-decoration:none">${escapeHtml(email)}</a><br>`
+      ).join('')}</div>` : 
+      `<div style="margin-top:12px;color:var(--text3)"><strong>Contact:</strong> No agency representation found</div>`;
+    
+    const contactsEl = document.getElementById('creator-contacts');
+    if (contactsEl) {
+      contactsEl.innerHTML = linksHtml + emailsHtml;
+    }
+
+    // Store creator info for group modal
+    currentCreatorForGroup = {
+      handle: creator.handle,
+      displayName: creator.displayName,
+      platform: 'tiktok'
+    };
+
+    resultEl.style.display = 'block';
+    statusEl.style.display = 'none';
+
+    // Show scan history if available
+    if (data.scanHistory && data.scanHistory.length > 0) {
+      const scanList = document.getElementById('creator-scan-history');
+      scanList.innerHTML = data.scanHistory.map(scan => {
+        const dealsText = scan.dealCount ? `${scan.dealCount} deal${scan.dealCount !== 1 ? 's' : ''}` : 'No deals';
+        const date = new Date(scan.date).toLocaleDateString();
+        const dealsHtml = !(scan.deals?.length)
+          ? `<div style="font-size:12px;color:var(--text3);padding:7px 0">No deals found</div>`
+          : scan.deals.map(d => {
+              const brands = (d.brands||(d.brand?[d.brand]:['?'])).join(', ');
+              const cc = d.confidence==='high'?'conf-high':d.confidence==='medium'?'conf-mid':'conf-low';
+              return `<div class="he-row">
+                <div style="flex:1">
+                  <div class="he-brand">${brands}</div>
+                  <div class="he-type">${d.deal_type||''}${d.video_ref?' · '+d.video_ref:''}</div>
+                  ${d.evidence?`<div class="he-evidence">"${d.evidence.slice(0,85)}${d.evidence.length>85?'...':''}"</div>`:''}
+                </div>
+                <div class="conf-pill ${cc}" style="margin-top:0">${d.confidence||'?'}</div>
+              </div>`;
+            }).join('');
+        return `
+          <div class="history-item" onclick="toggleExpand('csh-${scan.id}')">
+            <div>
+              <div class="hi-name">Scan from ${date}</div>
+              <div class="hi-meta">
+                <span>${dealsText}</span>
+                ${scan.range?`<span>Last ${scan.range}</span>`:''}
+                ${scan.videoCount?`<span>${scan.videoCount} videos</span>`:''}
+              </div>
+            </div>
+            <div class="hi-right">
+              <div class="hi-deals">${scan.dealCount || 0}</div>
+            </div>
+          </div>
+          <div class="history-expand" id="he-csh-${scan.id}">
+            <div style="margin-bottom:12px">
+              <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Deals Found (${scan.dealCount})</div>
+              ${dealsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+      historyEl.style.display = 'block';
+      noScansEl.style.display = 'none';
+    } else {
+      historyEl.style.display = 'none';
+      noScansEl.style.display = 'block';
+    }
+
+    emptyEl.style.display = 'none';
+  } catch(e) {
+    console.error('[Creator Lookup] Error:', e);
+    statusEl.textContent = `✗ Error: ${e.message || 'Lookup failed'}`;
+    emptyEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Look Up Creator';
+  }
+}
+
+// ── AGENCY SEARCH: ADD CREATOR TO GROUP ──
+function openCreatorGroupModal() {
+  if (!currentCreatorForGroup) {
+    showStatusMsg('No creator selected', 'error');
+    return;
+  }
+
+  const creator = currentCreatorForGroup;
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.display = 'flex';
+  modal.id = 'creator-group-selector';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
+    <div class="modal-content" style="background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-width:500px">
+      <div class="modal-header" style="border-bottom:1px solid var(--border);padding:20px;margin:0"><h2 style="margin:0;font-size:18px;font-weight:600;color:var(--text)">Add Creator to Group</h2></div>
+      <div style="padding:20px">
+        <p style="font-size:13px;color:var(--text);margin-bottom:16px;line-height:1.5">Add <strong style="color:var(--accent)">@${escapeHtml(creator.handle)}</strong> to which group?</p>
+        
+        <!-- Create New Group Section -->
+        <button id="create-creator-group-btn" style="width:100%;padding:12px 14px;background:var(--accent);border:none;border-radius:8px;color:white;font-weight:600;font-size:13px;cursor:pointer;margin-bottom:16px;transition:all 0.15s" onmouseover="this.style.background='var(--accent-dark)'" onmouseout="this.style.background='var(--accent)'">
+          ✨ Create New Group
+        </button>
+        
+        <!-- Divider with Label -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;opacity:0.5">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:12px;color:var(--text2);font-weight:500">or add to existing group</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+        
+        <!-- Existing Groups List -->
+        <div id="creator-groups-list" style="display:grid;gap:8px;margin-bottom:16px;max-height:320px;overflow-y:auto"></div>
+        <div id="creator-group-msg" style="font-size:13px;display:none;margin-bottom:12px;padding:10px;border-radius:4px;background:var(--surface2)"></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;padding:16px;border-top:1px solid var(--border)">
+        <button id="creator-close-btn" class="btn-ghost" style="padding:10px 20px;border:1px solid var(--border);border-radius:6px;color:var(--text)" onclick="document.getElementById('creator-group-selector').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Set up "Create New Group" button handler
+  const createBtn = document.getElementById('create-creator-group-btn');
+  createBtn.addEventListener('click', async () => {
+    try {
+      const groupName = prompt('Enter group name:');
+      if (!groupName) return;
+      
+      const response = await api('/api/groups', 'POST', { name: groupName });
+      if (response && response.id) {
+        await addCreatorToGroup(response.id, groupName);
+        document.getElementById('creator-group-selector').style.display = 'none';
+        showStatusMsg(`✓ Added @${creator.handle} to "${groupName}"`, 'success');
+      }
+    } catch (e) {
+      showStatusMsg(`Error creating group: ${e.message}`, 'error');
+    }
+  });
+
+  // Load and display existing groups
+  loadCreatorGroupsList();
+}
+
+async function loadCreatorGroupsList() {
+  try {
+    const response = await api('/api/groups', 'GET');
+    const { groups } = response;
+    const listEl = document.getElementById('creator-groups-list');
+    
+    if (!groups || groups.length === 0) {
+      listEl.innerHTML = '<p style="font-size:13px;color:var(--text2);padding:20px;text-align:center">No groups yet. Create one above!</p>';
+      return;
+    }
+
+    listEl.innerHTML = groups.map(group => `
+      <button onclick="addCreatorToGroup('${group.id}', '${escapeHtml(group.name)}')" 
+              style="padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;cursor:pointer;text-align:left;transition:all 0.15s"
+              onmouseover="this.style.background='var(--surface1)';this.style.borderColor='var(--accent)'"
+              onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border)'">
+        <div style="font-weight:600">${escapeHtml(group.name)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">${group.memberCount || 0} member${(group.memberCount || 0) !== 1 ? 's' : ''}</div>
+      </button>
+    `).join('');
+  } catch (e) {
+    console.error('[Creator Groups] Error loading groups:', e);
+    document.getElementById('creator-groups-list').innerHTML = `<p style="color:var(--error);font-size:13px">Error loading groups: ${e.message}</p>`;
+  }
+}
+
+async function addCreatorToGroup(groupId, groupName) {
+  if (!currentCreatorForGroup) {
+    showStatusMsg('No creator selected', 'error');
+    return;
+  }
+
+  try {
+    const creator = currentCreatorForGroup;
+    const response = await api(`/api/groups/${groupId}/members`, 'POST', {
+      members: [{
+        platform: 'tiktok',
+        handle: creator.handle
+      }]
+    });
+
+    if (response && response.success) {
+      document.getElementById('creator-group-selector').style.display = 'none';
+      showStatusMsg(`✓ Added @${creator.handle} to "${groupName}"`, 'success');
+    }
+  } catch (e) {
+    showStatusMsg(`Error adding creator to group: ${e.message}`, 'error');
+  }
+}
+
+function scanThisCreator() {
+  const handle = document.getElementById('creator-lookup-input').value.trim();
+  if (!handle) {
+    showStatusMsg('No creator selected', 'error');
+    return;
+  }
+  
+  // Navigate to scanner page and pre-fill the handle
+  navTo('scanner', document.querySelector('.nav-item[onclick*="scanner"]'));
+  setTimeout(() => {
+    document.getElementById('manual-input').value = handle;
+    document.getElementById('input-detected').textContent = `Handle detected: ${escapeHtml(handle)}`;
+    document.getElementById('input-detected').style.display = 'inline-block';
+  }, 100);
+}
+
+function expandScanHistory(element) {
+  // Toggle expand - could be enhanced to show deal details
+  element.style.opacity = element.style.opacity === '0.7' ? '1' : '0.7';
+}
+
+// ── AGENCY SEARCH: SCRAPE (Legacy) ──
+async function scrapeAgency() {
+  const urlInput = document.getElementById('agency-url-input');
+  const url = urlInput.value.trim();
+  
+  if (!url) {
+    showStatusMsg('Please enter an agency URL', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('agency-scrape-btn');
+  const statusEl = document.getElementById('agency-scrape-status');
+  const resultsEl = document.getElementById('agency-results');
+  const emptyEl = document.getElementById('agency-empty-state');
+
+  btn.disabled = true;
+  btn.textContent = 'Crawling...';
+  statusEl.textContent = 'Crawling site... then enriching creator profiles. This may take 2-3 minutes for large rosters.';
+  statusEl.style.display = 'block';
+  resultsEl.style.display = 'none';
+  emptyEl.style.display = 'none';
+
+  try {
+    const data = await api('/api/agency-search/scrape', 'POST', { url }, 180000); // 3 min timeout
+    console.log('[Agency Search] Crawl result:', data);
+
+    if (!data.creators || data.creators.length === 0) {
+      statusEl.textContent = 'No creators found on this site. Try another URL.';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    // Group creators by niche
+    const byNiche = {};
+    data.creators.forEach(c => {
+      const niche = c.niche || 'Uncategorized';
+      if (!byNiche[niche]) byNiche[niche] = [];
+      byNiche[niche].push(c);
+    });
+
+    // Render niche sections
+    const container = document.getElementById('agency-niches-container');
+    container.innerHTML = Object.entries(byNiche).map(([niche, creators]) => `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div class="card-label">${escapeHtml(niche)}</div>
+            <div style="font-size:12px;color:var(--text2)">${creators.length} creator${creators.length !== 1 ? 's' : ''}</div>
+          </div>
+          <button class="btn-ghost" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600" data-niche="${escapeHtml(niche)}" data-creators='${JSON.stringify(creators)}' onclick="openNicheGroupSelectorFromButton(this)">Add Niche to Group</button>
+        </div>
+        <div style="display:grid;gap:10px">
+          ${creators.map(c => {
+            const socials = c.socials || {};
+            const socialsHtml = [
+              socials.tiktok ? `<span style="font-size:10px;background:var(--surface3);padding:2px 6px;border-radius:3px;margin-right:4px">TikTok: @${escapeHtml(socials.tiktok)}</span>` : '',
+              socials.youtube ? `<span style="font-size:10px;background:var(--surface3);padding:2px 6px;border-radius:3px;margin-right:4px">YT: ${escapeHtml(socials.youtube)}</span>` : '',
+              socials.instagram ? `<span style="font-size:10px;background:var(--surface3);padding:2px 6px;border-radius:3px;margin-right:4px">IG: @${escapeHtml(socials.instagram)}</span>` : ''
+            ].filter(Boolean).join('');
+            return `
+              <div style="padding:12px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                  <div style="flex:1">
+                    <div style="font-weight:600;font-size:13px">@${escapeHtml(c.handle)}</div>
+                    <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${escapeHtml(c.name || 'N/A')}</div>
+                    ${socialsHtml ? `<div style="display:flex;flex-wrap:wrap;gap:4px;font-size:10px">${socialsHtml}</div>` : ''}
+                  </div>
+                  <span style="font-size:10px;color:var(--text3);background:var(--accent-dim);padding:4px 8px;border-radius:4px;white-space:nowrap">${c.niche || 'Uncategorized'}</span>
+                </div>
+                <div style="font-size:11px;color:var(--text2)">📊 ${c.followerCount ? (c.followerCount / 1000).toFixed(0) + 'K' : 'N/A'} followers</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    statusEl.textContent = `✓ Found ${data.creators.length} creators across ${Object.keys(byNiche).length} niche${Object.keys(byNiche).length !== 1 ? 's' : ''}`;
+    resultsEl.style.display = 'block';
+    emptyEl.style.display = 'none';
+  } catch(e) {
+    console.error('[Agency Search] Error:', e);
+    statusEl.textContent = `✗ Error: ${e.message || 'Scrape failed'}`;
+    emptyEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Scrape Roster';
+  }
+}
+
+// Wrapper function to safely call openNicheGroupSelector from button data attributes
+function openNicheGroupSelectorFromButton(btn) {
+  try {
+    const niche = btn.getAttribute('data-niche');
+    const creatorsJson = btn.getAttribute('data-creators');
+    console.log('[openNicheGroupSelectorFromButton] Niche:', niche);
+    console.log('[openNicheGroupSelectorFromButton] Creators JSON length:', creatorsJson ? creatorsJson.length : 0);
+    
+    if (!creatorsJson) {
+      console.error('[openNicheGroupSelectorFromButton] No creators data found');
+      return;
+    }
+    
+    let creators;
+    try {
+      creators = JSON.parse(creatorsJson);
+      console.log('[openNicheGroupSelectorFromButton] Parsed creators:', creators.length, 'items');
+    } catch (parseErr) {
+      console.error('[openNicheGroupSelectorFromButton] Failed to parse creators JSON:', parseErr.message);
+      return;
+    }
+    
+    openNicheGroupSelector(niche, creators);
+  } catch (e) {
+    console.error('[openNicheGroupSelectorFromButton] Error:', e.message);
+  }
+}
+
+function openNicheGroupSelector(niche, creators) {
+  // Fetch groups and show selection modal
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.display = 'flex';
+  modal.id = 'niche-group-selector';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
+    <div class="modal-content" style="background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-width:500px">
+      <div class="modal-header" style="border-bottom:1px solid var(--border);padding:20px;margin:0"><h2 style="margin:0;font-size:18px;font-weight:600;color:var(--text)">Add Creators to Group</h2></div>
+      <div style="padding:20px">
+        <p style="font-size:13px;color:var(--text);margin-bottom:16px;line-height:1.5">Add all <strong>${creators.length} creator${creators.length !== 1 ? 's' : ''}</strong> from <strong style="color:var(--accent)">${escapeHtml(niche)}</strong> to which group?</p>
+        
+        <!-- Create New Group Section -->
+        <button id="create-niche-group-btn" style="width:100%;padding:12px 14px;background:var(--accent);border:none;border-radius:8px;color:white;font-weight:600;font-size:13px;cursor:pointer;margin-bottom:16px;transition:all 0.15s" onmouseover="this.style.background='var(--accent-dark)'" onmouseout="this.style.background='var(--accent)'">
+          ✨ Create New Group: ${escapeHtml(niche)}
+        </button>
+        
+        <!-- Divider with Label -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;opacity:0.5">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:12px;color:var(--text2);font-weight:500">or add to existing group</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+        
+        <!-- Existing Groups List -->
+        <div id="niche-groups-list" style="display:grid;gap:8px;margin-bottom:16px;max-height:320px;overflow-y:auto"></div>
+        <div id="niche-group-msg" style="font-size:13px;display:none;margin-bottom:12px;padding:10px;border-radius:4px;background:var(--surface2)"></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;padding:16px;border-top:1px solid var(--border)">
+        <button id="niche-close-btn" class="btn-ghost" style="padding:10px 20px;border:1px solid var(--border);border-radius:6px;color:var(--text)" onclick="document.getElementById('niche-group-selector').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Set up "Create New Group" button handler
+  const createBtn = document.getElementById('create-niche-group-btn');
+  createBtn.addEventListener('click', async () => {
+    try {
+      console.log('[Create Niche Group] Creating group:', niche);
+      createBtn.disabled = true;
+      createBtn.textContent = 'Creating...';
+      
+      // Get auth token
+      let authToken = null;
+      try {
+        authToken = await getValidToken();
+      } catch (tokenErr) {
+        authToken = token || localStorage.getItem('rs_token');
+      }
+      
+      const opts = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (authToken) {
+        opts.headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      opts.body = JSON.stringify({ name: niche });
+      
+      // Create the group
+      let resp = await fetch('/api/groups', opts);
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`HTTP ${resp.status}: ${errText}`);
+      }
+      
+      const groupResp = await resp.json();
+      console.log('[Create Niche Group] Group created:', groupResp);
+      const newGroupId = groupResp.id || groupResp.groupId;
+      
+      if (!newGroupId) {
+        throw new Error('No group ID returned from API');
+      }
+      
+      // Now add all creators to this new group
+      console.log('[Create Niche Group] Adding', creators.length, 'creators to new group');
+      const membersToAdd = creators.map(c => ({
+        platform: c.platform || c.mainPlatform || 'unknown',
+        handle: c.handle || c.socials?.[c.mainPlatform]?.handle || 'unknown'
+      }));
+      
+      const addOpts = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (authToken) {
+        addOpts.headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      addOpts.body = JSON.stringify({ members: membersToAdd });
+      
+      let addResp = await fetch(`/api/groups/${newGroupId}/members`, addOpts);
+      if (!addResp.ok) {
+        const errText = await addResp.text();
+        throw new Error(`Failed to add members: ${errText}`);
+      }
+      
+      const addResult = await addResp.json();
+      console.log('[Create Niche Group] Members added:', addResult);
+      
+      // Show success
+      const msgEl = document.getElementById('niche-group-msg');
+      msgEl.style.display = 'block';
+      msgEl.style.color = 'var(--accent)';
+      msgEl.innerHTML = `<strong style="color:var(--accent)">✓ Created!</strong><br><span style="font-size:12px;color:var(--text2)">Group "${escapeHtml(niche)}" created with ${creators.length} creator${creators.length !== 1 ? 's' : ''}</span>`;
+      msgEl.style.backgroundColor = 'rgba(59, 130, 246, 0.08)';
+      msgEl.style.borderLeft = '3px solid var(--accent)';
+      msgEl.style.paddingLeft = '12px';
+      
+      // Refresh groups list to show newly created group
+      if (typeof loadGroups === 'function') {
+        await loadGroups();
+      }
+      
+      // Close modal after 1.5s
+      setTimeout(() => {
+        document.getElementById('niche-group-selector').style.display = 'none';
+      }, 1500);
+      
+    } catch(e) {
+      console.error('[Create Niche Group] Error:', e);
+      createBtn.disabled = false;
+      createBtn.textContent = '✨ Create New Group: ' + escapeHtml(niche);
+      
+      const msgEl = document.getElementById('niche-group-msg');
+      msgEl.style.display = 'block';
+      msgEl.style.color = '#ef4444';
+      msgEl.innerHTML = `<strong style="color:#ef4444">✗ Error</strong><br><span style="font-size:12px;color:var(--text2)">${e.message}</span>`;
+      msgEl.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+      msgEl.style.borderLeft = '3px solid #ef4444';
+      msgEl.style.paddingLeft = '12px';
+    }
+  });
+
+  // Fetch and populate groups
+  (async () => {
+    try {
+      console.log('[Niche Selector] Fetching groups from /api/groups...');
+      
+      let authToken = null;
+      try {
+        authToken = await getValidToken();
+        console.log('[Niche Selector] Got valid token from getValidToken()');
+      } catch (tokenErr) {
+        console.warn('[Niche Selector] getValidToken() failed:', tokenErr.message);
+        // Fallback to global token
+        authToken = token || localStorage.getItem('rs_token');
+        console.log('[Niche Selector] Using fallback token:', authToken ? 'YES (length: ' + authToken.length + ')' : 'NO');
+      }
+      
+      const opts = {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (authToken) {
+        opts.headers['Authorization'] = `Bearer ${authToken}`;
+        console.log('[Niche Selector] Authorization header set');
+      } else {
+        console.error('[Niche Selector] NO AUTH TOKEN AVAILABLE - request will fail');
+      }
+      
+      let resp = await fetch('/api/groups', opts);
+      const rawText = await resp.text();
+      console.log('[Niche Selector] Raw response text length:', rawText.length);
+      console.log('[Niche Selector] Raw response text:', rawText.substring(0, 200));
+      console.log('[Niche Selector] Response status:', resp.status);
+      console.log('[Niche Selector] Response headers:', {
+        'content-type': resp.headers.get('content-type'),
+        'content-length': resp.headers.get('content-length')
+      });
+      
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${rawText}`);
+      }
+      
+      let parsedData;
+      try {
+        parsedData = JSON.parse(rawText);
+        console.log('[Niche Selector] Parsed response:', parsedData);
+      } catch (parseErr) {
+        console.error('[Niche Selector] JSON parse error:', parseErr.message);
+        console.error('[Niche Selector] Raw response was:', rawText);
+        throw new Error('Invalid JSON response: ' + parseErr.message);
+      }
+      
+      const listEl = document.getElementById('niche-groups-list');
+      
+      // Handle both response formats: array or { groups: [] }
+      let groupArray = [];
+      if (Array.isArray(parsedData)) {
+        groupArray = parsedData;
+      } else if (parsedData && parsedData.groups && Array.isArray(parsedData.groups)) {
+        groupArray = parsedData.groups;
+      }
+      
+      console.log('[Niche Selector] Extracted group array:', groupArray);
+      
+      if (groupArray.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text2);font-size:12px">No groups yet. Create one first.</div>';
+        return;
+      }
+
+      listEl.innerHTML = groupArray.map(g => `
+        <button class="btn-ghost" style="padding:14px;text-align:left;border:1px solid var(--border);border-radius:6px;background:white;cursor:pointer;transition:all 0.2s;display:flex;justify-content:space-between;align-items:center" 
+          data-group-id="${g.id}" data-group-name="${escapeHtml(g.name)}" data-creators='${JSON.stringify(creators)}' 
+          onclick="addNicheToGroupFromButton(this)"
+          onmouseover="this.style.backgroundColor='var(--accent-dim)';this.style.borderColor='var(--accent)'"
+          onmouseout="this.style.backgroundColor='white';this.style.borderColor='var(--border)'">
+          <div>
+            <div style="font-weight:600;color:var(--text);font-size:14px">${escapeHtml(g.name)}</div>
+            <div style="font-size:12px;color:var(--text2);font-weight:400;margin-top:4px">${g.memberCount || g.members?.length || 0} member${(g.memberCount || g.members?.length || 0) !== 1 ? 's' : ''}</div>
+          </div>
+          <div style="color:var(--text2);font-size:12px;white-space:nowrap;margin-left:12px">→</div>
+        </button>
+      `).join('');
+      
+      console.log('[Niche Selector] Successfully populated', groupArray.length, 'groups');
+    } catch(e) {
+      console.error('[Niche Selector] Error loading groups:', e);
+      console.error('[Niche Selector] Error message:', e.message);
+      console.error('[Niche Selector] Error stack:', e.stack);
+      const msgEl = document.getElementById('niche-group-msg');
+      if (msgEl) {
+        msgEl.textContent = 'Error loading groups: ' + e.message;
+        msgEl.style.display = 'block';
+        msgEl.style.color = 'var(--error, #ef4444)';
+      }
+    }
+  })();
+}
+
+// Wrapper function to safely call addNicheToGroup from button data attributes
+async function addNicheToGroupFromButton(btn) {
+  try {
+    const groupId = btn.getAttribute('data-group-id');
+    const groupName = btn.getAttribute('data-group-name');
+    const creatorsJson = btn.getAttribute('data-creators');
+    console.log('[addNicheToGroupFromButton] Group ID:', groupId, 'Name:', groupName);
+    console.log('[addNicheToGroupFromButton] Creators JSON length:', creatorsJson ? creatorsJson.length : 0);
+    
+    if (!creatorsJson) {
+      console.error('[addNicheToGroupFromButton] No creators data found');
+      return;
+    }
+    
+    let creators;
+    try {
+      creators = JSON.parse(creatorsJson);
+      console.log('[addNicheToGroupFromButton] Parsed creators:', creators.length, 'items');
+    } catch (parseErr) {
+      console.error('[addNicheToGroupFromButton] Failed to parse creators JSON:', parseErr.message);
+      return;
+    }
+    
+    await addNicheToGroup(groupId, groupName, creators);
+  } catch (e) {
+    console.error('[addNicheToGroupFromButton] Error:', e.message);
+  }
+}
+
+async function addNicheToGroup(groupId, groupName, creators) {
+  const msgEl = document.getElementById('niche-group-msg');
+  const closeBtn = document.getElementById('niche-close-btn');
+  const groupsList = document.getElementById('niche-groups-list');
+  
+  msgEl.style.display = 'block';
+  msgEl.textContent = 'Adding creators...';
+  msgEl.style.color = 'var(--text2)';
+
+  try {
+    console.log('[addNicheToGroup] Adding', creators.length, 'creators to group', groupName);
+    
+    // Convert creators to members array format: { platform, handle }
+    const membersToAdd = creators.map(c => ({
+      platform: c.platform || c.mainPlatform || 'unknown',
+      handle: c.handle || c.socials?.[c.mainPlatform]?.handle || 'unknown'
+    }));
+    
+    console.log('[addNicheToGroup] Members to add:', JSON.stringify(membersToAdd, null, 2));
+    
+    // Send all creators in one request with { members: [...] } format
+    const response = await api(`/api/groups/${groupId}/members`, 'POST', {
+      members: membersToAdd
+    });
+    
+    console.log('[addNicheToGroup] API response:', response);
+
+    // Success state
+    msgEl.style.color = 'var(--accent)';
+    msgEl.innerHTML = `<strong style="color:var(--accent)">✓ Added ${response.added}/${creators.length} creators</strong><br><span style="font-size:12px;color:var(--text2)">to ${escapeHtml(groupName)}</span>`;
+    msgEl.style.backgroundColor = 'rgba(59, 130, 246, 0.08)';
+    msgEl.style.borderLeft = '3px solid var(--accent)';
+    msgEl.style.paddingLeft = '12px';
+    
+    // Hide group list and change button to "Close"
+    groupsList.style.display = 'none';
+    closeBtn.textContent = 'Close';
+    closeBtn.style.color = 'var(--accent)';
+    closeBtn.style.borderColor = 'var(--accent)';
+    
+    // Refresh groups list immediately so member counts update
+    if (typeof loadGroups === 'function') {
+      console.log('[addNicheToGroup] Refreshing groups list...');
+      await loadGroups();
+    }
+    
+  } catch(e) {
+    console.error('[addNicheToGroup] Error:', e);
+    msgEl.style.color = '#ef4444';
+    msgEl.innerHTML = `<strong style="color:#ef4444">✗ Error</strong><br><span style="font-size:12px;color:var(--text2)">${e.message}</span>`;
+    msgEl.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+    msgEl.style.borderLeft = '3px solid #ef4444';
+    msgEl.style.paddingLeft = '12px';
+    
+    // Change button to "Close" on error too
+    closeBtn.textContent = 'Close';
+  }
+}
+
+function showStatusMsg(text, type) {
+  const statusEl = document.getElementById('agency-scrape-status');
+  if (statusEl) {
+    statusEl.textContent = text;
+    statusEl.style.display = 'block';
+    statusEl.style.color = type === 'error' ? 'var(--red)' : 'var(--text2)';
+  }
+}
+
 // ── ACCOUNT REFRESH ──
 async function refreshAccount() {
   try {
@@ -2360,14 +4854,104 @@ async function refreshAccount() {
   document.getElementById('acct-email-display').textContent = currentUser.email || '—';
   document.getElementById('acct-plan').textContent = plan.toUpperCase();
 
-  // Show correct button based on plan
+  // Show correct button based on plan (new tier structure)
   const upgradeEl = document.getElementById('acct-upgrade-btn');
   if (plan === 'none') {
-    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('pro')">Choose a Plan</button>`;
+    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('starter')">Choose a Plan</button>`;
+  } else if (plan === 'starter') {
+    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('pro')">Upgrade to Pro</button>`;
   } else if (plan === 'pro') {
-    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('max')">Upgrade to Max</button>`;
+    upgradeEl.innerHTML = `<button class="btn-primary" style="font-size:12px;padding:8px 16px" onclick="startCheckout('agency')">Upgrade to Agency</button>`;
   } else {
     upgradeEl.innerHTML = `<span style="font-family:var(--mono);font-size:11px;color:var(--green)">✓ Active</span>`;
+  }
+}
+
+// ── PRICING PAGE ──
+async function renderPricingPage() {
+  // Refresh user data to ensure plan is in sync
+  try {
+    console.log('[Pricing] Fetching fresh user data...');
+    const me = await api('/api/auth/me');
+    console.log('[Pricing] Got user data:', { plan: me.plan, credits: me.credits_remaining });
+    currentUser = me;
+  } catch(err) {
+    console.error('[Pricing] Failed to fetch user data:', err);
+    // Fall through and use stale currentUser
+  }
+  
+  if (!currentUser) {
+    console.warn('[Pricing] No currentUser available');
+    return;
+  }
+  const plan = currentUser.plan || 'none';
+  const credits = currentUser.credits_remaining || 0;
+  const totalCredits = PLAN_CREDITS[plan] || 1000;
+  console.log('[Pricing] Rendering with plan:', plan, 'credits:', credits);
+  
+  // Update current plan display
+  const planNames = { none: 'None', starter: 'Starter', pro: 'Pro', agency: 'Agency' };
+  document.getElementById('pricing-current-plan').textContent = planNames[plan] || 'None';
+  document.getElementById('pricing-credits').textContent = credits.toLocaleString();
+  
+  const pct = Math.min(100, (credits / totalCredits) * 100);
+  document.getElementById('pricing-credit-bar').style.width = pct + '%';
+  
+  // Show current plan badges
+  ['starter', 'pro', 'agency'].forEach(p => {
+    const badge = document.getElementById(`badge-${p}`);
+    const btn = document.getElementById(`btn-${p}`);
+    if (p === plan) {
+      badge.style.display = 'inline-block';
+      btn.textContent = 'Current Plan';
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'default';
+    } else {
+      badge.style.display = 'none';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+  });
+}
+
+async function selectPlan(planName) {
+  if (!currentUser) { showAuth('login'); return; }
+  if (currentUser.plan === planName) {
+    alert('You are already on the ' + planName.toUpperCase() + ' plan.');
+    return;
+  }
+  
+  const confirmation = confirm(`Switch to ${planName.toUpperCase()} for $${planName === 'starter' ? '299' : planName === 'pro' ? '599' : '999'}/month?\n\nYou'll be redirected to Stripe to complete payment.`);
+  if (!confirmation) return;
+  
+  try {
+    await startCheckout(planName);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function selectTopup(packId) {
+  if (!currentUser) { showAuth('login'); return; }
+  
+  const packInfo = {
+    topup_500: { credits: 500, price: '$119' },
+    topup_1500: { credits: 1500, price: '$299' },
+    topup_3000: { credits: 3000, price: '$499' },
+  };
+  
+  const info = packInfo[packId];
+  if (!info) return;
+  
+  const confirmation = confirm(`Buy ${info.credits} credits for ${info.price}?\n\nYou'll be redirected to Stripe to complete payment.`);
+  if (!confirmation) return;
+  
+  try {
+    await startCheckout(packId);
+  } catch(e) {
+    alert('Error: ' + e.message);
   }
 }
 
@@ -2426,16 +5010,27 @@ async function openBillingPortal() {
 }
 
 function showUpgradeModal() {
-  // Simple upgrade flow — send to checkout for max
-  if (confirm('Upgrade to Max for $79/mo?\n\n✓ 1,000 credits/month\n✓ Scan last 30 videos\n✓ Bulk automation\n\nYou\'ll be redirected to Stripe to complete payment.')) {
-    startCheckout('max');
+  // Simple upgrade flow — send to checkout for pro
+  if (confirm('Upgrade to Pro for $599/mo?\n\n✓ 2,500 credits/month\n✓ All platforms\n✓ Priority processing\n✓ Campaign history + reporting\n✓ Slack/webhook notifications\n\nYou\'ll be redirected to Stripe to complete payment.')) {
+    startCheckout('pro');
   }
 }
 
 // Handle billing success/cancel redirects
 if (window.location.search.includes('billing=success')) {
   window.history.replaceState(null, '', '/');
-  setTimeout(() => alert('🎉 Subscription activated! Your credits have been updated.'), 500);
+  setTimeout(async () => {
+    // Refresh user data after successful purchase
+    try {
+      const me = await api('/api/auth/me');
+      currentUser = me;
+      updateCreditsUI();
+      renderPricingPage();
+      alert('🎉 Subscription activated! Your credits have been updated.');
+    } catch(e) {
+      alert('✓ Payment successful! Refreshing your account...');
+    }
+  }, 500);
 }
 
 // ── ENTERPRISE FORM ──
@@ -2570,10 +5165,20 @@ async function api(path, method = 'GET', body = null) {
       }
     }
     
-    const data = await resp.json();
+    let data;
+    try {
+      const responseText = await resp.text();
+      console.log(`[api] Response from ${path}: status=${resp.status}, text="${responseText.substring(0, 100)}..."`);
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (parseErr) {
+      console.error(`[api] Failed to parse response from ${path}:`, parseErr);
+      console.error(`[api] Response status:`, resp.status);
+      throw new Error(`Invalid response from ${path}: ${parseErr.message}`);
+    }
     if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
     return data;
   } catch (err) {
+    console.error('[api] Request error:', err);
     throw err;
   }
 }
@@ -2688,16 +5293,36 @@ let currentConfigId = null;
 let selectedCreatorsForConfig = [];
 
 function switchSettingsTab(tab, btn) {
-  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.settings-content').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('settings-'+tab+'-tab').classList.add('active');
-  
-  // Load data when tab is opened
-  if (tab === 'creators') loadCreators();
-  else if (tab === 'groups') loadGroups();
-  else if (tab === 'configs') loadConfigs();
-  else if (tab === 'account') loadAccountData();
+  try {
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.settings-content').forEach(c => {
+      c.classList.remove('active');
+      c.style.display = 'none';
+    });
+    btn.classList.add('active');
+    const tabEl = document.getElementById('settings-'+tab+'-tab');
+    if (tabEl) {
+      tabEl.classList.add('active');
+      tabEl.style.display = 'block';
+    }
+    
+    // Load data when tab is opened
+    if (tab === 'creators') {
+      if (typeof loadCreators === 'function') loadCreators();
+    } else if (tab === 'groups') {
+      if (typeof loadGroups === 'function') loadGroups();
+    } else if (tab === 'configs') {
+      if (typeof loadConfigs === 'function') loadConfigs();
+    } else if (tab === 'notifications') {
+      if (typeof loadNotificationSettings === 'function') loadNotificationSettings();
+    } else if (tab === 'reports') {
+      if (typeof loadReportsUI === 'function') loadReportsUI();
+    } else if (tab === 'account') {
+      if (typeof loadAccountData === 'function') loadAccountData();
+    }
+  } catch (err) {
+    console.error('Error in switchSettingsTab:', err);
+  }
 }
 
 function showAddCreatorModal() {
@@ -3144,13 +5769,13 @@ function createGroupModal() {
   modal.style.cssText = 'display:flex';
   modal.innerHTML = `
     <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
-    <div class="modal-content">
+    <div class="modal-content" style="background:#ffffff">
       <div class="modal-header"><h2>Create Group</h2></div>
-      <input class="form-input" id="group-name-input" type="text" placeholder="Group name (e.g., 'Fitness Creators')" style="margin-bottom:12px" />
-      <textarea class="form-input" id="group-desc-input" placeholder="Description (optional)" style="margin-bottom:12px;height:80px"></textarea>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn-ghost" onclick="document.getElementById('create-group-modal').style.display='none'">Cancel</button>
-        <button class="auth-btn" onclick="createGroup()">Create</button>
+      <input class="form-input" id="group-name-input" type="text" placeholder="Group name (e.g., 'Fitness Creators')" style="margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:6px" />
+      <textarea class="form-input" id="group-desc-input" placeholder="Description (optional)" style="margin-bottom:20px;padding:12px;border:1px solid var(--border);border-radius:6px;height:50px;resize:none"></textarea>
+      <div style="display:flex;gap:12px;justify-content:flex-end">
+        <button class="btn-ghost" style="padding:10px 20px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-weight:600;color:var(--text)" onclick="document.getElementById('create-group-modal').style.display='none'">Cancel</button>
+        <button class="auth-btn" style="padding:10px 24px" onclick="createGroup()">Create</button>
       </div>
       <div id="group-create-msg" style="margin-top:12px;font-size:12px;display:none"></div>
     </div>
@@ -3223,47 +5848,49 @@ function createEditGroupModal() {
   modal.className = 'modal';
   modal.innerHTML = `
     <div class="modal-backdrop" onclick="this.parentElement.style.display='none'"></div>
-    <div class="modal-content" style="max-width:600px">
+    <div class="modal-content" style="max-width:700px;background:#ffffff;padding:28px">
       <div class="modal-header"><h2>Edit Group</h2></div>
       <input class="form-input" id="edit-group-id" type="hidden" />
       
-      <div style="margin-bottom:20px">
-        <label style="display:block;font-weight:500;margin-bottom:6px">Group Name</label>
-        <input class="form-input" id="edit-group-name" type="text" />
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-weight:600;margin-bottom:8px;font-size:14px">Group Name</label>
+        <input class="form-input" id="edit-group-name" type="text" style="padding:12px;border:1px solid var(--border);border-radius:6px;width:100%" />
       </div>
 
-      <div style="margin-bottom:20px">
-        <label style="display:block;font-weight:500;margin-bottom:6px">Description</label>
-        <textarea class="form-input" id="edit-group-desc" style="height:60px"></textarea>
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-weight:600;margin-bottom:8px;font-size:14px">Description</label>
+        <textarea class="form-input" id="edit-group-desc" style="padding:12px;border:1px solid var(--border);border-radius:6px;width:100%;height:50px;resize:none"></textarea>
       </div>
 
-      <div style="margin-bottom:20px">
-        <label style="display:block;font-weight:500;margin-bottom:6px">Members (Max 20)</label>
-        <div id="group-members-list" style="display:grid;gap:8px;margin-bottom:12px"></div>
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-weight:600;margin-bottom:12px;font-size:14px">Members (Max 20)</label>
+        <div id="group-members-list" style="display:grid;gap:8px;margin-bottom:16px"></div>
         
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-          <div>
-            <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Add Manual</label>
-            <select id="add-member-platform" class="form-input" style="margin-bottom:4px">
-              <option value="tiktok">TikTok</option>
-              <option value="youtube">YouTube</option>
-              <option value="instagram">Instagram</option>
-              <option value="twitch">Twitch</option>
-            </select>
-            <input class="form-input" id="add-member-handle" type="text" placeholder="Handle (e.g., johndoe)" style="margin-bottom:4px" />
-            <button class="btn-ghost" style="width:100%;font-size:12px;padding:6px" onclick="addGroupMember()">Add</button>
-          </div>
-          <div>
-            <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Paste List</label>
-            <textarea id="add-members-bulk" class="form-input" placeholder="tiktok:user1&#10;youtube:user2" style="margin-bottom:4px;height:76px;font-size:11px;font-family:var(--mono)"></textarea>
-            <button class="btn-ghost" style="width:100%;font-size:12px;padding:6px" onclick="addGroupMembersBulk()">Import</button>
+        <div style="border-top:1px solid var(--border);padding-top:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Add Manual</label>
+              <select id="add-member-platform" class="form-input" style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:6px;width:100%">
+                <option value="tiktok">TikTok</option>
+                <option value="youtube">YouTube</option>
+                <option value="instagram">Instagram</option>
+                <option value="twitch">Twitch</option>
+              </select>
+              <input class="form-input" id="add-member-handle" type="text" placeholder="Handle (e.g., johndoe)" style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:6px;width:100%" />
+              <button class="btn-ghost" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-weight:600" onclick="addGroupMember()">Add</button>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Paste List</label>
+              <textarea id="add-members-bulk" class="form-input" placeholder="tiktok:user1&#10;youtube:user2" style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:6px;width:100%;height:54px;font-size:11px;font-family:var(--mono);resize:none"></textarea>
+              <button class="btn-ghost" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-weight:600" onclick="addGroupMembersBulk()">Import</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn-ghost" onclick="document.getElementById('edit-group-modal').style.display='none'">Cancel</button>
-        <button class="auth-btn" onclick="saveGroupChanges()">Save</button>
+      <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--border)">
+        <button class="btn-ghost" style="padding:10px 20px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-weight:600;color:var(--text)" onclick="document.getElementById('edit-group-modal').style.display='none'">Cancel</button>
+        <button class="auth-btn" style="padding:10px 24px" onclick="saveGroupChanges()">Save</button>
       </div>
       <div id="group-edit-msg" style="margin-top:12px;font-size:12px;display:none"></div>
     </div>
@@ -3280,9 +5907,9 @@ function displayGroupMembers(members) {
   }
 
   list.innerHTML = members.map(m => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:4px;font-size:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);font-size:12px">
       <span>${m.platform} • <strong>${escapeHtml(m.handle)}</strong></span>
-      <button class="danger-btn" style="font-size:10px;padding:3px 8px" onclick="removeGroupMember('${m.id}')">×</button>
+      <button class="danger-btn" style="font-size:10px;padding:4px 10px;border-radius:4px" onclick="removeGroupMember('${m.id}')">×</button>
     </div>
   `).join('');
 }
@@ -3468,6 +6095,416 @@ function showMsg(elementId, msg, type) {
 }
 
 init();
+
+// ── ONBOARDING ──────────────────────────────────────────────────────────────
+const ONBOARDING_STEPS = [
+  {
+    title: "Welcome to RespawnSignal 👋",
+    body: "You're about to find every brand deal hiding in your competitor's content. Let's take a 30-second tour so you get the most out of it.",
+    target: null,
+    position: 'center'
+  },
+  {
+    title: "Pick a Platform",
+    body: "Start by choosing where your creator lives — TikTok, YouTube, Instagram, or Twitch. Each platform has its own scanning logic.",
+    target: '.card:has([data-platform])',
+    position: 'below'
+  },
+  {
+    title: "Enter a Creator",
+    body: "Paste a profile URL or just a username like <code>@ninja</code> or <code>UCxxxxx</code>. We'll resolve it automatically.",
+    target: '#single-mode-card',
+    position: 'below'
+  },
+  {
+    title: "Choose Scan Depth",
+    body: "Scan the last 3, 14, or 30 videos. Each video costs ~1 credit. Start with 3 to test, then go deeper once you find a good target.",
+    target: '#range-group',
+    position: 'above'
+  },
+  {
+    title: "Hit Scan — Get Deals",
+    body: "We fetch the videos, transcribe the audio, then run AI analysis to surface every brand mention, promo code, and sponsorship.",
+    target: '#scan-btn',
+    position: 'above'
+  },
+  {
+    title: "Your History & All Deals",
+    body: "Every scan is saved. <b>Scan History</b> shows per-creator runs. <b>All Deals</b> aggregates brands across all your scans — great for spotting who's spending.",
+    target: '.sidebar-nav',
+    position: 'right'
+  },
+  {
+    title: "You're ready. Go find some deals.",
+    body: "That's it. Most users find their first brand deal in under 2 minutes. Credits renew monthly — check the Credits page for your balance.",
+    target: null,
+    position: 'center'
+  }
+];
+
+let onboardStep = 0;
+let onboardHighlightEl = null;
+
+function startOnboarding() {
+  onboardStep = 0;
+  // Build progress dots
+  const dotsEl = document.getElementById('ob-dots');
+  dotsEl.innerHTML = ONBOARDING_STEPS.map((_, i) =>
+    `<div class="ob-dot${i === 0 ? ' ob-dot-active' : ''}"></div>`
+  ).join('');
+  document.getElementById('ob-overlay').style.display = 'block';
+  document.getElementById('ob-overlay').offsetHeight; // force reflow for transition
+  document.getElementById('ob-overlay').classList.add('ob-visible');
+  renderOnboardStep();
+}
+
+function renderOnboardStep() {
+  const step = ONBOARDING_STEPS[onboardStep];
+  const total = ONBOARDING_STEPS.length;
+
+  // Update text
+  document.getElementById('ob-title').textContent = step.title;
+  document.getElementById('ob-body').innerHTML = step.body;
+  document.getElementById('ob-step-indicator').textContent = `${onboardStep + 1} of ${total}`;
+  document.getElementById('ob-next-btn').textContent = onboardStep === total - 1 ? 'Get started' : 'Next →';
+  document.getElementById('ob-prev-btn').style.visibility = onboardStep === 0 ? 'hidden' : 'visible';
+
+  // Update progress dots
+  const dots = document.querySelectorAll('.ob-dot');
+  dots.forEach((d, i) => d.classList.toggle('ob-dot-active', i === onboardStep));
+
+  // Remove old highlight
+  if (onboardHighlightEl) {
+    onboardHighlightEl.classList.remove('ob-highlight');
+    onboardHighlightEl = null;
+  }
+
+  // Position tooltip
+  const card = document.getElementById('ob-card');
+  card.className = 'ob-card'; // reset
+
+  if (!step.target) {
+    // Centered modal
+    card.classList.add('ob-card-center');
+    document.getElementById('ob-backdrop').style.background = 'rgba(15,23,42,0.55)';
+  } else {
+    const targetEl = document.querySelector(step.target);
+    if (targetEl) {
+      onboardHighlightEl = targetEl;
+      targetEl.classList.add('ob-highlight');
+      document.getElementById('ob-backdrop').style.background = 'rgba(15,23,42,0.45)';
+      positionOnboardCard(card, targetEl, step.position);
+    } else {
+      card.classList.add('ob-card-center');
+    }
+  }
+}
+
+function positionOnboardCard(card, target, position) {
+  const rect = target.getBoundingClientRect();
+  const cardW = 340;
+  const cardH = 200; // estimated
+  const gap = 16;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  card.style.position = 'fixed';
+  card.style.removeProperty('top');
+  card.style.removeProperty('left');
+  card.style.removeProperty('transform');
+  card.style.removeProperty('right');
+  card.style.removeProperty('bottom');
+
+  if (position === 'below') {
+    let top = rect.bottom + gap;
+    let left = rect.left + (rect.width / 2) - (cardW / 2);
+    left = Math.max(12, Math.min(left, vw - cardW - 12));
+    if (top + cardH > vh - 12) top = rect.top - cardH - gap;
+    card.style.top = top + 'px';
+    card.style.left = left + 'px';
+  } else if (position === 'above') {
+    let top = rect.top - cardH - gap;
+    let left = rect.left + (rect.width / 2) - (cardW / 2);
+    left = Math.max(12, Math.min(left, vw - cardW - 12));
+    if (top < 12) top = rect.bottom + gap;
+    card.style.top = top + 'px';
+    card.style.left = left + 'px';
+  } else if (position === 'right') {
+    let left = rect.right + gap;
+    let top = rect.top + (rect.height / 2) - (cardH / 2);
+    top = Math.max(12, Math.min(top, vh - cardH - 12));
+    if (left + cardW > vw - 12) left = rect.left - cardW - gap;
+    card.style.top = top + 'px';
+    card.style.left = left + 'px';
+  }
+}
+
+function onboardNext() {
+  if (onboardStep < ONBOARDING_STEPS.length - 1) {
+    onboardStep++;
+    renderOnboardStep();
+  } else {
+    finishOnboarding();
+  }
+}
+
+function onboardPrev() {
+  if (onboardStep > 0) {
+    onboardStep--;
+    renderOnboardStep();
+  }
+}
+
+function finishOnboarding() {
+  localStorage.setItem('rs_onboarding_done', '1');
+  const overlay = document.getElementById('ob-overlay');
+  overlay.classList.remove('ob-visible');
+  setTimeout(() => { overlay.style.display = 'none'; }, 300);
+  if (onboardHighlightEl) {
+    onboardHighlightEl.classList.remove('ob-highlight');
+    onboardHighlightEl = null;
+  }
+}
+
+function resetOnboarding() {
+  localStorage.removeItem('rs_onboarding_done');
+  startOnboarding();
+}
+
+// ── REPORTS ──
+async function loadReportsUI() {
+  try {
+    console.log('[Reports UI] Loading reports UI...');
+    
+    // Set current month as default
+    const now = new Date();
+    document.getElementById('report-month').value = now.getMonth();
+    
+    // Populate years (current year + 2 previous)
+    const yearSelect = document.getElementById('report-year');
+    yearSelect.innerHTML = '';
+    for (let i = 2; i >= 0; i--) {
+      const year = now.getFullYear() - i;
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      if (i === 0) option.selected = true;
+      yearSelect.appendChild(option);
+    }
+
+    // Load creators list
+    console.log('[Reports UI] Fetching creators...');
+    const response = await api('/api/reports/creators');
+    console.log('[Reports UI] Full response:', JSON.stringify(response));
+    console.log('[Reports UI] Response type:', typeof response);
+    console.log('[Reports UI] Has creators property:', 'creators' in response);
+    
+    const creators = Array.isArray(response?.creators) ? response.creators : [];
+    console.log('[Reports UI] Creators array:', creators);
+    console.log('[Reports UI] Creators length:', creators.length);
+    
+    const creatorsList = document.getElementById('reports-creators-list');
+    if (!creatorsList) {
+      console.error('[Reports UI] Could not find creators list element!');
+      return;
+    }
+    creatorsList.innerHTML = '';
+    
+    if (creators.length > 0) {
+      console.log('[Reports UI] Rendering', creators.length, 'creators');
+      let html = '';
+      creators.forEach(({ creator_handle, platform }, i) => {
+        console.log(`[Reports UI] Creator ${i}:`, creator_handle, platform);
+        html += `
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:4px;transition:background 0.2s;margin-bottom:4px">
+            <input type="checkbox" class="report-creator-checkbox" value="${creator_handle}-${platform}" data-creator="${creator_handle}" data-platform="${platform}" />
+            <span style="font-size:13px">@${creator_handle} (${platform.toUpperCase()})</span>
+          </label>
+        `;
+      });
+      console.log('[Reports UI] HTML to insert:', html);
+      creatorsList.innerHTML = html;
+      
+      // Add event listeners for hover
+      document.querySelectorAll('#reports-creators-list label').forEach(label => {
+        label.onmouseover = () => label.style.background = 'var(--border)';
+        label.onmouseout = () => label.style.background = 'transparent';
+      });
+      
+      console.log('[Reports UI] ✓ Rendered', creators.length, 'creators');
+    } else {
+      console.log('[Reports UI] No creators found');
+      creatorsList.innerHTML = '<p style="color:var(--text2);font-size:12px">No creators yet. Scan some first!</p>';
+    }
+
+    // Load report history
+    console.log('[Reports UI] Fetching report history...');
+    const historyResponse = await api('/api/reports/history');
+    console.log('[Reports UI] History response:', historyResponse);
+    
+    const history = historyResponse?.reports || [];
+    const historyEl = document.getElementById('reports-history');
+    if (history && history.length > 0) {
+      historyEl.innerHTML = history.slice(0, 10).map(r => {
+        const date = new Date(r.created_at).toLocaleDateString();
+        const status = r.status === 'sent' ? '✅' : '❌';
+        return `<div style="padding:8px;border-radius:4px;background:var(--bg2)">
+          ${status} ${r.creator_handle} → ${r.email} (${date})
+        </div>`;
+      }).join('');
+    } else {
+      historyEl.innerHTML = '<p style="color:var(--text2)">No reports sent yet</p>';
+    }
+
+    // Pre-fill email if available
+    if (currentUser && currentUser.email) {
+      document.getElementById('report-email').value = currentUser.email;
+    }
+    
+    console.log('[Reports UI] ✓ Reports UI loaded successfully');
+  } catch (err) {
+    console.error('[Reports UI] Failed to load reports UI:', err);
+    document.getElementById('reports-creators-list').innerHTML = `<p style="color:var(--red)">Error: ${err.message}</p>`;
+  }
+}
+
+function selectAllCreators() {
+  document.querySelectorAll('.report-creator-checkbox').forEach(cb => cb.checked = true);
+}
+
+function getSelectedCreators() {
+  const checked = document.querySelectorAll('.report-creator-checkbox:checked');
+  return Array.from(checked).map(cb => ({ creator: cb.dataset.creator, platform: cb.dataset.platform }));
+}
+
+async function generateReportPDF() {
+  try {
+    const email = document.getElementById('report-email').value;
+    const month = document.getElementById('report-month').value;
+    const year = document.getElementById('report-year').value;
+    const selected = getSelectedCreators();
+
+    if (!selected.length) {
+      showReportStatus('Please select at least one creator', 'error');
+      return;
+    }
+
+    showReportStatus('Generating PDFs...', 'loading');
+
+    // Generate and download each report
+    for (const { creator, platform } of selected) {
+      const reportData = await api(`/api/reports/preview?creator=${creator}&platform=${platform}&month=${month}&year=${year}`);
+      downloadReportPDF(reportData);
+    }
+
+    showReportStatus(`✓ Downloaded ${selected.length} PDF(s)!`, 'success');
+  } catch (err) {
+    console.error('PDF generation error:', err);
+    showReportStatus('Failed to generate PDF', 'error');
+  }
+}
+
+function downloadReportPDF(reportData) {
+  // Create simple HTML-to-PDF by opening in new window
+  const html = generateReportHTML(reportData.creatorName, reportData);
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `report-${reportData.creatorName.replace('@', '')}-${new Date().toISOString().split('T')[0]}.html`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function sendReportEmail() {
+  try {
+    const email = document.getElementById('report-email').value;
+    const month = document.getElementById('report-month').value;
+    const year = document.getElementById('report-year').value;
+    const selected = getSelectedCreators();
+
+    if (!email) {
+      showReportStatus('Please enter an email', 'error');
+      return;
+    }
+
+    if (!selected.length) {
+      showReportStatus('Please select at least one creator', 'error');
+      return;
+    }
+
+    showReportStatus('Sending reports...', 'loading');
+
+    // Send each report
+    let sent = 0;
+    for (const { creator, platform } of selected) {
+      try {
+        await api('/api/reports/send', 'POST', {
+          creator,
+          platform,
+          email,
+          month,
+          year,
+        });
+        sent++;
+      } catch (err) {
+        console.error(`Failed to send report for ${creator}:`, err);
+      }
+    }
+
+    showReportStatus(`✓ Sent ${sent}/${selected.length} reports to ${email}!`, 'success');
+    
+    // Reload history
+    setTimeout(() => loadReportsUI(), 1000);
+  } catch (err) {
+    console.error('Email send error:', err);
+    showReportStatus('Failed to send reports', 'error');
+  }
+}
+
+function showReportStatus(msg, type) {
+  const el = document.getElementById('report-status-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? 'var(--green)' : type === 'error' ? 'var(--red)' : 'var(--accent)';
+  el.style.color = 'white';
+  
+  if (type !== 'loading') {
+    setTimeout(() => el.style.display = 'none', 4000);
+  }
+}
+
+function generateReportHTML(creatorName, reportData) {
+  const { totalDeals = 0, dealHistory = [], scanCount = 0, topBrands = [] } = reportData;
+  const brandRows = topBrands.slice(0, 10).map(b => 
+    `<tr><td>${b.name}</td><td>${b.count}</td></tr>`
+  ).join('');
+  const dealRows = dealHistory.slice(0, 15).map(d =>
+    `<tr><td>${new Date(d.created_at).toLocaleDateString()}</td><td>${(d.brands || []).join(', ')}</td></tr>`
+  ).join('');
+
+  return `<!DOCTYPE html><html><head><style>
+    body { font-family: system-ui, -apple-system, sans-serif; color: #333; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 24px; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+    .stat { background: #f5f5f5; padding: 15px; border-radius: 6px; text-align: center; }
+    .stat-num { font-size: 28px; font-weight: bold; color: #667eea; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { background: #f5f5f5; padding: 10px; text-align: left; font-weight: 600; }
+    td { padding: 8px; border-bottom: 1px solid #eee; }
+    .footer { font-size: 12px; color: #999; text-align: center; margin-top: 30px; }
+  </style></head><body>
+    <div class="header"><h1>${creatorName}</h1><p>Monthly Activity Report</p></div>
+    <div class="stats">
+      <div class="stat"><div class="stat-num">${totalDeals}</div>Deals Found</div>
+      <div class="stat"><div class="stat-num">${scanCount}</div>Scans</div>
+    </div>
+    ${topBrands.length > 0 ? `<h3>Top Brands</h3><table><thead><tr><th>Brand</th><th>Count</th></tr></thead><tbody>${brandRows}</tbody></table>` : ''}
+    ${dealHistory.length > 0 ? `<h3>Deal History</h3><table><thead><tr><th>Date</th><th>Brand</th></tr></thead><tbody>${dealRows}</tbody></table>` : ''}
+    <div class="footer">Report generated by RespawnSignal</div>
+  </body></html>`;
+}
 </script>
 </body>
 </html>

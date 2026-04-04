@@ -3,6 +3,22 @@ const router = express.Router();
 const fetch = require('node-fetch');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
+const { notifyOnScanComplete, notifyOnLowCredits } = require('../services/notificationService');
+
+/**
+ * Decode HTML entities in text
+ */
+function decodeHtmlEntities(text) {
+  if (!text) return text;
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#x2F;/g, '/');
+}
 
 // POST /api/scan
 router.post('/', authMiddleware, async (req, res) => {
@@ -41,15 +57,19 @@ router.post('/', authMiddleware, async (req, res) => {
 
   // Check for existing scan (same username + range) — return cached, no credit deduction
   // BUT: Skip cache for group scans (groupId param means this is a bulk scan, always run fresh)
-  const { groupId } = req.body;
+  const { groupId, groupScanId } = req.body;
   
   if (!groupId) {
+    // Cache only valid for 7 days
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    
     const { data: existing } = await supabase
       .from('scans')
       .select('*')
       .eq('user_id', dbUser.id)
       .eq('username', username)
       .eq('range', safeRange)
+      .gte('created_at', sevenDaysAgo)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -62,6 +82,8 @@ router.post('/', authMiddleware, async (req, res) => {
         creditsUsed: 0,
         cached: true,
         cachedAt: existing.created_at,
+        business_email: existing.business_email,
+        bio_links: existing.bio_links,
       });
     }
   } else {
@@ -281,9 +303,9 @@ router.post('/', authMiddleware, async (req, res) => {
   let deals = [];
   let analysisError = false;
   try {
-    // Cap each transcript at 800 chars to avoid truncating later videos
+    // Cap each transcript at 2000 chars (sponsor reads often in last 20s, were cut off at 800)
     const text = withTranscripts
-      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, 800)}`)
+      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, 2000)}`)
       .join('\n\n---\n\n');
 
     const platformLabel = platform === 'twitch' ? 'Twitch' : 'TikTok';
@@ -292,6 +314,7 @@ router.post('/', authMiddleware, async (req, res) => {
 Analyze the following ${platformLabel} video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
 
 IMPORTANT: Ignore hashtags (#word). Only analyze the actual spoken content or description text.
+CRITICAL: Only reference the video transcripts provided below. Do not search the web. Do not cite YouTube or any external source. Label evidence only as Video 1, Video 2, etc.
 
 TYPES TO DETECT (not limited to these):
 - Traditional sponsorships ("this video is sponsored by X")
@@ -373,7 +396,91 @@ TRANSCRIPTS:\n${text}`;
     views: v.views,
   }));
   
-  const { error: insertError } = await supabase.from('scans').insert({
+  // Fetch creator profile to get business email and bio links
+  let businessEmail = null;
+  let bioLinks = [];
+  try {
+    const normalizedUsername = username.toLowerCase().trim().replace(/^@/, '');
+    console.log(`[Post-Scan] Fetching creator profile for @${normalizedUsername}`);
+    const profileResp = await fetch(
+      `https://tiktok-scraper7.p.rapidapi.com/user/info?unique_id=${encodeURIComponent(normalizedUsername)}`,
+      {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+          'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
+        },
+      }
+    );
+    
+    console.log(`[Post-Scan] TikTok API response status: ${profileResp.status} (ok: ${profileResp.ok})`);
+    
+    if (profileResp.ok) {
+      const profileData = await profileResp.json();
+      console.log(`[Post-Scan] Raw response keys:`, Object.keys(profileData || {}));
+      console.log(`[Post-Scan] Response structure:`, JSON.stringify(profileData).substring(0, 500));
+      
+      // Use the EXACT same extraction path as agency-search.js fetchTikTokProfile
+      const userInfo = profileData?.data?.user || profileData?.data || profileData?.user || profileData;
+      console.log(`[Post-Scan] UserInfo extracted, keys:`, Object.keys(userInfo || {}));
+      console.log(`[Post-Scan] userInfo.signature:`, userInfo?.signature?.substring(0, 100) || '(none)');
+      
+      if (userInfo?.signature) {
+        const bio = decodeHtmlEntities(userInfo.signature);
+        console.log(`[Post-Scan] Profile fetch complete — bio: "${bio.substring(0, 150)}"`);
+        
+        // Extract business emails from bio
+        const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const emailMatches = bio.match(emailPattern) || [];
+        console.log(`[Post-Scan] Found ${emailMatches.length} total emails in bio`);
+        
+        // Filter for business emails (not personal domains)
+        const businessEmails = emailMatches.filter(email => {
+          const domain = email.split('@')[1]?.toLowerCase();
+          const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'msn.com', 'live.com', 'mail.com', 'yandex.com', 'qq.com', 'gmx.com', 'mail.ru', 'inbox.com'];
+          return domain && !personalDomains.includes(domain);
+        });
+        
+        if (businessEmails.length > 0) {
+          businessEmail = businessEmails[0];
+          console.log(`[Post-Scan] Found business email: ${businessEmail}`);
+        } else {
+          console.log(`[Post-Scan] No business email found (${emailMatches.length} emails are personal domains)`);
+        }
+        
+        // Extract URLs from bio
+        const emailDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'msn.com', 'live.com'];
+        const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
+        const urlMatches = bio.match(urlPattern) || [];
+        console.log(`[Post-Scan] Found ${urlMatches.length} potential URLs in bio`);
+        
+        urlMatches.forEach(url => {
+          if (!bioLinks.includes(url)) {
+            const isEmailDomain = emailDomains.some(domain => url.toLowerCase().includes(domain));
+            if (!isEmailDomain) {
+              const normalizedUrl = /^https?:\/\//.test(url) ? url : `https://${url}`;
+              bioLinks.push(normalizedUrl);
+              console.log(`[Post-Scan] Added bio link: ${normalizedUrl}`);
+            }
+          }
+        });
+        
+        if (bioLinks.length === 0) {
+          console.log(`[Post-Scan] No bio links found`);
+        }
+      } else {
+        console.log(`[Post-Scan] No signature field in userInfo (bio is empty)`);
+      }
+    } else {
+      console.warn(`[Post-Scan] Failed to fetch creator profile: ${profileResp.status}`);
+    }
+  } catch (profileErr) {
+    console.warn(`[Post-Scan] Error fetching creator profile:`, profileErr.message);
+  }
+  
+  console.log(`[Post-Scan] Final result: businessEmail="${businessEmail}", bioLinks=[${bioLinks.join(', ')}]`);
+  
+  const scanData = {
     user_id: dbUser.id,
     username,
     platform: platform || 'tiktok', // ← Save platform for context
@@ -382,12 +489,47 @@ TRANSCRIPTS:\n${text}`;
     credits_used: creditsToDeduct,
     deals,
     videos: videosList,
-  });
+    business_email: businessEmail,
+    bio_links: bioLinks.length > 0 ? bioLinks : null,
+  };
+  
+  // Link to parent group scan if this is part of a group scan
+  if (groupScanId) {
+    scanData.group_scan_id = groupScanId;
+    console.log('[Scan] Linking scan to group_scan_id:', groupScanId);
+  }
+
+  console.log('[Scan] About to insert scan record:', JSON.stringify(scanData));
+
+  const { error: insertError, data: insertData } = await supabase.from('scans').insert(scanData);
 
   if (insertError) {
     console.error('[Scan] Insert error:', insertError.message);
+    console.error('[Scan] Insert error details:', insertError);
   } else {
-    console.log(`[Scan] ✓ Saved ${platform} scan for ${username} with ${deals.length} deals`);
+    console.log(`[Scan] ✓ Saved scan for user ${dbUser.id}, creator ${username}, platform ${platform || 'tiktok'}`);
+    console.log('[Scan] Insert response:', insertData);
+  }
+
+  // Send notifications (non-blocking)
+  try {
+    // Notify if deals found
+    if (deals && deals.length > 0) {
+      notifyOnScanComplete(dbUser.id, username, platform, deals, null).catch(err => {
+        console.error('[Notifications] Scan complete notification failed:', err.message);
+      });
+    }
+
+    // Warn if credits running low
+    const remainingAfter = dbUser.credits_remaining - creditsToDeduct;
+    if (remainingAfter < 100 && remainingAfter > 0) {
+      notifyOnLowCredits(dbUser.id, remainingAfter).catch(err => {
+        console.error('[Notifications] Low credits notification failed:', err.message);
+      });
+    }
+  } catch (notifErr) {
+    console.error('[Notifications] Error sending notifications:', notifErr.message);
+    // Don't fail the scan if notifications fail
   }
 
   return res.json({
@@ -396,6 +538,8 @@ TRANSCRIPTS:\n${text}`;
     creditsUsed: creditsToDeduct,
     analysisError,
     transcriptFailures,
+    business_email: businessEmail,
+    bio_links: bioLinks,
   });
 });
 

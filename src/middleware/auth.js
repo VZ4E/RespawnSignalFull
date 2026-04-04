@@ -2,8 +2,9 @@ const { supabase } = require('../supabase');
 
 const PLAN_DEFAULTS = {
   none: { credits: 0, maxRange: 0, automation: false, unlimitedHistory: false },
-  pro: { credits: 300, maxRange: 14, automation: false, unlimitedHistory: false },
-  max: { credits: 1000, maxRange: 30, automation: true, unlimitedHistory: true },
+  starter: { credits: 1000, maxRange: 30, automation: false, unlimitedHistory: false },
+  pro: { credits: 2500, maxRange: 30, automation: true, unlimitedHistory: true },
+  agency: { credits: 5000, maxRange: 30, automation: true, unlimitedHistory: true },
   enterprise: { credits: 9999, maxRange: 30, automation: true, unlimitedHistory: true },
 };
 
@@ -26,30 +27,39 @@ async function authMiddleware(req, res, next) {
     req.user = user;
 
     // Fetch or create DB user row
+    console.log(`[Auth] Looking for user with email: ${user.email}`);
     let { data: dbUser, error: dbErr } = await supabase
       .from('users')
       .select('*')
       .eq('email', user.email)
       .single();
 
+    console.log(`[Auth] DB user query result - ID: ${dbUser?.id}, error: ${dbErr?.message || 'none'}`);
+
     if (dbErr && dbErr.code !== 'PGRST116') {
-      console.error('DB user fetch error:', dbErr.message);
+      console.error(`[Auth] DB user fetch error:`, dbErr.message);
     }
 
     if (!dbUser) {
+      console.log(`[Auth] Creating new user for ${user.email}`);
       const { data: newUser, error: insertErr } = await supabase
         .from('users')
         .insert({ email: user.email, plan: 'none', credits_remaining: 0 })
         .select()
         .single();
-      if (insertErr) console.error('User insert error:', insertErr.message);
+      if (insertErr) {
+        console.error('[Auth] User insert error:', insertErr.message);
+      } else {
+        console.log(`[Auth] Created new user with ID: ${newUser?.id}`);
+      }
       dbUser = newUser;
     }
 
     if (!dbUser) return res.status(500).json({ error: 'Failed to load user profile' });
 
+    console.log(`[Auth] Final user ID for request: ${dbUser.id}`);
     req.dbUser = dbUser;
-    req.planConfig = PLAN_DEFAULTS[dbUser.plan] || PLAN_DEFAULTS.pro;
+    req.planConfig = PLAN_DEFAULTS[dbUser.plan] || PLAN_DEFAULTS.starter;
     next();
   } catch (err) {
     console.error('Auth middleware exception:', err.message);

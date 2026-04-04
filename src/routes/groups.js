@@ -1,6 +1,7 @@
 const express = require('express');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
+const { notifyOnGroupScanComplete } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -14,6 +15,18 @@ router.use(authMiddleware);
 // GET /api/groups - List all groups for user
 router.get('/', async (req, res) => {
   try {
+    console.log('[GET /api/groups] ========== REQUEST START ==========');
+    console.log('[GET /api/groups] User ID from req.user:', req.user?.id);
+    console.log('[GET /api/groups] User email from req.user:', req.user?.email);
+    console.log('[GET /api/groups] Auth header present:', !!req.headers.authorization);
+    
+    if (!req.user || !req.user.id) {
+      console.error('[GET /api/groups] MISSING USER - auth middleware failed');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    console.log('[GET /api/groups] Querying creator_groups for user:', req.user.id);
+    
     const { data: groups, error } = await supabase
       .from('creator_groups')
       .select(`
@@ -28,10 +41,15 @@ router.get('/', async (req, res) => {
       .eq('user_id', req.user.id)
       .order('updated_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[GET /api/groups] Supabase query error:', error);
+      throw error;
+    }
 
-    res.json({
-      groups: groups.map(g => ({
+    console.log('[GET /api/groups] Query success - found', groups ? groups.length : 0, 'groups');
+
+    const result = {
+      groups: (groups || []).map(g => ({
         id: g.id,
         name: g.name,
         description: g.description,
@@ -42,10 +60,24 @@ router.get('/', async (req, res) => {
         created_at: g.created_at,
         updated_at: g.updated_at
       }))
-    });
+    };
+
+    console.log('[GET /api/groups] About to send response - size:', JSON.stringify(result).length, 'bytes');
+    console.log('[GET /api/groups] Response object:', JSON.stringify(result, null, 2));
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json(result);
+    
+    console.log('[GET /api/groups] ========== REQUEST SUCCESS ==========');
   } catch (err) {
-    console.error('GET /api/groups error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch groups' });
+    console.error('[GET /api/groups] ========== REQUEST ERROR ==========');
+    console.error('[GET /api/groups] Error message:', err.message);
+    console.error('[GET /api/groups] Error name:', err.name);
+    console.error('[GET /api/groups] Stack:', err.stack);
+    res.status(500).json({ 
+      error: 'Failed to fetch groups',
+      message: err.message 
+    });
   }
 });
 
@@ -458,6 +490,49 @@ router.get('/:groupId/bulk-scans', async (req, res) => {
   } catch (err) {
     console.error('GET /api/groups/:groupId/bulk-scans error:', err.message);
     res.status(500).json({ error: 'Failed to fetch bulk scans' });
+  }
+});
+
+// POST /api/groups/:groupId/bulk-scan/:scanId/complete - Mark bulk scan complete and notify
+router.post('/:groupId/bulk-scan/:scanId/complete', async (req, res) => {
+  const { results = [], groupName = 'Bulk Scan' } = req.body;
+
+  try {
+    // Verify authorization
+    const { data: scan, error: checkErr } = await supabase
+      .from('bulk_scans')
+      .select('user_id')
+      .eq('id', req.params.scanId)
+      .eq('group_id', req.params.groupId)
+      .single();
+
+    if (checkErr || !scan || scan.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Update scan status to completed
+    const { error: updateErr } = await supabase
+      .from('bulk_scans')
+      .update({ 
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        results
+      })
+      .eq('id', req.params.scanId);
+
+    if (updateErr) throw updateErr;
+
+    // Send notification (non-blocking)
+    if (results.length > 0) {
+      notifyOnGroupScanComplete(req.user.id, groupName, results).catch(err => {
+        console.error('[Notifications] Group scan notification failed:', err.message);
+      });
+    }
+
+    res.json({ success: true, scanId: req.params.scanId });
+  } catch (err) {
+    console.error('POST /api/groups/:groupId/bulk-scan/:scanId/complete error:', err.message);
+    res.status(500).json({ error: 'Failed to complete bulk scan' });
   }
 });
 

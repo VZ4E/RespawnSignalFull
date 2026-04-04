@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1, h2, .page-heading {
+    @apply text-2xl font-semibold text-gray-900 pt-6 not-italic;
+  }
+  
+  .section-label {
+    @apply text-xs uppercase font-medium text-gray-500 tracking-wider mb-3;
+  }
+  
+  input, textarea {
+    @apply h-10 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-500;
+  }
+
+  button {
+    @apply transition-colors duration-200;
+  }
+}
+
+/* Page heading styles */
+.page-heading {
+  @apply text-3xl font-bold text-gray-900 mb-8;
+}
+
+/* Section labels */
+.section-label {
+  @apply text-xs uppercase font-medium text-gray-500 tracking-wider mb-3 block;
+}
+
+/* Form controls */
+.form-group {
+  @apply mb-6;
+}
+
+.form-group label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+/* Sidebar navigation */
+.sidebar {
+  @apply h-full bg-gradient-to-b from-primary-light to-white border-r border-gray-200;
+}
+
+.nav-item {
+  @apply px-4 py-3 text-gray-700 hover:bg-primary-light hover:text-primary-text transition-colors;
+}
+
+.nav-item.active {
+  @apply bg-primary-light text-primary-text font-semibold border-l-4 border-primary;
+}

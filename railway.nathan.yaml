@@ -1,0 +1,17 @@
+$schema: https://railway.app/schema.json
+
+services:
+  openclaw-nathan:
+    image: ./Dockerfile.nathan
+    variables:
+      PORT: 3000
+      OPENCLAW_WORKSPACE: /app/workspace
+      AGENT_NAME: Nathan
+      DISCORD_WEBHOOK: https://discord.com/api/webhooks/1488353215119495251/SdMorIa2-EbqFYFj8DOxn4a5Ha3Auio63CJYnmlO7cBFMWm2BizPqXFUHmcG7HMj1gtw
+      NODE_ENV: production
+    domains:
+      - openclaw-nathan.railway.app
+    port: 3000
+    healthCheck:
+      path: /api/health
+      interval: 30s
