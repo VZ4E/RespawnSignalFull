@@ -426,7 +426,7 @@
         });
         if (!response.ok) throw new Error('Failed to fetch creators');
         
-        const creators = await response.json();
+        const { creators } = await response.json();
         const select = document.getElementById('creatorSelect');
         select.innerHTML = '<option value="">Select a creator...</option>';
         
