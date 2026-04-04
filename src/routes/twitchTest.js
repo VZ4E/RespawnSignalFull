@@ -5,10 +5,13 @@ const { getTwitchVodTranscript } = require('../services/twitchTranscriber');
 // GET /api/twitch-test?vod=https://www.twitch.tv/videos/2738337586
 router.get('/', async (req, res) => {
   const { vod } = req.query;
-  if (!vod) return res.status(400).json({ error: 'vod URL required' });
+  if (!vod) return res.status(400).json({ error: 'vod URL or ID required' });
 
-  console.log(`[TwitchTest] Testing VOD: ${vod}`);
-  const transcript = await getTwitchVodTranscript(vod);
+  // Extract VOD ID from URL or use directly
+  const vodId = vod.replace('https://www.twitch.tv/videos/', '');
+  console.log(`[TwitchTest] Testing VOD ID: ${vodId}`);
+  
+  const transcript = await getTwitchVodTranscript(vodId);
 
   if (!transcript) return res.status(500).json({ error: 'Transcript failed' });
 
