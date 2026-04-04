@@ -210,10 +210,11 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.15);
       z-index: 1000;
       align-items: center;
       justify-content: center;
+      backdrop-filter: blur(2px);
     }
 
     .modal.active {
@@ -222,11 +223,23 @@
 
     .modal-content {
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       padding: 24px;
       max-width: 500px;
       width: 90%;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     .modal-header {
@@ -347,8 +360,8 @@
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>Automations</h1>
+    <div class="header" style="margin-bottom:20px;">
+      <div style="flex:1;"></div>
       <button class="btn btn-primary" id="addAutomationBtn">+ Add Automation</button>
     </div>
 
