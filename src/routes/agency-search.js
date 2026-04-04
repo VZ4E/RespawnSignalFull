@@ -906,7 +906,7 @@ router.delete('/:agencyId', async (req, res) => {
  */
 router.post('/lookup', async (req, res) => {
   const { handle } = req.body;
-  const userId = req.user.id;
+  const userId = req.dbUser.id;
 
   if (!handle || typeof handle !== 'string') {
     return res.status(400).json({ error: 'handle is required' });
@@ -916,7 +916,7 @@ router.post('/lookup', async (req, res) => {
     const cleanedHandle = cleanHandle(handle);
     // Normalize handle to lowercase for TikTok API (case-insensitive)
     const normalizedHandle = cleanedHandle.toLowerCase();
-    console.log(`[Creator Lookup] Looking up: "${handle}" → cleaned to "${cleanedHandle}" → normalized to "${normalizedHandle}"`);
+    console.log(`[Creator Lookup] Looking up: "${handle}" → cleaned to "${cleanedHandle}" → normalized to "${normalizedHandle}" | user_id: ${userId}`);
 
     // Fetch TikTok profile data using the same API as the scanner
     const profileData = await fetchTikTokProfile(normalizedHandle);
