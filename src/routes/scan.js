@@ -303,36 +303,61 @@ router.post('/', authMiddleware, async (req, res) => {
       .join('\n\n---\n\n');
 
     const platformLabel = platform === 'twitch' ? 'Twitch' : 'TikTok';
-    const prompt = `You are an expert at identifying brand deals, sponsorships, and paid partnerships in social media content.
+    const systemMessage = 'You are a brand deal detection engine. You only output valid JSON arrays. Never explain your reasoning. Never add markdown. Return [] if no deals found.';
 
-Analyze the following ${platformLabel} video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
+    const prompt = `You are a brand deal detection engine specializing in social media creator content across all niches including gaming, lifestyle, food, fashion, and tech.
 
-IMPORTANT: Ignore hashtags (#word). Only analyze the actual spoken content or description text.
-CRITICAL: Only reference the video transcripts provided below. Do not search the web. Do not cite YouTube or any external source. Label evidence only as Video 1, Video 2, etc.
+Analyze the following ${platformLabel} video transcript(s) and identify ONLY genuine paid brand deals, sponsorships, and partnerships.
 
-TYPES TO DETECT (not limited to these):
-- Traditional sponsorships ("this video is sponsored by X")
-- Affiliate links and discount codes ("use code X for 10% off")
-- Product placement or gifted products
-- Gaming/app promotions (UEFN maps, Fortnite creative codes, mobile games, apps)
-- Brand ambassador mentions
-- Merchandise or music promotions paid by a label/brand
-- Any "link in bio" or "check out X" that sounds promotional
-- Creator fund content for specific platforms
+CRITICAL: Only reference the video transcripts provided below. Do not search the web. Do not cite external sources. Label evidence only as Video 1, Video 2, etc.
+
+IGNORE THESE — THEY ARE NOT BRAND DEALS:
+- Fortnite creator codes / Support-A-Creator codes ("use code X in the item shop", "code FoxMan", "!code", "!creator")
+- Fortnite map codes / UEFN island codes (e.g. "4501-7515-6492") unless the map itself is a paid sponsorship
+- Epic Games affiliate program mentions (this is a free creator program, not a paid deal) — BUT if Epic gifts them a skin, bundle, or physical item, that DOES count as a Gifted Product
+- Epic Partner program mentions ("I'm an Epic Partner", "Epic Partner") — the program itself is not a deal, BUT if Epic gifts them a skin, bundle, or physical item, that DOES count as a Gifted Product
+- Roblox creator program mentions unless explicitly paid
+- Organic game mentions with no payment implied
+- Self-promotion (own merch, own Discord, own music unless label-paid)
+- Twitch/TikTok/YouTube platform features (bits, subscriptions, gifted subs, creator fund)
+- Viewership milestones or follower goals
+
+IMPORTANT: Ignoring any of the above does NOT mean you stop analyzing the rest of the transcript. Continue scanning the full transcript for other genuine brand deals even if you find and discard one of the above.
+
+DETECT THESE — GENUINE BRAND DEALS ONLY:
+- Traditional paid sponsorships ("this video is sponsored by X", "partnered with X", "X paid me to", "working with X")
+- Affiliate links with discount codes ("use code X for 10% off at Y") for any brand outside platform creator programs
+- Gifted products from brands ("they sent me X", "X sent me a package", "care package from X")
+- Epic Games / Fortnite gifted items ("Epic sent me", "Fortnite gave me", "I got the skin early", "they sent me the bundle", "Epic hooked me up", "I got early access from Epic/Fortnite") — label as Gifted Product with brand "Epic Games"
+- Paid product placements (brand explicitly paid for placement)
+- Brand ambassador contracts ("I'm signed to X", "I'm an ambassador for X", "I rep X")
+- Gaming peripheral and hardware deals (controllers, headsets, chairs, keyboards, mice, monitors)
+- Food, beverage, and snack brand sponsorships
+- Fashion, apparel, and lifestyle brand deals
+- Tech, software, and app sponsorships (non-platform)
+- Health, fitness, and supplement brand deals
+- Finance, crypto, or betting platform sponsorships
+- Any explicit mention of a brief, contract, deliverable, or payment from a brand
+
+CONFIDENCE RULES:
+- high: creator explicitly states payment, contract, sponsorship, or "this is an ad"
+- medium: gifted product or strong contextual signals of a paid deal (brief mentioned, deliverables, brand-required actions)
+- low: implied promotion with no explicit confirmation — only include if multiple signals are present
+
+EVIDENCE RULE: If you cannot find an exact quote from the transcript supporting the deal, omit the deal entirely. Never use "N/A" as evidence.
 
 GROUPING RULES:
-- Same sentence + same promotion = group in ONE entry with all brand names
-- Different parts of video or different sentences = SEPARATE entries
-- Default to separate when unsure
+- Same brand + same deal type across multiple videos = ONE entry, use the video with the strongest evidence
+- Different brands or different deal types = SEPARATE entries
 
 Return a JSON array where each object has:
-- "brands": string[] — brand/game/app/creator names
-- "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Game Promotion"|"App Promotion"|"Unknown"
+- "brands": string[]
+- "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Unknown"
 - "confidence": "high"|"medium"|"low"
-- "evidence": exact quote or phrase from transcript (NOT hashtags)
+- "evidence": exact quote from transcript
 - "video_ref": e.g. "Video 1"
 
-Return ONLY a valid JSON array. No markdown, no explanation. Return [] only if there are genuinely zero promotional mentions.
+Return ONLY a valid JSON array. No markdown, no explanation. Return [] if no genuine brand deals found.
 
 TRANSCRIPTS:\n${text}`;
 
@@ -345,7 +370,7 @@ TRANSCRIPTS:\n${text}`;
       body: JSON.stringify({
         model: 'sonar-pro',
         messages: [
-          { role: 'system', content: 'You are a brand deal detection engine. You only output valid JSON arrays. Never explain your reasoning. Never add markdown. Return [] if no deals found.' },
+          { role: 'system', content: systemMessage },
           { role: 'user', content: prompt }
         ],
         max_tokens: 3000,
