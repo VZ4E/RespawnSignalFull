@@ -76,10 +76,48 @@ function extractContactsFromBio(bio) {
 }
 
 /**
+ * Calculate Levenshtein distance between two strings
+ * Measures minimum number of single-character edits needed to change one string into another
+ * @param {string} s1 - First string
+ * @param {string} s2 - Second string
+ * @returns {number} Levenshtein distance
+ */
+function levenshteinDistance(s1, s2) {
+  const len1 = s1.length;
+  const len2 = s2.length;
+  
+  // Create a matrix of size (len1 + 1) x (len2 + 1)
+  const dp = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
+  
+  // Initialize first column and row
+  for (let i = 0; i <= len1; i++) {
+    dp[i][0] = i;
+  }
+  for (let j = 0; j <= len2; j++) {
+    dp[0][j] = j;
+  }
+  
+  // Fill in the rest of the matrix
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,      // deletion
+        dp[i][j - 1] + 1,      // insertion
+        dp[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+  
+  return dp[len1][len2];
+}
+
+/**
  * Fuzzy match usernames — check if they're likely the same creator
- * Returns true if:
- * - First 5+ characters match
- * - One username contains the other (e.g., "foxman" vs "foxman1x")
+ * Uses multiple methods:
+ * 1. Levenshtein distance ≤ 2 (e.g., "foxman" vs "foxman1" = 1 edit)
+ * 2. First 5+ characters match (e.g., "foxman" vs "foxman1x")
+ * 3. One username contains the other (e.g., "real_jerian" contains "realjerian")
  */
 function isSimilarUsername(username1, username2) {
   const u1 = username1.toLowerCase().replace(/^@/, '').trim();
@@ -87,18 +125,29 @@ function isSimilarUsername(username1, username2) {
 
   if (u1 === u2) return true;
 
-  // Check if first 5+ characters match
+  // Method 1: Levenshtein distance ≤ 2
+  const distance = levenshteinDistance(u1, u2);
+  console.log(`[ContactInfo] Levenshtein distance between "${u1}" and "${u2}": ${distance}`);
+  if (distance <= 2) {
+    console.log(`[ContactInfo] ✓ Match via Levenshtein distance (${distance} ≤ 2)`);
+    return true;
+  }
+
+  // Method 2: Check if first 5+ characters match
   if (u1.length >= 5 && u2.length >= 5) {
     if (u1.substring(0, 5) === u2.substring(0, 5)) {
+      console.log(`[ContactInfo] ✓ Match via first 5 characters`);
       return true;
     }
   }
 
-  // Check if one contains the other
+  // Method 3: Check if one contains the other
   if (u1.includes(u2) || u2.includes(u1)) {
+    console.log(`[ContactInfo] ✓ Match via substring contains`);
     return true;
   }
 
+  console.log(`[ContactInfo] ✗ No match found for "${u1}" vs "${u2}"`);
   return false;
 }
 
