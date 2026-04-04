@@ -3,6 +3,7 @@ const router = express.Router();
 const fetch = require('node-fetch');
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
+const { runAutomationScheduler } = require('../services/automationScheduler');
 
 /**
  * Calculate next_run_at based on frequency
@@ -204,6 +205,21 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('[Automations] DELETE error:', err.message);
     return res.status(500).json({ error: 'Failed to delete automation' });
+  }
+});
+
+/**
+ * POST /api/automations/trigger-test
+ * Manual trigger for testing the automation scheduler
+ */
+router.post('/trigger-test', authMiddleware, async (req, res) => {
+  try {
+    console.log('[AutomationScheduler] Manual trigger fired by user', req.dbUser.id);
+    await runAutomationScheduler();
+    res.json({ success: true, message: 'Automation scheduler triggered manually' });
+  } catch (err) {
+    console.error('[AutomationScheduler] Manual trigger error:', err.message);
+    res.status(500).json({ error: 'Failed to trigger scheduler: ' + err.message });
   }
 });
 
