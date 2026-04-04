@@ -181,10 +181,27 @@ router.post('/', authMiddleware, async (req, res) => {
     const enrichedVideos = videos.map((v, i) => {
       const videoId = v.node?.id || v.video_id || v.id || v.aweme_id;
       const title = v.node?.title || v.title || v.desc || `Video ${i + 1}`;
-      // Extract VOD length in seconds (check nested node first, then fallback to other names)
-      const lengthSeconds = v.node?.lengthSeconds || v.lengthSeconds || v.duration || v.length || v.durationSeconds || 0;
       
-      console.log(`[Scan] VOD ${videoId} lengthSeconds: ${lengthSeconds}`);
+      // Extract VOD length in seconds (check nested node first, then all fallback paths)
+      // Priority: v.node.lengthSeconds → v.lengthSeconds → v.duration → v.length → v.durationSeconds → v.node.duration → 0
+      const lengthSeconds = 
+        v.node?.lengthSeconds || 
+        v.lengthSeconds || 
+        v.duration || 
+        v.length || 
+        v.durationSeconds || 
+        v.node?.duration ||
+        0;
+      
+      console.log(`[Scan] VOD ${videoId} lengthSeconds: ${lengthSeconds} (source: ${
+        v.node?.lengthSeconds ? 'v.node.lengthSeconds' :
+        v.lengthSeconds ? 'v.lengthSeconds' :
+        v.duration ? 'v.duration' :
+        v.length ? 'v.length' :
+        v.durationSeconds ? 'v.durationSeconds' :
+        v.node?.duration ? 'v.node.duration' :
+        'fallback(0)'
+      })`);
       
       return {
         ...v,
