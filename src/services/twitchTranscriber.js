@@ -3,26 +3,34 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+const MAX_VOD_HOURS = 10;
+const SEGMENT_HOURS = 5;
+
 // Check if yt-dlp is available on startup
 exec('yt-dlp --version', (err, stdout) => {
   console.log('[TwitchTranscriber] yt-dlp version:', stdout.trim() || err?.message);
 });
 
-async function downloadTwitchAudio(vodId) {
-  const outputPath = `/tmp/twitch_${vodId}.mp3`;
-  const twitchVodUrl = `https://www.twitch.tv/videos/${vodId}`;
+/**
+ * Download a specific segment of a Twitch VOD using yt-dlp's --download-sections
+ */
+async function downloadSegment(vodUrl, outputPath, startTime, endTime) {
+  const timeArg = endTime 
+    ? `*${startTime}-${endTime}` 
+    : `*${startTime}-inf`;
   
-  console.log(`[TwitchTranscriber] Downloading audio from: ${twitchVodUrl}`);
-
+  console.log(`[TwitchTranscriber] Downloading segment ${startTime} → ${endTime || 'end'}`);
+  
   return new Promise((resolve, reject) => {
-    exec(`yt-dlp -x --audio-format mp3 --audio-quality 5 -o "${outputPath}" "${twitchVodUrl}"`,
-      { timeout: 600000 }, // 10 min timeout for long VODs
+    exec(
+      `yt-dlp --download-sections "${timeArg}" -x --audio-format mp3 --audio-quality 5 -o "${outputPath}" "${vodUrl}"`,
+      { timeout: 900000, maxBuffer: 1024 * 1024 * 50 }, // 15 min timeout, 50MB buffer
       (error, stdout, stderr) => {
         if (error) {
-          console.error('[TwitchTranscriber] yt-dlp error:', stderr);
+          console.error(`[TwitchTranscriber] Segment download error:`, stderr?.substring(0, 200));
           reject(error);
         } else {
-          console.log('[TwitchTranscriber] Download complete');
+          console.log(`[TwitchTranscriber] Segment downloaded: ${outputPath}`);
           resolve(outputPath);
         }
       }
@@ -30,23 +38,12 @@ async function downloadTwitchAudio(vodId) {
   });
 }
 
-async function getTwitchVodTranscript(vodId) {
-  const ASSEMBLYAI_KEY = process.env.ASSEMBLYAI_API_KEY;
-
-  console.log('[TwitchTranscriber] API key loaded:', ASSEMBLYAI_KEY ? 'YES' : 'MISSING');
-
-  // Step 1 — Download audio directly from Twitch VOD URL using yt-dlp
-  let audioPath;
-  try {
-    audioPath = await downloadTwitchAudio(vodId);
-  } catch (error) {
-    console.error('[TwitchTranscriber] Download failed:', error.message);
-    return null;
-  }
-
-  // Step 2 — Upload audio file to AssemblyAI
-  console.log('[TwitchTranscriber] Uploading audio to AssemblyAI...');
-  const fileData = fs.readFileSync(audioPath);
+/**
+ * Upload audio file to AssemblyAI and transcribe it
+ */
+async function uploadAndTranscribe(filePath, ASSEMBLYAI_KEY) {
+  // Upload to AssemblyAI
+  const fileData = fs.readFileSync(filePath);
   const uploadResp = await fetch('https://api.assemblyai.com/v2/upload', {
     method: 'POST',
     headers: {
@@ -57,19 +54,17 @@ async function getTwitchVodTranscript(vodId) {
   });
   const uploadData = await uploadResp.json();
   const uploadUrl = uploadData.upload_url;
-  console.log('[TwitchTranscriber] Uploaded to AssemblyAI:', uploadUrl ? 'YES' : 'FAILED');
+  
+  // Clean up file immediately after upload
+  fs.unlinkSync(filePath);
+  console.log(`[TwitchTranscriber] Uploaded segment: ${filePath}`);
 
   if (!uploadUrl) {
     console.error('[TwitchTranscriber] Upload failed:', uploadData);
-    fs.unlinkSync(audioPath);
-    return null;
+    throw new Error('Failed to upload segment to AssemblyAI');
   }
 
-  // Clean up local file
-  fs.unlinkSync(audioPath);
-  console.log('[TwitchTranscriber] Local file cleaned up');
-
-  // Step 3 — Submit uploadUrl to AssemblyAI for transcription
+  // Submit for transcription
   const submitResp = await fetch('https://api.assemblyai.com/v2/transcript', {
     method: 'POST',
     headers: {
@@ -84,20 +79,20 @@ async function getTwitchVodTranscript(vodId) {
       format_text: true
     })
   });
-
+  
   const submitData = await submitResp.json();
   const transcriptId = submitData.id;
-  console.log(`[TwitchTranscriber] Submitted — transcript ID: ${transcriptId}`);
+  console.log(`[TwitchTranscriber] Segment transcript ID: ${transcriptId}`);
 
   if (!transcriptId) {
     console.error('[TwitchTranscriber] Submit failed:', submitData);
-    return null;
+    throw new Error('Failed to submit segment for transcription');
   }
 
-  // Step 4 — Poll until complete
+  // Poll for completion
   const pollUrl = `https://api.assemblyai.com/v2/transcript/${transcriptId}`;
   let attempts = 0;
-  const maxAttempts = 120; // 10 minutes max (5 second intervals)
+  const maxAttempts = 180; // 15 minutes max (5 second intervals)
 
   while (attempts < maxAttempts) {
     await new Promise(r => setTimeout(r, 5000)); // wait 5 seconds
@@ -111,18 +106,66 @@ async function getTwitchVodTranscript(vodId) {
     console.log(`[TwitchTranscriber] Poll ${attempts}: status = ${pollData.status}`);
 
     if (pollData.status === 'completed') {
-      console.log(`[TwitchTranscriber] Transcript complete — ${pollData.text.length} chars`);
+      console.log(`[TwitchTranscriber] Segment transcript complete — ${pollData.text.length} chars`);
       return pollData.text;
     }
 
     if (pollData.status === 'error') {
       console.error('[TwitchTranscriber] AssemblyAI error:', pollData.error);
-      return null;
+      throw new Error(pollData.error);
     }
   }
 
-  console.error('[TwitchTranscriber] Timed out after 10 minutes');
-  return null;
+  throw new Error('Segment transcription timed out after 15 minutes');
+}
+
+/**
+ * Main function: Download and transcribe Twitch VOD, handling long VODs with segmentation
+ */
+async function getTwitchVodTranscript(vodId, vodLengthSeconds = 0) {
+  const ASSEMBLYAI_KEY = process.env.ASSEMBLYAI_API_KEY;
+  console.log(`[TwitchTranscriber] API key loaded: ${ASSEMBLYAI_KEY ? 'YES' : 'MISSING'}`);
+
+  if (!ASSEMBLYAI_KEY) {
+    console.error('[TwitchTranscriber] Missing ASSEMBLYAI_API_KEY');
+    return null;
+  }
+
+  const vodUrl = `https://www.twitch.tv/videos/${vodId}`;
+  const vodHours = vodLengthSeconds / 3600;
+
+  // Cap at 10 hours max
+  if (vodHours > MAX_VOD_HOURS) {
+    console.log(`[TwitchTranscriber] VOD is ${vodHours.toFixed(1)}h — capping at ${MAX_VOD_HOURS}h`);
+  }
+
+  try {
+    // Short VOD (≤5 hours): Single segment
+    if (vodHours <= SEGMENT_HOURS) {
+      console.log(`[TwitchTranscriber] Short VOD (${vodHours.toFixed(1)}h) — single segment`);
+      const outputPath = `/tmp/twitch_${vodId}.mp3`;
+      await downloadSegment(vodUrl, outputPath, '00:00:00', null);
+      return await uploadAndTranscribe(outputPath, ASSEMBLYAI_KEY);
+    }
+
+    // Long VOD (>5 hours): Split into two 5-hour segments in parallel
+    console.log(`[TwitchTranscriber] Long VOD (${vodHours.toFixed(1)}h) — splitting into 2 segments`);
+    const seg1Path = `/tmp/twitch_${vodId}_seg1.mp3`;
+    const seg2Path = `/tmp/twitch_${vodId}_seg2.mp3`;
+
+    const [transcript1, transcript2] = await Promise.all([
+      downloadSegment(vodUrl, seg1Path, '00:00:00', '05:00:00')
+        .then(() => uploadAndTranscribe(seg1Path, ASSEMBLYAI_KEY)),
+      downloadSegment(vodUrl, seg2Path, '05:00:00', '10:00:00')
+        .then(() => uploadAndTranscribe(seg2Path, ASSEMBLYAI_KEY))
+    ]);
+
+    console.log(`[TwitchTranscriber] Both segments complete — combining transcripts`);
+    return `${transcript1}\n\n[SEGMENT 2 - HOURS 5-10]\n\n${transcript2}`;
+  } catch (error) {
+    console.error('[TwitchTranscriber] Fatal error:', error.message);
+    return null;
+  }
 }
 
 module.exports = { getTwitchVodTranscript };

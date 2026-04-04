@@ -202,11 +202,13 @@ router.post('/', authMiddleware, async (req, res) => {
     const transcriptPromises = videos.map(async (v, i) => {
       const videoId = v.node?.id || v.video_id || v.id || v.aweme_id;
       const title = v.node?.title || v.title || v.desc || `Video ${i + 1}`;
+      // Extract VOD length in seconds (try multiple field names)
+      const vodLengthSeconds = v.lengthSeconds || v.duration || v.length || v.durationSeconds || 0;
       
       let transcript = '';
       try {
-        console.log(`[Scan] Starting transcript for VOD: ${videoId}`);
-        const twitchTranscript = await getTwitchVodTranscript(videoId);
+        console.log(`[Scan] Starting transcript for VOD: ${videoId} (${(vodLengthSeconds / 3600).toFixed(1)}h)`);
+        const twitchTranscript = await getTwitchVodTranscript(videoId, vodLengthSeconds);
         transcript = twitchTranscript || title || '';
         if (twitchTranscript) {
           console.log(`[Scan] Transcript ready for ${videoId} — ${transcript.length} chars`);
