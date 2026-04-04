@@ -1,8 +1,8 @@
 const fetch = require('node-fetch');
 
-const ASSEMBLYAI_KEY = process.env.ASSEMBLYAI_API_KEY;
-
 async function getTwitchVodTranscript(vodUrl) {
+  const ASSEMBLYAI_KEY = process.env.ASSEMBLYAI_API_KEY;
+  console.log('[TwitchTranscriber] API key loaded:', ASSEMBLYAI_KEY ? 'YES' : 'MISSING');
   console.log(`[TwitchTranscriber] Starting transcript for: ${vodUrl}`);
 
   // Step 1 — Submit VOD URL to AssemblyAI
