@@ -37,6 +37,11 @@ const scanLimiter = rateLimit({
   message: { error: 'Too many scan requests, please wait a minute.' },
 });
 
+// Health check endpoint — always responds instantly
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/billing', billingRoutes);
