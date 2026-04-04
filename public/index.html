@@ -3247,10 +3247,13 @@ async function startScan() {
   
   // Progress animation
   let startTime = Date.now();
-  const progressInterval = setInterval(() => {
+  let progressInterval = setInterval(() => {
     const elapsed = Date.now() - startTime;
     const progress = Math.min((elapsed / totalScanDuration) * 100, 98); // Cap at 98% until complete
-    document.getElementById('scan-progress-fill').style.width = progress + '%';
+    const progressFill = document.getElementById('scan-progress-fill');
+    if (progressFill) {
+      progressFill.style.width = progress + '%';
+    }
     
     // Update stage message
     let currentStageIndex = 0;
@@ -3262,11 +3265,15 @@ async function startScan() {
       }
       timeInCurrentStage -= scanStages[i].duration;
     }
-    document.getElementById('scan-progress-text').textContent = scanStages[currentStageIndex].message;
+    const progressText = document.getElementById('scan-progress-text');
+    if (progressText) {
+      progressText.textContent = scanStages[currentStageIndex].message;
+    }
   }, 500);
 
   try {
     let data;
+    const apiStartTime = Date.now();
     if (platform === 'youtube') {
       // Map scan range to YouTube scan depth (10/20/30)
       const scanDepth = scanRange <= 10 ? 10 : scanRange <= 20 ? 20 : 30;
@@ -3282,6 +3289,17 @@ async function startScan() {
       data.videos = (data.videos || []).map(v => ({ title: v.title, views: v.viewCount || 0 }));
     } else {
       data = await api('/api/scan', 'POST', { platform, handle, range: scanRange });
+    }
+    const apiDuration = Date.now() - apiStartTime;
+    
+    // If scan returned in under 5 seconds, it was cached — skip progress animation
+    if (apiDuration < 5000) {
+      console.log(`[Scan] Cached response received in ${apiDuration}ms — skipping progress animation`);
+      clearInterval(progressInterval);
+      const progressContainer = document.getElementById('scan-progress-container');
+      if (progressContainer) {
+        progressContainer.remove();
+      }
     }
 
     console.log('[Scan Result] Full response from API:', data);
