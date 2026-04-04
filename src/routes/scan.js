@@ -59,9 +59,10 @@ router.post('/', authMiddleware, async (req, res) => {
 
   // Check for existing scan (same username + range) — return cached, no credit deduction
   // BUT: Skip cache for group scans (groupId param means this is a bulk scan, always run fresh)
+  // OR: Skip if nocache query parameter is set (for testing)
   const { groupId, groupScanId } = req.body;
   
-  if (!groupId) {
+  if (!groupId && !req.query.nocache) {
     // Cache only valid for 7 days
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     
@@ -88,8 +89,10 @@ router.post('/', authMiddleware, async (req, res) => {
         bio_links: existing.bio_links,
       });
     }
-  } else {
+  } else if (groupId) {
     console.log(`[Scan] Group scan (groupId: ${groupId}) — skipping cache, running fresh`);
+  } else if (req.query.nocache) {
+    console.log(`[Scan] nocache=1 query parameter — forcing fresh scan for ${username}`);
   }
 
   // 1. Fetch videos (TikTok or Twitch)
