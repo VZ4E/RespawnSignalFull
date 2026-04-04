@@ -3262,8 +3262,18 @@ async function startScan() {
 
     renderDeals(deals, listHtml + warnings, true, { businessEmail: data.business_email, bioLinks: data.bio_links });
 
-    // Add to local history cache
-    scanHistory.unshift({ id: Date.now(), label: `${platform.toUpperCase()} @${handle}`, platform, handle, deals, meta: { range: scanRange, videoCount: (videos||[]).length, credits: creditsUsed }, timestamp: new Date().toISOString() });
+    // Add to local history cache (include business_email and bio_links from scan)
+    scanHistory.unshift({ 
+      id: Date.now(), 
+      label: `${platform.toUpperCase()} @${handle}`, 
+      platform, 
+      handle, 
+      deals, 
+      business_email: data.business_email,
+      bio_links: data.bio_links,
+      meta: { range: scanRange, videoCount: (videos||[]).length, credits: creditsUsed }, 
+      timestamp: new Date().toISOString() 
+    });
     updateBadges();
 
     // Refresh credits
@@ -3295,6 +3305,10 @@ async function forceFreshScan(handle, platform, range) {
 }
 
 function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) {
+  console.log('[renderDeals] Called with creatorInfo:', creatorInfo);
+  console.log('[renderDeals] businessEmail:', creatorInfo?.businessEmail);
+  console.log('[renderDeals] bioLinks:', creatorInfo?.bioLinks);
+  
   const r = document.getElementById('scan-results');
   if (!deals || !deals.length) {
     r.innerHTML = prefix + `<div class="no-results"><div style="font-size:28px;margin-bottom:9px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:3px">No brand deals detected</div><div>Content may be organic or contains no flagged partnerships.</div></div>`;
@@ -3305,12 +3319,19 @@ function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) 
   
   // Build Creator Info section
   let creatorInfoHtml = '';
-  if (creatorInfo?.businessEmail || (creatorInfo?.bioLinks && creatorInfo.bioLinks.length > 0)) {
+  const hasBusinessEmail = creatorInfo?.businessEmail;
+  const hasBioLinks = creatorInfo?.bioLinks && Array.isArray(creatorInfo.bioLinks) && creatorInfo.bioLinks.length > 0;
+  console.log('[renderDeals] hasBusinessEmail:', hasBusinessEmail, 'hasBioLinks:', hasBioLinks);
+  
+  if (hasBusinessEmail || hasBioLinks) {
+    console.log('[renderDeals] Building Creator Info card');
     creatorInfoHtml = `<div class="card" style="margin-bottom:13px">
       <div class="card-label">Creator Info</div>
-      ${creatorInfo.businessEmail ? `<div style="margin-bottom:8px"><strong>Contact:</strong> <a href="mailto:${escapeHtml(creatorInfo.businessEmail)}" style="color:var(--accent);text-decoration:none">${escapeHtml(creatorInfo.businessEmail)}</a></div>` : ''}
-      ${creatorInfo.bioLinks && creatorInfo.bioLinks.length > 0 ? `<div><strong>Links:</strong><br>${creatorInfo.bioLinks.map(link => `<a href="${escapeHtml(link)}" target="_blank" style="color:var(--accent);text-decoration:none;word-break:break-all">${escapeHtml(link)}</a><br>`).join('')}</div>` : ''}
+      ${hasBusinessEmail ? `<div style="margin-bottom:8px"><strong>Contact:</strong> <a href="mailto:${escapeHtml(creatorInfo.businessEmail)}" style="color:var(--accent);text-decoration:none">${escapeHtml(creatorInfo.businessEmail)}</a></div>` : ''}
+      ${hasBioLinks ? `<div><strong>Links:</strong><br>${creatorInfo.bioLinks.map(link => `<a href="${escapeHtml(link)}" target="_blank" style="color:var(--accent);text-decoration:none;word-break:break-all">${escapeHtml(link)}</a><br>`).join('')}</div>` : ''}
     </div>`;
+  } else {
+    console.log('[renderDeals] No creator info to display');
   }
   
   let html = creatorInfoHtml;
