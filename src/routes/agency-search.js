@@ -162,7 +162,11 @@ async function fetchTikTokProfile(username) {
     
     // Extract profile data
     const displayName = userInfo.nickname || userInfo.user?.nickname || userInfo.uniqueId || normalizedUsername;
-    const bio = userInfo.signature || userInfo.user?.signature || '';
+    let bio = userInfo.signature || userInfo.user?.signature || '';
+    
+    console.log(`[TikTok Profile] Bio before decoding for @${normalizedUsername}:`, bio.substring(0, 200));
+    bio = decodeHtmlEntities(bio);
+    console.log(`[TikTok Profile] Bio after decoding for @${normalizedUsername}:`, bio.substring(0, 200));
     
     // Extract linked social media accounts
     const socialHandles = {};
@@ -214,7 +218,7 @@ async function fetchTikTokProfile(username) {
     
     return {
       displayName,
-      bio: decodeHtmlEntities(bio),
+      bio,
       bioLinks,
       emails,
       socialHandles

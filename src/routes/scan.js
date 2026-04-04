@@ -5,6 +5,21 @@ const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
 const { notifyOnScanComplete, notifyOnLowCredits } = require('../services/notificationService');
 
+/**
+ * Decode HTML entities in text
+ */
+function decodeHtmlEntities(text) {
+  if (!text) return text;
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#x2F;/g, '/');
+}
+
 // POST /api/scan
 router.post('/', authMiddleware, async (req, res) => {
   // Support both old (username) and new (platform, handle) formats
@@ -374,6 +389,72 @@ TRANSCRIPTS:\n${text}`;
     views: v.views,
   }));
   
+  // Fetch creator profile to get business email and bio links
+  let businessEmail = null;
+  let bioLinks = [];
+  try {
+    console.log(`[Scan] Fetching creator profile for @${username}`);
+    const profileResp = await fetch(
+      `https://tiktok-scraper7.p.rapidapi.com/user/info?username=${encodeURIComponent(username.replace(/^@/, ''))}`,
+      {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+          'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
+        },
+      }
+    );
+    
+    if (profileResp.ok) {
+      const profileData = await profileResp.json();
+      const userInfo = profileData?.data?.user || profileData?.data || profileData?.user || profileData;
+      
+      if (userInfo?.signature) {
+        const bio = decodeHtmlEntities(userInfo.signature);
+        console.log(`[Scan] Creator bio: ${bio.substring(0, 200)}`);
+        
+        // Extract business emails from bio
+        const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const emailMatches = bio.match(emailPattern) || [];
+        
+        // Filter for business emails (not personal domains)
+        const businessEmails = emailMatches.filter(email => {
+          const domain = email.split('@')[1]?.toLowerCase();
+          const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'msn.com', 'live.com', 'mail.com', 'yandex.com', 'qq.com', 'gmx.com', 'mail.ru', 'inbox.com'];
+          return domain && !personalDomains.includes(domain);
+        });
+        
+        if (businessEmails.length > 0) {
+          businessEmail = businessEmails[0];
+          console.log(`[Scan] Found business email: ${businessEmail}`);
+        }
+        
+        // Extract URLs from bio
+        const emailDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'msn.com', 'live.com'];
+        const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
+        const urlMatches = bio.match(urlPattern) || [];
+        
+        urlMatches.forEach(url => {
+          if (!bioLinks.includes(url)) {
+            const isEmailDomain = emailDomains.some(domain => url.toLowerCase().includes(domain));
+            if (!isEmailDomain) {
+              const normalizedUrl = /^https?:\/\//.test(url) ? url : `https://${url}`;
+              bioLinks.push(normalizedUrl);
+            }
+          }
+        });
+        
+        if (bioLinks.length > 0) {
+          console.log(`[Scan] Found ${bioLinks.length} bio links`);
+        }
+      }
+    } else {
+      console.warn(`[Scan] Failed to fetch creator profile: ${profileResp.status}`);
+    }
+  } catch (profileErr) {
+    console.warn(`[Scan] Error fetching creator profile:`, profileErr.message);
+  }
+  
   const scanData = {
     user_id: dbUser.id,
     username,
@@ -383,6 +464,8 @@ TRANSCRIPTS:\n${text}`;
     credits_used: creditsToDeduct,
     deals,
     videos: videosList,
+    business_email: businessEmail,
+    bio_links: bioLinks.length > 0 ? bioLinks : null,
   };
   
   // Link to parent group scan if this is part of a group scan
