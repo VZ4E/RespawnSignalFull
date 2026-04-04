@@ -5,7 +5,7 @@ async function getTwitchVodTranscript(vodUrl) {
   console.log('[TwitchTranscriber] API key loaded:', ASSEMBLYAI_KEY ? 'YES' : 'MISSING');
   console.log(`[TwitchTranscriber] Starting transcript for: ${vodUrl}`);
 
-  // Step 1 — Submit VOD URL to AssemblyAI (v2 API with v3 speech model)
+  // Step 1 — Submit VOD URL to AssemblyAI
   const submitResp = await fetch('https://api.assemblyai.com/v2/transcript', {
     method: 'POST',
     headers: {
@@ -14,7 +14,6 @@ async function getTwitchVodTranscript(vodUrl) {
     },
     body: JSON.stringify({
       audio_url: vodUrl,
-      speech_model: 'universal-2',
       language_code: 'en',
       punctuate: true,
       format_text: true
