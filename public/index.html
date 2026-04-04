@@ -4742,9 +4742,11 @@ async function addNicheToGroup(groupId, groupName, creators) {
 
 function showStatusMsg(text, type) {
   const statusEl = document.getElementById('agency-scrape-status');
-  statusEl.textContent = text;
-  statusEl.style.display = 'block';
-  statusEl.style.color = type === 'error' ? 'var(--red)' : 'var(--text2)';
+  if (statusEl) {
+    statusEl.textContent = text;
+    statusEl.style.display = 'block';
+    statusEl.style.color = type === 'error' ? 'var(--red)' : 'var(--text2)';
+  }
 }
 
 // ── ACCOUNT REFRESH ──
