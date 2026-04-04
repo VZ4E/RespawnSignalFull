@@ -452,14 +452,19 @@
         if (!response.ok) throw new Error('Failed to fetch creators');
         
         const { creators } = await response.json();
+        console.log('[fetchCreators] Raw creators response:', creators);
         const select = document.getElementById('creatorSelect');
         select.innerHTML = '<option value="">Select a creator...</option>';
         
         creators.forEach(creator => {
-          const option = document.createElement('option');
-          option.value = creator.username;
-          option.textContent = `@${creator.username} (${creator.platform})`;
-          select.appendChild(option);
+          // Each creator has display_name and accounts array
+          const accounts = creator.accounts || [];
+          accounts.forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.handle; // Use handle as the value (username)
+            option.textContent = `@${account.handle} (${account.platform})`;
+            select.appendChild(option);
+          });
         });
       } catch (err) {
         console.error('Error fetching creators:', err);
