@@ -6,7 +6,10 @@ async function getTwitchVodTranscript(vodId) {
   const TWITCH_ACCESS_TOKEN = process.env.TWITCH_ACCESS_TOKEN;
 
   console.log('[TwitchTranscriber] API key loaded:', ASSEMBLYAI_KEY ? 'YES' : 'MISSING');
-  console.log('[TwitchTranscriber] Twitch credentials loaded:', (TWITCH_CLIENT_ID && TWITCH_ACCESS_TOKEN) ? 'YES' : 'MISSING');
+  console.log('[TwitchTranscriber] Twitch credentials loaded:',
+    TWITCH_CLIENT_ID ? 'CLIENT_ID=YES' : 'CLIENT_ID=MISSING',
+    TWITCH_ACCESS_TOKEN ? 'TOKEN=YES' : 'TOKEN=MISSING'
+  );
   console.log(`[TwitchTranscriber] Fetching VOD info for ID: ${vodId}`);
 
   // Step 1 — Get VOD info from Twitch API
