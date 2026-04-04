@@ -133,6 +133,7 @@ async function getTwitchVodTranscript(vodId, vodLengthSeconds = 0) {
 
   const vodUrl = `https://www.twitch.tv/videos/${vodId}`;
   const vodHours = vodLengthSeconds / 3600;
+  console.log(`[TwitchTranscriber] VOD ${vodId}: ${vodLengthSeconds} seconds = ${vodHours.toFixed(3)}h`);
 
   // Cap at 10 hours max
   if (vodHours > MAX_VOD_HOURS) {
@@ -140,16 +141,16 @@ async function getTwitchVodTranscript(vodId, vodLengthSeconds = 0) {
   }
 
   try {
-    // Short VOD (≤5 hours): Single segment
+    // Short VOD (≤5 hours): Single segment — treats 5.0h and below as single segment
     if (vodHours <= SEGMENT_HOURS) {
-      console.log(`[TwitchTranscriber] Short VOD (${vodHours.toFixed(1)}h) — single segment`);
+      console.log(`[TwitchTranscriber] Short VOD (${vodHours.toFixed(1)}h) — single segment (≤ ${SEGMENT_HOURS}h)`);
       const outputPath = `/tmp/twitch_${vodId}.mp3`;
       await downloadSegment(vodUrl, outputPath, '00:00:00', null);
       return await uploadAndTranscribe(outputPath, ASSEMBLYAI_KEY);
     }
 
-    // Long VOD (>5 hours): Split into two 5-hour segments in parallel
-    console.log(`[TwitchTranscriber] Long VOD (${vodHours.toFixed(1)}h) — splitting into 2 segments`);
+    // Long VOD (>5 hours): Split into two 5-hour segments in parallel — only if STRICTLY greater than 5 hours
+    console.log(`[TwitchTranscriber] Long VOD (${vodHours.toFixed(1)}h, > ${SEGMENT_HOURS}h) — splitting into 2 segments`);
     const seg1Path = `/tmp/twitch_${vodId}_seg1.mp3`;
     const seg2Path = `/tmp/twitch_${vodId}_seg2.mp3`;
 
