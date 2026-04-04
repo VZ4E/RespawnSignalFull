@@ -1,9 +1,13 @@
-FROM node:24-alpine
+FROM node:20-slim
 
 WORKDIR /app/workspace
 
-# Install git and essential tools
-RUN apk add --no-cache git curl bash dcron
+# Install git, curl, bash, dcron, ffmpeg, python3 for yt-dlp
+RUN apt-get update && apt-get install -y \
+    git curl bash dcron ffmpeg python3 && \
+    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && \
+    chmod a+rx /usr/local/bin/yt-dlp && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy repo
 COPY . .
@@ -20,8 +24,8 @@ RUN mkdir -p /app/logs
 # Setup cron for daily reports
 RUN echo "0 18 * * * cd /app/workspace && node scripts/daily-report.js >> /app/logs/daily-report.log 2>&1" | crontab -
 
-# Expose port
-EXPOSE 3000
+# Expose ports
+EXPOSE 3000 8080
 
 # Start OpenClaw gateway and cron daemon
 CMD ["sh", "-c", "openclaw gateway start --port 3000 & crond -f"]
