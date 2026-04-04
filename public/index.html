@@ -211,6 +211,9 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); }
 
 .page { display:none; padding:28px 30px; max-width:820px; }
 .page.active { display:block; }
+#page-automation { max-width:none; padding:0; }
+#page-automation .sec-head { margin:28px 30px 24px 30px; }
+#automation-content { width:100%; }
 .sec-head { margin-bottom:24px; }
 .sec-head h1 { font-family:var(--serif); font-style:italic; font-size:26px; margin-bottom:4px; }
 .sec-head p { font-size:13px; color:var(--text2); }
@@ -2787,7 +2790,15 @@ function navTo(id, el) {
 function loadAutomationPage() {
   const container = document.getElementById('automation-content');
   if (!container) return;
-  container.innerHTML = '<iframe src="/automation" style="width:100%; height:calc(100vh - 200px); border:none; border-radius:8px; overflow:auto;"></iframe>';
+  container.innerHTML = '<iframe src="/automation" style="width:100%; min-height:600px; border:none; border-radius:8px; overflow:auto;"></iframe>';
+  // Set iframe height dynamically based on content
+  const iframe = container.querySelector('iframe');
+  iframe.onload = function() {
+    try {
+      const height = iframe.contentDocument.body.scrollHeight;
+      iframe.style.height = (height + 20) + 'px';
+    } catch(e) {}
+  };
 }
 
 // ── SCANNER ──
