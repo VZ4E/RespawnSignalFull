@@ -166,18 +166,25 @@ async function fetchTikTokProfile(username) {
     const bioLinks = [];
     const emails = [];
     
+    // Common email domains to exclude from links section
+    const emailDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'msn.com', 'live.com'];
+    
     if (bio) {
       // Extract URLs from bio: https/http, www., or bare domains (with optional path)
       // Pattern: (https?://... | www.... | bare.domain.com/path)
       const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
       const urlMatches = bio.match(urlPattern);
       if (urlMatches) {
-        // Filter duplicates and add https:// to bare domains
+        // Filter duplicates, exclude email domains, and add https:// to bare domains
         urlMatches.forEach(url => {
           if (!bioLinks.includes(url)) {
-            // If URL doesn't start with http:// or https://, add https://
-            const normalizedUrl = /^https?:\/\//.test(url) ? url : `https://${url}`;
-            bioLinks.push(normalizedUrl);
+            // Check if this URL is from a known email domain (catch gmail.com, yahoo.com, etc.)
+            const isEmailDomain = emailDomains.some(domain => url.toLowerCase().includes(domain));
+            if (!isEmailDomain) {
+              // If URL doesn't start with http:// or https://, add https://
+              const normalizedUrl = /^https?:\/\//.test(url) ? url : `https://${url}`;
+              bioLinks.push(normalizedUrl);
+            }
           }
         });
       }
@@ -972,21 +979,21 @@ router.post('/lookup', async (req, res) => {
 
     console.log(`[Creator Lookup] After formatting: ${formattedScanHistory.length} scans for "${normalizedHandle}"`);
 
-    // SILENT LEAD LOGGING: Check if creator is unrepresented
+    // SILENT LEAD LOGGING: Check if creator is unrepresented or has only personal emails
     const businessEmails = profileData.emails.filter(email => isBusinessEmail(email));
     console.log(`[Lead Logging] @${normalizedHandle}: ${profileData.emails.length} emails found, ${businessEmails.length} business emails`);
     
-    if (profileData.emails.length === 0 || businessEmails.length === 0) {
-      // No business email found — log as unrepresented creator (silently, no response change)
+    if (profileData.emails.length === 0) {
+      // No emails found at all — log as unrepresented creator
+      console.log(`[Lead Logging] Logging @${normalizedHandle} as unrepresented (no emails found)`);
       const { error: logError } = await supabase
         .from('unrepresented_creators')
         .insert([{
           handle: normalizedHandle,
           platform: 'tiktok',
           name: profileData.displayName,
-          followers: profileData.followers,
           bio: profileData.bio,
-          emails_found: profileData.emails.length > 0 ? profileData.emails : null,
+          emails_found: null,
           looked_up_by: userId
         }]);
       
@@ -994,6 +1001,25 @@ router.post('/lookup', async (req, res) => {
         console.warn(`[Lead Logging] Failed to log unrepresented creator @${normalizedHandle}:`, logError.message);
       } else {
         console.log(`[Lead Logging] Logged unrepresented creator: @${normalizedHandle}`);
+      }
+    } else if (businessEmails.length === 0) {
+      // Has emails but all are personal/common domains — log separately
+      console.log(`[Lead Logging] Logging @${normalizedHandle} as personal email creator (no business email)`);
+      const { error: logError } = await supabase
+        .from('personal_email_creators')
+        .insert([{
+          handle: normalizedHandle,
+          platform: 'tiktok',
+          name: profileData.displayName,
+          bio: profileData.bio,
+          emails_found: profileData.emails,
+          looked_up_by: userId
+        }]);
+      
+      if (logError) {
+        console.warn(`[Lead Logging] Failed to log personal email creator @${normalizedHandle}:`, logError.message);
+      } else {
+        console.log(`[Lead Logging] Logged personal email creator: @${normalizedHandle}`);
       }
     }
 
