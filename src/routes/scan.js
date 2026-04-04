@@ -407,17 +407,23 @@ TRANSCRIPTS:\n${text}`;
       }
     );
     
+    console.log(`[Post-Scan] TikTok API response status: ${profileResp.status} (ok: ${profileResp.ok})`);
+    
     if (profileResp.ok) {
       const profileData = await profileResp.json();
+      console.log(`[Post-Scan] Profile data keys:`, Object.keys(profileData || {}));
+      
       const userInfo = profileData?.data?.user || profileData?.data || profileData?.user || profileData;
+      console.log(`[Post-Scan] UserInfo extracted, keys:`, Object.keys(userInfo || {}));
       
       if (userInfo?.signature) {
         const bio = decodeHtmlEntities(userInfo.signature);
-        console.log(`[Post-Scan] Creator bio: ${bio.substring(0, 200)}`);
+        console.log(`[Post-Scan] Profile fetch complete — bio: "${bio.substring(0, 150)}"`);
         
         // Extract business emails from bio
         const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
         const emailMatches = bio.match(emailPattern) || [];
+        console.log(`[Post-Scan] Found ${emailMatches.length} total emails in bio`);
         
         // Filter for business emails (not personal domains)
         const businessEmails = emailMatches.filter(email => {
@@ -429,12 +435,15 @@ TRANSCRIPTS:\n${text}`;
         if (businessEmails.length > 0) {
           businessEmail = businessEmails[0];
           console.log(`[Post-Scan] Found business email: ${businessEmail}`);
+        } else {
+          console.log(`[Post-Scan] No business email found (${emailMatches.length} emails are personal domains)`);
         }
         
         // Extract URLs from bio
         const emailDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'msn.com', 'live.com'];
         const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
         const urlMatches = bio.match(urlPattern) || [];
+        console.log(`[Post-Scan] Found ${urlMatches.length} potential URLs in bio`);
         
         urlMatches.forEach(url => {
           if (!bioLinks.includes(url)) {
@@ -442,13 +451,16 @@ TRANSCRIPTS:\n${text}`;
             if (!isEmailDomain) {
               const normalizedUrl = /^https?:\/\//.test(url) ? url : `https://${url}`;
               bioLinks.push(normalizedUrl);
+              console.log(`[Post-Scan] Added bio link: ${normalizedUrl}`);
             }
           }
         });
         
-        if (bioLinks.length > 0) {
-          console.log(`[Post-Scan] Found ${bioLinks.length} bio links`);
+        if (bioLinks.length === 0) {
+          console.log(`[Post-Scan] No bio links found`);
         }
+      } else {
+        console.log(`[Post-Scan] No signature field in userInfo (bio is empty)`);
       }
     } else {
       console.warn(`[Post-Scan] Failed to fetch creator profile: ${profileResp.status}`);
@@ -456,6 +468,8 @@ TRANSCRIPTS:\n${text}`;
   } catch (profileErr) {
     console.warn(`[Post-Scan] Error fetching creator profile:`, profileErr.message);
   }
+  
+  console.log(`[Post-Scan] Final result: businessEmail="${businessEmail}", bioLinks=[${bioLinks.join(', ')}]`);
   
   const scanData = {
     user_id: dbUser.id,
