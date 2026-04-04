@@ -78,6 +78,8 @@ router.post('/', authMiddleware, async (req, res) => {
         creditsUsed: 0,
         cached: true,
         cachedAt: existing.created_at,
+        business_email: existing.business_email,
+        bio_links: existing.bio_links,
       });
     }
   } else {
@@ -393,7 +395,7 @@ TRANSCRIPTS:\n${text}`;
   let businessEmail = null;
   let bioLinks = [];
   try {
-    console.log(`[Scan] Fetching creator profile for @${username}`);
+    console.log(`[Post-Scan] Fetching creator profile for @${username}`);
     const profileResp = await fetch(
       `https://tiktok-scraper7.p.rapidapi.com/user/info?username=${encodeURIComponent(username.replace(/^@/, ''))}`,
       {
@@ -411,7 +413,7 @@ TRANSCRIPTS:\n${text}`;
       
       if (userInfo?.signature) {
         const bio = decodeHtmlEntities(userInfo.signature);
-        console.log(`[Scan] Creator bio: ${bio.substring(0, 200)}`);
+        console.log(`[Post-Scan] Creator bio: ${bio.substring(0, 200)}`);
         
         // Extract business emails from bio
         const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
@@ -426,7 +428,7 @@ TRANSCRIPTS:\n${text}`;
         
         if (businessEmails.length > 0) {
           businessEmail = businessEmails[0];
-          console.log(`[Scan] Found business email: ${businessEmail}`);
+          console.log(`[Post-Scan] Found business email: ${businessEmail}`);
         }
         
         // Extract URLs from bio
@@ -445,14 +447,14 @@ TRANSCRIPTS:\n${text}`;
         });
         
         if (bioLinks.length > 0) {
-          console.log(`[Scan] Found ${bioLinks.length} bio links`);
+          console.log(`[Post-Scan] Found ${bioLinks.length} bio links`);
         }
       }
     } else {
-      console.warn(`[Scan] Failed to fetch creator profile: ${profileResp.status}`);
+      console.warn(`[Post-Scan] Failed to fetch creator profile: ${profileResp.status}`);
     }
   } catch (profileErr) {
-    console.warn(`[Scan] Error fetching creator profile:`, profileErr.message);
+    console.warn(`[Post-Scan] Error fetching creator profile:`, profileErr.message);
   }
   
   const scanData = {
@@ -513,6 +515,8 @@ TRANSCRIPTS:\n${text}`;
     creditsUsed: creditsToDeduct,
     analysisError,
     transcriptFailures,
+    business_email: businessEmail,
+    bio_links: bioLinks,
   });
 });
 

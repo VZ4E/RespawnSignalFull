@@ -3224,6 +3224,10 @@ async function startScan() {
       data = await api('/api/scan', 'POST', { platform, handle, range: scanRange });
     }
 
+    console.log('[Scan Result] Full response from API:', data);
+    console.log('[Scan Result] business_email:', data.business_email);
+    console.log('[Scan Result] bio_links:', data.bio_links);
+
     const { videos, deals, creditsUsed } = data;
 
     // Show cached notice or video list
