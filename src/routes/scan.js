@@ -5,6 +5,7 @@ const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
 const { notifyOnScanComplete, notifyOnLowCredits } = require('../services/notificationService');
 const { getTwitchVodTranscript } = require('../services/twitchTranscriber');
+const { getContactInfo } = require('../services/contactInfoExtractor');
 
 /**
  * Decode HTML entities in text
@@ -414,12 +415,22 @@ TRANSCRIPTS:\n${text}`;
   }));
   
   // Fetch creator profile to get business email and bio links
+  // Use platform-specific extraction with TikTok fuzzy match fallback
   let businessEmail = null;
   let bioLinks = [];
-  try {
-    const normalizedUsername = username.toLowerCase().trim().replace(/^@/, '');
-    console.log(`[Post-Scan] Fetching creator profile for @${normalizedUsername}`);
-    const profileResp = await fetch(
+
+  if (platform && platform.toLowerCase() !== 'tiktok') {
+    // For non-TikTok platforms, use the contact info extractor
+    console.log(`[Post-Scan] Using contact info extractor for ${platform}`);
+    const contactInfo = await getContactInfo(platform, username, dbUser.id);
+    businessEmail = contactInfo.businessEmail;
+    bioLinks = contactInfo.bioLinks || [];
+  } else {
+    // For TikTok, use the original TikTok API extraction
+    try {
+      const normalizedUsername = username.toLowerCase().trim().replace(/^@/, '');
+      console.log(`[Post-Scan] Fetching creator profile for @${normalizedUsername}`);
+      const profileResp = await fetch(
       `https://tiktok-scraper7.p.rapidapi.com/user/info?unique_id=${encodeURIComponent(normalizedUsername)}`,
       {
         method: 'GET',
@@ -491,8 +502,9 @@ TRANSCRIPTS:\n${text}`;
     } else {
       console.warn(`[Post-Scan] Failed to fetch creator profile: ${profileResp.status}`);
     }
-  } catch (profileErr) {
-    console.warn(`[Post-Scan] Error fetching creator profile:`, profileErr.message);
+    } catch (profileErr) {
+      console.warn(`[Post-Scan] Error fetching creator profile:`, profileErr.message);
+    }
   }
   
   console.log(`[Post-Scan] Final result: businessEmail="${businessEmail}", bioLinks=[${bioLinks.join(', ')}]`);
