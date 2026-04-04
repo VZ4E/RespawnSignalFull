@@ -53,8 +53,9 @@ router.post('/', authMiddleware, async (req, res) => {
     return res.status(402).json({ error: 'No credits remaining. Your monthly credits have been used up.' });
   }
 
-  // Enforce range limit by plan
-  const safeRange = Math.min(parseInt(range) || 3, planConfig.maxRange);
+  // Enforce range limit by plan, with hard cap for Twitch (VOD downloads are resource-intensive)
+  const maxRangeForPlatform = platform === 'twitch' ? Math.min(3, planConfig.maxRange) : planConfig.maxRange;
+  const safeRange = Math.min(parseInt(range) || 3, maxRangeForPlatform);
 
   // Check for existing scan (same username + range) — return cached, no credit deduction
   // BUT: Skip cache for group scans (groupId param means this is a bulk scan, always run fresh)
@@ -194,41 +195,53 @@ router.post('/', authMiddleware, async (req, res) => {
   let totalCredits = 0;
   let transcriptFailures = 0;
 
-  for (let i = 0; i < videos.length; i++) {
-    const v = videos[i];
-    // Handle both Twitch (node.id) and TikTok (video_id, id, aweme_id) formats
-    const videoId = v.node?.id || v.video_id || v.id || v.aweme_id;
-    const title = v.node?.title || v.title || v.desc || `Video ${i + 1}`;
-
-    let transcript = '';
-    let transcribed = false;
-    try {
-      // Build the correct URL based on platform
-      let videoUrl;
-      if (platform === 'twitch') {
-        videoUrl = `https://www.twitch.tv/videos/${videoId}`;
-      } else {
-        videoUrl = `https://www.tiktok.com/@${username}/video/${videoId}`;
-      }
-
-      // Use AssemblyAI + yt-dlp for Twitch, Transcript24 for TikTok
-      if (platform === 'twitch') {
-        try {
-          console.log(`[Scan] Fetching Twitch transcript for VOD: ${videoId}`);
-          const twitchTranscript = await getTwitchVodTranscript(videoId);
-          if (twitchTranscript) {
-            transcript = twitchTranscript;
-            transcribed = true;
-            console.log(`[Scan] Got transcript for ${videoId} — ${transcript.length} chars`);
-          } else {
-            console.log(`[Scan] No transcript for ${videoId} — using title only`);
-            transcript = title || '';
-          }
-        } catch (err) {
-          console.error(`[Scan] Transcript error for ${videoId}:`, err.message);
-          transcript = title || '';
+  if (platform === 'twitch') {
+    // Parallel processing for Twitch VODs (much faster than sequential)
+    console.log(`[Scan] Processing ${videos.length} Twitch VODs in parallel`);
+    
+    const transcriptPromises = videos.map(async (v, i) => {
+      const videoId = v.node?.id || v.video_id || v.id || v.aweme_id;
+      const title = v.node?.title || v.title || v.desc || `Video ${i + 1}`;
+      
+      let transcript = '';
+      try {
+        console.log(`[Scan] Starting transcript for VOD: ${videoId}`);
+        const twitchTranscript = await getTwitchVodTranscript(videoId);
+        transcript = twitchTranscript || title || '';
+        if (twitchTranscript) {
+          console.log(`[Scan] Transcript ready for ${videoId} — ${transcript.length} chars`);
+        } else {
+          console.log(`[Scan] No transcript for ${videoId} — using title only`);
+          transcriptFailures++;
         }
-      } else {
+      } catch (err) {
+        console.error(`[Scan] Transcript error for ${videoId}:`, err.message);
+        transcript = title || '';
+        transcriptFailures++;
+      }
+      
+      return {
+        title,
+        videoId,
+        transcript,
+        views: v.play_count || v.statistics?.playCount || 0,
+      };
+    });
+
+    const results = await Promise.all(transcriptPromises);
+    withTranscripts.push(...results);
+    console.log(`[Scan] All ${videos.length} transcripts complete`);
+  } else {
+    // Sequential processing for TikTok (lower volume)
+    for (let i = 0; i < videos.length; i++) {
+      const v = videos[i];
+      const videoId = v.node?.id || v.video_id || v.id || v.aweme_id;
+      const title = v.node?.title || v.title || v.desc || `Video ${i + 1}`;
+
+      let transcript = '';
+      try {
+        const videoUrl = `https://www.tiktok.com/@${username}/video/${videoId}`;
+        
         // Use Transcript24 for TikTok
         const tr = await fetch('https://api.transcript24.com/transcribe', {
           method: 'POST',
@@ -242,26 +255,24 @@ router.post('/', authMiddleware, async (req, res) => {
         if (td?.caption && Array.isArray(td.caption)) {
           transcript = td.caption.map(c => c.text).join(' ');
           totalCredits += td.taskCredits || 1;
-          transcribed = true;
         }
+      } catch (err) {
+        console.error(`Transcription failed for video ${videoId}:`, err.message);
       }
-    } catch (err) {
-      console.error(`Transcription failed for video ${videoId}:`, err.message);
-    }
 
-    if (!transcript) {
-      transcriptFailures++;
-      // Only use title/description, NOT hashtags (they shouldn't be analyzed for deals)
-      transcript = v.title || v.desc || '';
-      totalCredits += 1;
-    }
+      if (!transcript) {
+        transcriptFailures++;
+        transcript = v.title || v.desc || '';
+        totalCredits += 1;
+      }
 
-    withTranscripts.push({
-      title,
-      videoId,
-      transcript,
-      views: v.play_count || v.statistics?.playCount || 0,
-    });
+      withTranscripts.push({
+        title,
+        videoId,
+        transcript,
+        views: v.play_count || v.statistics?.playCount || 0,
+      });
+    }
   }
 
   // 3. Analyze with Perplexity
