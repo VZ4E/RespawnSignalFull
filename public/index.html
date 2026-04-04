@@ -4233,7 +4233,8 @@ function openCreatorGroupModal() {
 
 async function loadCreatorGroupsList() {
   try {
-    const groups = await api('/api/groups', 'GET');
+    const response = await api('/api/groups', 'GET');
+    const { groups } = response;
     const listEl = document.getElementById('creator-groups-list');
     
     if (!groups || groups.length === 0) {
