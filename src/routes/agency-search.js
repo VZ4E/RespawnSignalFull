@@ -950,16 +950,20 @@ router.post('/lookup', async (req, res) => {
       console.warn(`[Creator Lookup] Error fetching scan history: ${scanError.message}`);
     }
 
-    // Parse scan results to extract deal counts
+    // Parse scan results to extract deal counts and full deal data
     const formattedScanHistory = (scanHistory || []).map(scan => {
       let dealCount = 0;
+      let deals = [];
       if (scan.deals && Array.isArray(scan.deals)) {
         dealCount = scan.deals.length;
+        deals = scan.deals;
       }
       return {
+        id: scan.id,
         handle: scan.username,
         date: scan.created_at,
         dealCount: dealCount,
+        deals: deals,
         range: scan.range,
         videoCount: scan.video_count,
         creditsUsed: scan.credits_used

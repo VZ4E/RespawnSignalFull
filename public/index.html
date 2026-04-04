@@ -4113,18 +4113,38 @@ async function lookupCreator() {
       scanList.innerHTML = data.scanHistory.map(scan => {
         const dealsText = scan.dealCount ? `${scan.dealCount} deal${scan.dealCount !== 1 ? 's' : ''}` : 'No deals';
         const date = new Date(scan.date).toLocaleDateString();
+        const dealsHtml = !(scan.deals?.length)
+          ? `<div style="font-size:12px;color:var(--text3);padding:7px 0">No deals found</div>`
+          : scan.deals.map(d => {
+              const brands = (d.brands||(d.brand?[d.brand]:['?'])).join(', ');
+              const cc = d.confidence==='high'?'conf-high':d.confidence==='medium'?'conf-mid':'conf-low';
+              return `<div class="he-row">
+                <div style="flex:1">
+                  <div class="he-brand">${brands}</div>
+                  <div class="he-type">${d.deal_type||''}${d.video_ref?' · '+d.video_ref:''}</div>
+                  ${d.evidence?`<div class="he-evidence">"${d.evidence.slice(0,85)}${d.evidence.length>85?'...':''}"</div>`:''}
+                </div>
+                <div class="conf-pill ${cc}" style="margin-top:0">${d.confidence||'?'}</div>
+              </div>`;
+            }).join('');
         return `
-          <div class="history-item" onclick="expandScanHistory(this)">
+          <div class="history-item" onclick="toggleExpand('csh-${scan.id}')">
             <div>
-              <div class="hi-name">${escapeHtml(scan.handle)}</div>
+              <div class="hi-name">Scan from ${date}</div>
               <div class="hi-meta">
-                <span>${date}</span>
                 <span>${dealsText}</span>
+                ${scan.range?`<span>Last ${scan.range}</span>`:''}
+                ${scan.videoCount?`<span>${scan.videoCount} videos</span>`:''}
               </div>
             </div>
-            <div style="display:flex;gap:8px">
-              <span class="hi-deals">${scan.dealCount || 0}</span>
-              <span style="color:var(--text3);font-size:12px">→</span>
+            <div class="hi-right">
+              <div class="hi-deals">${scan.dealCount || 0}</div>
+            </div>
+          </div>
+          <div class="history-expand" id="he-csh-${scan.id}">
+            <div style="margin-bottom:12px">
+              <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Deals Found (${scan.dealCount})</div>
+              ${dealsHtml}
             </div>
           </div>
         `;
