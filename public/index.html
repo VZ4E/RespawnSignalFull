@@ -3305,13 +3305,19 @@ async function forceFreshScan(handle, platform, range) {
 }
 
 function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) {
-  console.log('[renderDeals] Called with creatorInfo:', creatorInfo);
+  // Track call count
+  renderDeals.callCount = (renderDeals.callCount || 0) + 1;
+  console.log(`[renderDeals] CALL #${renderDeals.callCount} with creatorInfo:`, creatorInfo);
   console.log('[renderDeals] businessEmail:', creatorInfo?.businessEmail);
   console.log('[renderDeals] bioLinks:', creatorInfo?.bioLinks);
   
   const r = document.getElementById('scan-results');
+  console.log(`[renderDeals] Target DOM element exists:`, !!r, `| Element ID: ${r?.id}`);
+  
   if (!deals || !deals.length) {
-    r.innerHTML = prefix + `<div class="no-results"><div style="font-size:28px;margin-bottom:9px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:3px">No brand deals detected</div><div>Content may be organic or contains no flagged partnerships.</div></div>`;
+    const noResultsHtml = prefix + `<div class="no-results"><div style="font-size:28px;margin-bottom:9px">🔍</div><div style="font-size:14px;font-weight:600;margin-bottom:3px">No brand deals detected</div><div>Content may be organic or contains no flagged partnerships.</div></div>`;
+    r.innerHTML = noResultsHtml;
+    console.log(`[renderDeals] Set no-results, innerHTML length: ${r.innerHTML.length}`);
     return;
   }
   const norm = deals.map(d => ({ ...d, brands: d.brands?.length ? d.brands : (d.brand ? [d.brand] : ['Unknown']) }));
@@ -3346,7 +3352,8 @@ function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) 
     });
     
     let idx = 0;
-    html = Object.entries(grouped).map(([video, videoDeal]) => {
+    // PREPEND creatorInfoHtml to grouped deals instead of overwriting
+    const groupedHtml = Object.entries(grouped).map(([video, videoDeal]) => {
       const videoId = 'video-' + video.replace(/\s/g, '-');
       return `
         <div class="video-group" style="margin-bottom:13px">
@@ -3379,9 +3386,11 @@ function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) 
           </div>
         </div>`;
     }).join('');
+    // Append grouped deals to creator info HTML
+    html = html + groupedHtml;
   } else {
     // Flat list (no grouping)
-    html = norm.map((d, i) => {
+    const flatHtml = norm.map((d, i) => {
       const cc = d.confidence === 'high' ? 'conf-high' : d.confidence === 'medium' ? 'conf-mid' : 'conf-low';
       const dealId = 'deal-' + i;
       return `<div class="deal-card" style="animation-delay:${i*0.05}s">
@@ -3401,10 +3410,26 @@ function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) 
         </div>
       </div>`;
     }).join('');
+    // Append flat deals to creator info HTML
+    html = html + flatHtml;
   }
 
-  r.innerHTML = prefix +
+  const finalHtml = prefix +
     `<div class="results-hdr"><div class="results-title">Deals Found</div><div class="count-pill">${norm.length} post${norm.length!==1?'s':''} · ${totalBrands} brand${totalBrands!==1?'s':''}</div></div>` + html;
+  
+  console.log(`[renderDeals] CALL #${renderDeals.callCount} - Concatenating HTML`);
+  console.log(`[renderDeals]   creatorInfoHtml length: ${creatorInfoHtml.length}`);
+  console.log(`[renderDeals]   deals HTML length: ${html.length}`);
+  console.log(`[renderDeals]   final HTML includes "Creator Info": ${html.includes('Creator Info')}`);
+  console.log(`[renderDeals] About to insert into DOM`);
+  console.log(`[renderDeals] Final HTML length:`, finalHtml.length);
+  console.log(`[renderDeals] First 300 chars:`, finalHtml.substring(0, 300));
+  
+  r.innerHTML = finalHtml;
+  
+  console.log(`[renderDeals] CALL #${renderDeals.callCount} - HTML inserted. Checking DOM:`);
+  console.log(`[renderDeals] r.innerHTML now has length:`, r.innerHTML.length);
+  console.log(`[renderDeals] Does r.innerHTML contain "Creator Info"?`, r.innerHTML.includes('Creator Info'));
 }
 
 function toggleVideoGroup(videoId) {
