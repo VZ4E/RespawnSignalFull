@@ -3,20 +3,41 @@ const fetch = require('node-fetch');
 async function getTwitchVodTranscript(vodId) {
   const ASSEMBLYAI_KEY = process.env.ASSEMBLYAI_API_KEY;
   const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
-  const TWITCH_ACCESS_TOKEN = process.env.TWITCH_ACCESS_TOKEN;
+  const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 
   console.log('[TwitchTranscriber] API key loaded:', ASSEMBLYAI_KEY ? 'YES' : 'MISSING');
   console.log('[TwitchTranscriber] Twitch credentials loaded:',
     TWITCH_CLIENT_ID ? 'CLIENT_ID=YES' : 'CLIENT_ID=MISSING',
-    TWITCH_ACCESS_TOKEN ? 'TOKEN=YES' : 'TOKEN=MISSING'
+    TWITCH_CLIENT_SECRET ? 'CLIENT_SECRET=YES' : 'CLIENT_SECRET=MISSING'
   );
+
+  // Step 0 — Get fresh Twitch app access token
+  console.log('[TwitchTranscriber] Requesting fresh access token...');
+  const tokenResp = await fetch('https://id.twitch.tv/oauth2/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: TWITCH_CLIENT_ID,
+      client_secret: TWITCH_CLIENT_SECRET,
+      grant_type: 'client_credentials'
+    })
+  });
+  const tokenData = await tokenResp.json();
+  const accessToken = tokenData.access_token;
+  console.log('[TwitchTranscriber] Fresh token obtained:', accessToken ? 'YES' : 'FAILED', tokenData.error || '');
+
+  if (!accessToken) {
+    console.error('[TwitchTranscriber] Failed to obtain access token:', tokenData);
+    return null;
+  }
+
   console.log(`[TwitchTranscriber] Fetching VOD info for ID: ${vodId}`);
 
   // Step 1 — Get VOD info from Twitch API
   const vodResp = await fetch(`https://api.twitch.tv/helix/videos?id=${vodId}`, {
     headers: {
       'Client-ID': TWITCH_CLIENT_ID,
-      'Authorization': `Bearer ${TWITCH_ACCESS_TOKEN}`
+      'Authorization': `Bearer ${accessToken}`
     }
   });
   const vodData = await vodResp.json();
