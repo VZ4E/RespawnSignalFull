@@ -107,70 +107,6 @@ function extractSocialHandlesFromUrls(urls) {
 }
 
 /**
- * Search for creator social profiles using Firecrawl when TikTok doesn't have them linked
- */
-async function searchCreatorSocialProfiles(handle, displayName) {
-  console.log(`[Firecrawl Search] Searching for social profiles for ${displayName} (@${handle})`);
-  
-  // Try multiple search queries (short queries work better with Firecrawl)
-  const searchQueries = [
-    handle,                    // First try just the handle
-    `${handle} tiktok`        // Then try handle + tiktok
-  ];
-  
-  for (const query of searchQueries) {
-    console.log(`[Firecrawl Search] Attempting query: "${query}"`);
-    
-    try {
-      const response = await fetch('https://api.firecrawl.dev/v1/search', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          query: query,
-          limit: 5
-        })
-      });
-      
-      if (!response.ok) {
-        console.warn(`[Firecrawl Search] API error for query "${query}": ${response.status}`);
-        continue;
-      }
-      
-      const data = await response.json();
-      const resultCount = data.results?.length || 0;
-      console.log(`[Firecrawl Search] Query "${query}" returned ${resultCount} results`);
-      
-      if (data.results && data.results.length > 0) {
-        // Extract URLs from results
-        const urls = data.results
-          .map(result => result.url)
-          .filter(url => url && typeof url === 'string');
-        
-        console.log(`[Firecrawl Search] URLs found for @${handle}:`, urls);
-        
-        // Extract social handles from URLs
-        const socialHandles = extractSocialHandlesFromUrls(urls);
-        console.log(`[Firecrawl Search] Extracted handles for @${handle}:`, socialHandles);
-        
-        if (Object.keys(socialHandles).length > 0) {
-          console.log(`[Firecrawl Search] Successfully found handles for @${handle} with query: "${query}"`);
-          return socialHandles;
-        }
-      }
-    } catch (err) {
-      console.error(`[Firecrawl Search] Error with query "${query}":`, err.message);
-      continue;
-    }
-  }
-  
-  console.log(`[Firecrawl Search] No social profiles found for @${handle} after all queries`);
-  return {};
-}
-
-/**
  * Fetch TikTok profile data using the RapidAPI endpoint
  * Returns: { displayName, bio, bioLinks, emails, socialHandles: { instagram, twitter, youtube } }
  */
@@ -222,14 +158,6 @@ async function fetchTikTokProfile(username) {
         channelId: userInfo.youtube_channel_id,
         title: userInfo.youtube_channel_title || 'YouTube'
       };
-    }
-    
-    // If no social handles found, use Firecrawl to search for creator's other profiles
-    if (Object.keys(socialHandles).length === 0 && process.env.FIRECRAWL_API_KEY) {
-      console.log(`[TikTok Profile] No linked accounts found for @${normalizedUsername}, searching with Firecrawl...`);
-      const firecrawlHandles = await searchCreatorSocialProfiles(normalizedUsername, displayName);
-      Object.assign(socialHandles, firecrawlHandles);
-      console.log(`[TikTok Profile] Firecrawl search completed for @${normalizedUsername}, found:`, socialHandles);
     }
     
     console.log(`[TikTok Profile] Final social handles for @${normalizedUsername}:`, socialHandles);
@@ -1003,6 +931,8 @@ router.post('/lookup', async (req, res) => {
     }
 
     // Query scan history from the scans table
+    console.log(`[Creator Lookup] Querying scans for user_id=${userId}, username ILIKE '%${normalizedHandle}%'`);
+    
     const { data: scanHistory, error: scanError } = await supabase
       .from('scans')
       .select('id, username, range, video_count, credits_used, deals, created_at')
@@ -1011,6 +941,11 @@ router.post('/lookup', async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(10);
 
+    console.log(`[Creator Lookup] Raw scan query result count: ${scanHistory?.length || 0}`);
+    if (scanHistory?.length > 0) {
+      console.log(`[Creator Lookup] First scan result username: "${scanHistory[0].username}"`);
+    }
+    
     if (scanError) {
       console.warn(`[Creator Lookup] Error fetching scan history: ${scanError.message}`);
     }
@@ -1031,7 +966,7 @@ router.post('/lookup', async (req, res) => {
       };
     });
 
-    console.log(`[Creator Lookup] Found ${formattedScanHistory.length} scans for "${normalizedHandle}"`);
+    console.log(`[Creator Lookup] After formatting: ${formattedScanHistory.length} scans for "${normalizedHandle}"`);
 
     // SILENT LEAD LOGGING: Check if creator is unrepresented
     const businessEmails = profileData.emails.filter(email => isBusinessEmail(email));
