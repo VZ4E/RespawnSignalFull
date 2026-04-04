@@ -14,6 +14,7 @@ async function getTwitchVodTranscript(vodUrl) {
     },
     body: JSON.stringify({
       audio_url: vodUrl,
+      speech_models: ['universal-2'],
       language_code: 'en',
       punctuate: true,
       format_text: true
