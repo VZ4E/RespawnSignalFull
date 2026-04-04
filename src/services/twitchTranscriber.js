@@ -5,8 +5,8 @@ async function getTwitchVodTranscript(vodUrl) {
   console.log('[TwitchTranscriber] API key loaded:', ASSEMBLYAI_KEY ? 'YES' : 'MISSING');
   console.log(`[TwitchTranscriber] Starting transcript for: ${vodUrl}`);
 
-  // Step 1 — Submit VOD URL to AssemblyAI (v3 API)
-  const submitResp = await fetch('https://api.assemblyai.com/v3/transcript', {
+  // Step 1 — Submit VOD URL to AssemblyAI (v2 API with v3 speech model)
+  const submitResp = await fetch('https://api.assemblyai.com/v2/transcript', {
     method: 'POST',
     headers: {
       'Authorization': ASSEMBLYAI_KEY,
@@ -30,8 +30,8 @@ async function getTwitchVodTranscript(vodUrl) {
     return null;
   }
 
-  // Step 2 — Poll until complete (v3 API)
-  const pollUrl = `https://api.assemblyai.com/v3/transcript/${transcriptId}`;
+  // Step 2 — Poll until complete (v2 API)
+  const pollUrl = `https://api.assemblyai.com/v2/transcript/${transcriptId}`;
   let attempts = 0;
   const maxAttempts = 120; // 10 minutes max (5 second intervals)
 
