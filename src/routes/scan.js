@@ -115,29 +115,7 @@ router.post('/', authMiddleware, async (req, res) => {
         const twitchData = await twitchResp.json();
         console.log(`[Scan] Twitch API full response:`, JSON.stringify(twitchData));
 
-        let items = [];
-        if (Array.isArray(twitchData?.data?.user?.videos)) {
-          console.log(`[Scan] Found videos in twitchData.data.user.videos`);
-          items = twitchData.data.user.videos;
-        } else if (Array.isArray(twitchData?.data)) {
-          console.log(`[Scan] Found videos in twitchData.data`);
-          items = twitchData.data;
-        } else if (Array.isArray(twitchData?.videos)) {
-          console.log(`[Scan] Found videos in twitchData.videos`);
-          items = twitchData.videos;
-        } else if (Array.isArray(twitchData?.result)) {
-          console.log(`[Scan] Found videos in twitchData.result`);
-          items = twitchData.result;
-        } else if (Array.isArray(twitchData)) {
-          console.log(`[Scan] twitchData is directly an array`);
-          items = twitchData;
-        } else if (twitchData?.data && typeof twitchData.data === 'object') {
-          const found = Object.values(twitchData.data).find(v => Array.isArray(v) && v.length > 0);
-          if (found) {
-            console.log(`[Scan] Found array in twitchData.data object`);
-            items = found;
-          }
-        }
+        const items = twitchData.data?.user?.videos || twitchData.data?.videos || [];
 
         console.log(`[Scan] Parsed ${items.length} videos from Twitch API`);
         videos = items.slice(0, safeRange);
