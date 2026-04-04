@@ -19,6 +19,7 @@ const supabaseAgenciesRoutes = require('./src/routes/agencies');
 const supabaseWatchlistRoutes = require('./src/routes/watchlist');
 const supabaseGroupsRoutes = require('./src/routes/supabase-groups');
 const groupScansRoutes = require('./src/routes/group-scans');
+const automationsRoutes = require('./src/routes/automations');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -56,6 +57,9 @@ app.use('/api/agencies', supabaseAgenciesRoutes);
 app.use('/api/watchlist', supabaseWatchlistRoutes);
 app.use('/api/supabase-groups', supabaseGroupsRoutes);
 
+// Automations
+app.use('/api/automations', automationsRoutes);
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Respawn Signal' }));
 app.get('/auth/callback', (req, res) => res.redirect('/?oauth=1'));
 
@@ -76,6 +80,10 @@ app.get('/cookie-policy', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cookie-policy.html'));
 });
 
+app.get('/automation', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'automation.html'));
+});
+
 // Disable caching for HTML files to prevent stale deployments
 app.use((req, res, next) => {
   if (req.path.endsWith('.html') || req.path === '/') {
@@ -94,6 +102,25 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Automation Scheduler (cron job runs every 60 minutes)
+const { runAutomationScheduler } = require('./src/services/automationScheduler');
+
+console.log('[Cron] Starting automation scheduler (runs every 60 minutes)');
+setInterval(() => {
+  console.log('[Cron] Running scheduled automations check...');
+  runAutomationScheduler().catch(err => {
+    console.error('[Cron] Automation scheduler failed:', err.message);
+  });
+}, 60 * 60 * 1000);
+
+// Run once on startup after 5 seconds (let app initialize)
+setTimeout(() => {
+  console.log('[Cron] Running initial automation check on startup');
+  runAutomationScheduler().catch(err => {
+    console.error('[Cron] Initial check failed:', err.message);
+  });
+}, 5000);
+
 app.listen(PORT, () => {
-  console.log(`Respawn Signal running on port ${PORT} [Agency Search Modal Fix Deployed]`);
+  console.log(`Respawn Signal running on port ${PORT} [Automations Scheduler Active]`);
 });

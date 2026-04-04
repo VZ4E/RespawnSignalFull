@@ -2774,12 +2774,20 @@ function navTo(id, el) {
   if (id === 'credits') loadHistory();
   if (id === 'groups') loadGroupsUI();
   if (id === 'pricing') renderPricingPage();
+  if (id === 'automation') loadAutomationPage();
   if (id === 'account') refreshAccount();
   if (id === 'settings') {
     // Initialize creators tab on settings page load
     const creatorsBtn = document.querySelector('[onclick*="switchSettingsTab"][onclick*="creators"]');
     if (creatorsBtn) switchSettingsTab('creators', creatorsBtn);
   }
+}
+
+// Load automation page via iframe
+function loadAutomationPage() {
+  const container = document.getElementById('automation-content');
+  if (!container) return;
+  container.innerHTML = '<iframe src="/automation" style="width:100%; height:100%; border:none; border-radius:8px;"></iframe>';
 }
 
 // ── SCANNER ──
