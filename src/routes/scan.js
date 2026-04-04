@@ -199,39 +199,54 @@ router.post('/', authMiddleware, async (req, res) => {
     // Parallel processing for Twitch VODs (much faster than sequential)
     console.log(`[Scan] Processing ${videos.length} Twitch VODs in parallel`);
     
-    const transcriptPromises = videos.map(async (v, i) => {
+    // Extract and enrich video data before parallel processing
+    const enrichedVideos = videos.map((v, i) => {
       const videoId = v.node?.id || v.video_id || v.id || v.aweme_id;
       const title = v.node?.title || v.title || v.desc || `Video ${i + 1}`;
-      // Extract VOD length in seconds (try multiple field names)
-      const vodLengthSeconds = v.lengthSeconds || v.duration || v.length || v.durationSeconds || 0;
+      // Extract VOD length in seconds (check nested node first, then fallback to other names)
+      const lengthSeconds = v.node?.lengthSeconds || v.lengthSeconds || v.duration || v.length || v.durationSeconds || 0;
       
-      let transcript = '';
-      try {
-        console.log(`[Scan] Starting transcript for VOD: ${videoId} (${(vodLengthSeconds / 3600).toFixed(1)}h)`);
-        const twitchTranscript = await getTwitchVodTranscript(videoId, vodLengthSeconds);
-        transcript = twitchTranscript || title || '';
-        if (twitchTranscript) {
-          console.log(`[Scan] Transcript ready for ${videoId} — ${transcript.length} chars`);
-        } else {
-          console.log(`[Scan] No transcript for ${videoId} — using title only`);
-          transcriptFailures++;
-        }
-      } catch (err) {
-        console.error(`[Scan] Transcript error for ${videoId}:`, err.message);
-        transcript = title || '';
-        transcriptFailures++;
-      }
+      console.log(`[Scan] VOD ${videoId} lengthSeconds: ${lengthSeconds}`);
       
       return {
-        title,
+        ...v,
         videoId,
-        transcript,
-        views: v.play_count || v.statistics?.playCount || 0,
+        title,
+        lengthSeconds
       };
     });
 
-    const results = await Promise.all(transcriptPromises);
-    withTranscripts.push(...results);
+    // Transcribe all VODs in parallel
+    await Promise.all(enrichedVideos.map(async (video) => {
+      try {
+        console.log(`[Scan] Starting transcript for VOD: ${video.videoId} (${(video.lengthSeconds / 3600).toFixed(1)}h)`);
+        const transcript = await getTwitchVodTranscript(video.videoId, video.lengthSeconds || 0);
+        
+        if (transcript) {
+          video.transcript = transcript;
+          console.log(`[Scan] Transcript ready for ${video.videoId} — ${transcript.length} chars`);
+        } else {
+          console.log(`[Scan] No transcript for ${video.videoId} — using title only`);
+          video.transcript = video.title || '';
+          transcriptFailures++;
+        }
+      } catch (err) {
+        console.error(`[Scan] Transcript error for ${video.videoId}:`, err.message);
+        video.transcript = video.title || '';
+        transcriptFailures++;
+      }
+    }));
+
+    // Build withTranscripts array from enriched videos
+    enrichedVideos.forEach((video) => {
+      withTranscripts.push({
+        title: video.title,
+        videoId: video.videoId,
+        transcript: video.transcript || '',
+        views: video.play_count || video.statistics?.playCount || 0,
+      });
+    });
+    
     console.log(`[Scan] All ${videos.length} transcripts complete`);
   } else {
     // Sequential processing for TikTok (lower volume)
