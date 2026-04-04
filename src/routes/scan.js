@@ -60,12 +60,16 @@ router.post('/', authMiddleware, async (req, res) => {
   const { groupId, groupScanId } = req.body;
   
   if (!groupId) {
+    // Cache only valid for 7 days
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    
     const { data: existing } = await supabase
       .from('scans')
       .select('*')
       .eq('user_id', dbUser.id)
       .eq('username', username)
       .eq('range', safeRange)
+      .gte('created_at', sevenDaysAgo)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -299,9 +303,9 @@ router.post('/', authMiddleware, async (req, res) => {
   let deals = [];
   let analysisError = false;
   try {
-    // Cap each transcript at 800 chars to avoid truncating later videos
+    // Cap each transcript at 2000 chars (sponsor reads often in last 20s, were cut off at 800)
     const text = withTranscripts
-      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, 800)}`)
+      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, 2000)}`)
       .join('\n\n---\n\n');
 
     const platformLabel = platform === 'twitch' ? 'Twitch' : 'TikTok';
@@ -310,6 +314,7 @@ router.post('/', authMiddleware, async (req, res) => {
 Analyze the following ${platformLabel} video transcript(s) and identify ALL brand deals, sponsorships, paid promotions, or affiliate partnerships. When in doubt, include it.
 
 IMPORTANT: Ignore hashtags (#word). Only analyze the actual spoken content or description text.
+CRITICAL: Only reference the video transcripts provided below. Do not search the web. Do not cite YouTube or any external source. Label evidence only as Video 1, Video 2, etc.
 
 TYPES TO DETECT (not limited to these):
 - Traditional sponsorships ("this video is sponsored by X")
