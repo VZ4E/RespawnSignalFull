@@ -3,7 +3,7 @@
 
 CREATE TABLE automations (
  id BIGSERIAL PRIMARY KEY,
- user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+ user_id UUID REFERENCES users(id) ON DELETE CASCADE,
  creator_username VARCHAR(100) NOT NULL,
  platform VARCHAR(20) DEFAULT 'tiktok',
  frequency VARCHAR(20) NOT NULL, -- 'twice_weekly', 'weekly', 'biweekly', 'monthly'
