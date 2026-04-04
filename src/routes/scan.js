@@ -395,9 +395,10 @@ TRANSCRIPTS:\n${text}`;
   let businessEmail = null;
   let bioLinks = [];
   try {
-    console.log(`[Post-Scan] Fetching creator profile for @${username}`);
+    const normalizedUsername = username.toLowerCase().trim().replace(/^@/, '');
+    console.log(`[Post-Scan] Fetching creator profile for @${normalizedUsername}`);
     const profileResp = await fetch(
-      `https://tiktok-scraper7.p.rapidapi.com/user/info?username=${encodeURIComponent(username.replace(/^@/, ''))}`,
+      `https://tiktok-scraper7.p.rapidapi.com/user/info?unique_id=${encodeURIComponent(normalizedUsername)}`,
       {
         method: 'GET',
         headers: {
@@ -411,10 +412,13 @@ TRANSCRIPTS:\n${text}`;
     
     if (profileResp.ok) {
       const profileData = await profileResp.json();
-      console.log(`[Post-Scan] Profile data keys:`, Object.keys(profileData || {}));
+      console.log(`[Post-Scan] Raw response keys:`, Object.keys(profileData || {}));
+      console.log(`[Post-Scan] Response structure:`, JSON.stringify(profileData).substring(0, 500));
       
+      // Use the EXACT same extraction path as agency-search.js fetchTikTokProfile
       const userInfo = profileData?.data?.user || profileData?.data || profileData?.user || profileData;
       console.log(`[Post-Scan] UserInfo extracted, keys:`, Object.keys(userInfo || {}));
+      console.log(`[Post-Scan] userInfo.signature:`, userInfo?.signature?.substring(0, 100) || '(none)');
       
       if (userInfo?.signature) {
         const bio = decodeHtmlEntities(userInfo.signature);
