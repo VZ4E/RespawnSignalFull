@@ -6,7 +6,6 @@
 <title>Brand Profile — Respawn Signal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root {
   --bg: #f8fafc; --sidebar: #ffffff; --surface: #ffffff; --surface2: #f1f5f9;
@@ -193,19 +192,6 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); }
 </div>
 
 <script>
-// ─── SUPABASE CLIENT ───
-// Initialize same Supabase client as main app to get proper session token
-let supabaseClient = null;
-function getSupabaseClient() {
-  if (!supabaseClient) {
-    supabaseClient = supabase.createClient(
-      'https://ehkvtwvtmvgtkqqotujo.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoa3Z0d3Z0bXZndGtxcW90dWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjEzODksImV4cCI6MjA4OTEzNzM4OX0.u7GA8thsQfpD1hdnQuocENuYaH79Y277AOm2Trg4Yz4'
-    );
-  }
-  return supabaseClient;
-}
-
 // Get brand name from URL
 const urlParams = new URLSearchParams(window.location.search);
 const brandNameEncoded = window.location.pathname.split('/').pop();
@@ -223,17 +209,13 @@ async function loadBrandProfile() {
   try {
     contentEl.innerHTML = '<div class="loading-spinner"><div class="spinner"></div>Loading brand profile...</div>';
     
-    // Get session token from Supabase client (not localStorage)
-    const sb = getSupabaseClient();
-    const { data: { session }, error: sessionError } = await sb.auth.getSession();
+    // Get fresh token at request time from localStorage
+    const token = localStorage.getItem('rs_token');
     
-    if (sessionError || !session) {
-      console.error('[Brand Profile] No active Supabase session:', sessionError?.message);
+    if (!token) {
       throw new Error('Not authenticated. Please log in first.');
     }
     
-    const token = session.access_token;
-    console.log(`[Brand Profile] Got session token from Supabase client`);
     console.log(`[Brand Profile] Fetching /api/brands/${encodeURIComponent(brandName)}`);
     
     const response = await fetch(`/api/brands/${encodeURIComponent(brandName)}`, {
