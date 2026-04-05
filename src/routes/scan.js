@@ -122,19 +122,7 @@ router.post('/', authMiddleware, async (req, res) => {
         const items = twitchData.data?.user?.videos || twitchData.data?.videos || [];
 
         console.log(`[Scan] Parsed ${items.length} videos from Twitch API`);
-        
-        // Filter VODs by max length (6 hours) and take up to safeRange
-        const MAX_VOD_HOURS = 6;
-        videos = items
-          .filter(v => {
-            const hours = (v.lengthSeconds || v.node?.lengthSeconds || v.duration || 0) / 3600;
-            if (hours > MAX_VOD_HOURS) {
-              console.log(`[Scan] Skipping VOD ${v.id || v.node?.id} — ${hours.toFixed(1)}h exceeds ${MAX_VOD_HOURS}h limit`);
-              return false;
-            }
-            return true;
-          })
-          .slice(0, safeRange);
+        videos = items.slice(0, safeRange);
 
         if (!videos.length) {
           const apiMsg = twitchData?.message || twitchData?.msg || twitchData?.error || '';
@@ -172,18 +160,7 @@ router.post('/', authMiddleware, async (req, res) => {
         if (found) items = found;
       }
 
-      // Filter videos by max length (6 hours for TikTok as well for consistency) and take up to safeRange
-      const MAX_VIDEO_HOURS = 6;
-      videos = items
-        .filter(v => {
-          const hours = (v.duration || v.lengthSeconds || 0) / 60; // TikTok duration is typically in seconds
-          if (hours > MAX_VIDEO_HOURS) {
-            console.log(`[Scan] Skipping TikTok video ${v.aweme_id || v.id} — ${hours.toFixed(1)}h exceeds ${MAX_VIDEO_HOURS}h limit`);
-            return false;
-          }
-          return true;
-        })
-        .slice(0, safeRange);
+      videos = items.slice(0, safeRange);
 
       if (!videos.length) {
         const apiMsg = ttData?.message || ttData?.msg || ttData?.error || '';
@@ -360,10 +337,14 @@ DETECT THESE — GENUINE BRAND DEALS ONLY:
 - Health, fitness, and supplement brand deals
 - Finance, crypto, or betting platform sponsorships
 - Any explicit mention of a brief, contract, deliverable, or payment from a brand
+- FORWARD-LOOKING sponsor mentions (creator mentions sponsor content coming later in stream):
+  - Creator teases upcoming sponsor segment ("I have a sponsor coming up", "stay tuned for a quick ad break", "before I forget I have a sponsor", "gonna do my sponsor at the end")
+  - Creator mentions existing deal without the read yet ("I'm working with X", "partnered with X this week", "shoutout to my sponsor X")
+  - Creator references brief, contract, or deliverables even if the read hasn't happened ("I need to do my brief for X", "X sent me deliverables", "my contract with X says")
 
 CONFIDENCE RULES:
 - high: creator explicitly states payment, contract, sponsorship, or "this is an ad"
-- medium: gifted product or strong contextual signals of a paid deal (brief mentioned, deliverables, brand-required actions)
+- medium: gifted product, forward-looking sponsor mentions, or strong contextual signals of a paid deal (brief mentioned, deliverables, brand-required actions)
 - low: implied promotion with no explicit confirmation — only include if multiple signals are present
 
 EVIDENCE RULE: If you cannot find an exact quote from the transcript supporting the deal, omit the deal entirely. Never use "N/A" as evidence.
@@ -374,7 +355,7 @@ GROUPING RULES:
 
 Return a JSON array where each object has:
 - "brands": string[]
-- "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Unknown"
+- "deal_type": "Paid Sponsorship"|"Affiliate Link"|"Product Placement"|"Brand Ambassador"|"Gifted Product"|"Discount Code"|"Upcoming Sponsorship"|"Unknown"
 - "confidence": "high"|"medium"|"low"
 - "evidence": exact quote from transcript
 - "video_ref": e.g. "Video 1"

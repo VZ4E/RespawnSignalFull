@@ -135,34 +135,20 @@ async function getTwitchVodTranscript(vodId, vodLengthSeconds = 0) {
   const vodHours = vodLengthSeconds / 3600;
   console.log(`[TwitchTranscriber] VOD ${vodId}: ${vodLengthSeconds} seconds = ${vodHours.toFixed(3)}h`);
 
-  // Cap at 10 hours max
-  if (vodHours > MAX_VOD_HOURS) {
-    console.log(`[TwitchTranscriber] VOD is ${vodHours.toFixed(1)}h — capping at ${MAX_VOD_HOURS}h`);
-  }
-
   try {
-    // Short VOD (≤5 hours): Single segment — treats 5.0h and below as single segment
-    if (vodHours <= SEGMENT_HOURS) {
-      console.log(`[TwitchTranscriber] Short VOD (${vodHours.toFixed(1)}h) — single segment (≤ ${SEGMENT_HOURS}h)`);
+    // VODs over 6 hours: Download only the first 6 hours to prevent timeouts
+    if (vodHours > 6) {
+      console.log(`[TwitchTranscriber] VOD ${vodHours.toFixed(1)}h — downloading first 6h (00:00:00 → 06:00:00)`);
       const outputPath = `/tmp/twitch_${vodId}.mp3`;
-      await downloadSegment(vodUrl, outputPath, '00:00:00', null);
+      await downloadSegment(vodUrl, outputPath, '00:00:00', '06:00:00');
       return await uploadAndTranscribe(outputPath, ASSEMBLYAI_KEY);
     }
 
-    // Long VOD (>5 hours): Split into two 5-hour segments in parallel — only if STRICTLY greater than 5 hours
-    console.log(`[TwitchTranscriber] Long VOD (${vodHours.toFixed(1)}h, > ${SEGMENT_HOURS}h) — splitting into 2 segments`);
-    const seg1Path = `/tmp/twitch_${vodId}_seg1.mp3`;
-    const seg2Path = `/tmp/twitch_${vodId}_seg2.mp3`;
-
-    const [transcript1, transcript2] = await Promise.all([
-      downloadSegment(vodUrl, seg1Path, '00:00:00', '05:00:00')
-        .then(() => uploadAndTranscribe(seg1Path, ASSEMBLYAI_KEY)),
-      downloadSegment(vodUrl, seg2Path, '05:00:00', '10:00:00')
-        .then(() => uploadAndTranscribe(seg2Path, ASSEMBLYAI_KEY))
-    ]);
-
-    console.log(`[TwitchTranscriber] Both segments complete — combining transcripts`);
-    return `${transcript1}\n\n[SEGMENT 2 - HOURS 5-10]\n\n${transcript2}`;
+    // VODs 6 hours or under: Download full VOD
+    console.log(`[TwitchTranscriber] VOD ${vodHours.toFixed(1)}h — downloading full VOD`);
+    const outputPath = `/tmp/twitch_${vodId}.mp3`;
+    await downloadSegment(vodUrl, outputPath, '00:00:00', null);
+    return await uploadAndTranscribe(outputPath, ASSEMBLYAI_KEY);
   } catch (error) {
     console.error('[TwitchTranscriber] Fatal error:', error.message);
     return null;
