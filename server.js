@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const fs = require('fs');
 const authRoutes = require('./src/routes/auth');
 const billingRoutes = require('./src/routes/billing');
 const scanRoutes = require('./src/routes/scan');
@@ -110,8 +111,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Brand profile page — must come after static but before catch-all
 app.get('/brands/:brandName', (req, res) => {
   const brandName = req.params.brandName;
-  console.log(`[Brands Route] GET /brands/${brandName} — serving brand-profile.html`);
-  res.sendFile(path.join(__dirname, 'public', 'brand-profile.html'));
+  const filePath = path.join(__dirname, 'public', 'brand-profile.html');
+  console.log(`[Brands Route] GET /brands/${brandName}`);
+  console.log(`[Brands Route] Attempting to serve file: ${filePath}`);
+  
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    console.error(`[Brands Route] File not found: ${filePath}`);
+    return res.status(404).json({ error: 'Brand profile page not found' });
+  }
+  
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error(`[Brands Route] Error serving file: ${err.message}`);
+      res.status(500).json({ error: 'Failed to serve brand profile page' });
+    }
+  });
 });
 
 app.get('*', (req, res) => {
