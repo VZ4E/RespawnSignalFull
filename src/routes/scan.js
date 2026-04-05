@@ -22,6 +22,47 @@ function decodeHtmlEntities(text) {
     .replace(/&#x2F;/g, '/');
 }
 
+/**
+ * Classify post type based on platform and content characteristics
+ * 
+ * Returns one of:
+ *   - "Live Stream" (Twitch)
+ *   - "Short-Form Ad" or "Long-Form Integration" (TikTok)
+ *   - "Dedicated Video" or "Mid-Video Integration" (YouTube)
+ *   - "Reel" or "IGTV/Long-Form" (Instagram)
+ *   - "Unknown"
+ */
+function derivePostType(platform, durationSeconds, title) {
+  if (!platform || !title) return 'Unknown';
+
+  const titleLower = title.toLowerCase();
+
+  // Twitch is always live streams
+  if (platform === 'twitch') {
+    return 'Live Stream';
+  }
+
+  // TikTok: short-form vs long-form based on duration
+  if (platform === 'tiktok') {
+    // TikTok max is 10 minutes (600s), but typical ads are < 3 min (180s)
+    return durationSeconds < 180 ? 'Short-Form Ad' : 'Long-Form Integration';
+  }
+
+  // YouTube: check title for keywords
+  if (platform === 'youtube') {
+    const dedicatedKeywords = ['sponsored', 'ad', 'review', 'unboxing'];
+    const isDedicated = dedicatedKeywords.some(k => titleLower.includes(k));
+    return isDedicated ? 'Dedicated Video' : 'Mid-Video Integration';
+  }
+
+  // Instagram: short-form (Reels) vs long-form (IGTV/Stories)
+  if (platform === 'instagram') {
+    return durationSeconds < 60 ? 'Reel' : 'IGTV/Long-Form';
+  }
+
+  return 'Unknown';
+}
+
 // POST /api/scan
 router.post('/', authMiddleware, async (req, res) => {
   // Support both old (username) and new (platform, handle) formats
@@ -238,11 +279,14 @@ router.post('/', authMiddleware, async (req, res) => {
 
     // Build withTranscripts array from enriched videos
     enrichedVideos.forEach((video) => {
+      const postType = derivePostType(platform, video.lengthSeconds || 0, video.title);
       withTranscripts.push({
         title: video.title,
         videoId: video.videoId,
         transcript: video.transcript || '',
         views: video.play_count || video.statistics?.playCount || 0,
+        duration_seconds: video.lengthSeconds || 0,
+        post_type: postType,
       });
     });
     
@@ -282,11 +326,14 @@ router.post('/', authMiddleware, async (req, res) => {
         totalCredits += 1;
       }
 
+      const postType = derivePostType(platform, v.duration || 0, title);
       withTranscripts.push({
         title,
         videoId,
         transcript,
         views: v.play_count || v.statistics?.playCount || 0,
+        duration_seconds: v.duration || 0,
+        post_type: postType,
       });
     }
   }
@@ -298,13 +345,16 @@ router.post('/', authMiddleware, async (req, res) => {
     // Cap each transcript — Twitch has longer transcripts, TikTok is shorter
     const transcriptCap = platform === 'twitch' ? 8000 : 2000;
     const text = withTranscripts
-      .map((v, i) => `[Video ${i + 1}: "${v.title}"]\n${v.transcript.slice(0, transcriptCap)}`)
+      .map((v, i) => `[Video ${i + 1}: "${v.title}" — ${v.post_type || 'Unknown'}]\n${v.transcript.slice(0, transcriptCap)}`)
       .join('\n\n---\n\n');
 
     const platformLabel = platform === 'twitch' ? 'Twitch' : 'TikTok';
     const systemMessage = 'You are a brand deal detection engine. You only output valid JSON arrays. Never explain your reasoning. Never add markdown. Return [] if no deals found.';
 
     const prompt = `You are a brand deal detection engine specializing in social media creator content across all niches including gaming, lifestyle, food, fashion, and tech.
+
+CONTENT CONTEXT:
+${withTranscripts.map((v, i) => `Video ${i + 1}: ${v.post_type || 'Unknown'}`).join(', ')}
 
 Analyze the following ${platformLabel} video transcript(s) and identify ONLY genuine paid brand deals, sponsorships, and partnerships.
 
@@ -389,6 +439,22 @@ TRANSCRIPTS:\n${text}`;
       const parsed = JSON.parse(cleaned);
       deals = Array.isArray(parsed) ? parsed : (parsed.deals || []);
       console.log('Parsed deals count:', deals.length);
+      
+      // Enrich deals with post_type based on video_ref
+      deals = deals.map(deal => {
+        // Extract video index from video_ref (e.g., "Video 1" → index 0)
+        let videoIndex = 0;
+        if (deal.video_ref && deal.video_ref.match(/Video (\d+)/)) {
+          videoIndex = parseInt(deal.video_ref.match(/Video (\d+)/)[1]) - 1;
+        }
+        
+        const postType = withTranscripts[videoIndex]?.post_type || 'Unknown';
+        return {
+          ...deal,
+          post_type: postType
+        };
+      });
+      
     } catch (parseErr) {
       console.error('Perplexity JSON parse failed:', parseErr.message, 'Raw:', raw.substring(0, 200));
       deals = [];
@@ -416,6 +482,8 @@ TRANSCRIPTS:\n${text}`;
     desc: v.title,
     transcript: v.transcript,
     views: v.views,
+    duration_seconds: v.duration_seconds,
+    post_type: v.post_type,
   }));
   
   // Fetch creator profile to get business email and bio links
