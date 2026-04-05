@@ -370,8 +370,9 @@ router.post('/:brandName/report', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Brands] Report generation error:', error.message);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[Brand Report] Error:', error.message);
+    console.error('[Brand Report] Stack:', error.stack);
+    res.status(500).json({ error: error.message });
   }
 });
 
