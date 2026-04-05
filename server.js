@@ -21,6 +21,7 @@ const supabaseWatchlistRoutes = require('./src/routes/watchlist');
 const supabaseGroupsRoutes = require('./src/routes/supabase-groups');
 const groupScansRoutes = require('./src/routes/group-scans');
 const automationsRoutes = require('./src/routes/automations');
+const brandsRoutes = require('./src/routes/brands');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +67,9 @@ app.use('/api/supabase-groups', supabaseGroupsRoutes);
 
 // Automations
 app.use('/api/automations', automationsRoutes);
+
+// Brands Intelligence
+app.use('/api/brands', brandsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Respawn Signal' }));
 app.get('/auth/callback', (req, res) => res.redirect('/?oauth=1'));

@@ -1,0 +1,215 @@
+const express = require('express');
+const { supabase } = require('../supabase');
+
+const router = express.Router();
+
+/**
+ * GET /api/brands/:brandName
+ * 
+ * Returns all deals containing a specific brand, grouped by creator.
+ * Supports query parameters:
+ *   - limit: max deals to return (default 100)
+ *   - platform: filter by platform ('twitch', 'tiktok', 'youtube', 'instagram')
+ */
+router.get('/:brandName', async (req, res) => {
+  try {
+    const { brandName } = req.params;
+    const { limit = 100, platform } = req.query;
+
+    // Get user from auth token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    console.log(`[Brands] Fetching deals for brand "${brandName}" user ${user.id}`);
+
+    // Query all scans for this user
+    const { data: scans, error: scanError } = await supabase
+      .from('scans')
+      .select('id, username, platform, created_at, deals')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (scanError) {
+      console.error('[Brands] Supabase query error:', scanError.message);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
+
+    if (!scans || scans.length === 0) {
+      console.log('[Brands] No scans found for user');
+      return res.status(200).json({
+        brand_name: brandName,
+        total_deals: 0,
+        creators_count: 0,
+        date_range: null,
+        deals: []
+      });
+    }
+
+    // Filter deals by brand name (case-insensitive)
+    const matchedDeals = [];
+    const brandNameLower = brandName.toLowerCase();
+
+    scans.forEach(scan => {
+      if (!scan.deals || !Array.isArray(scan.deals)) return;
+
+      scan.deals.forEach((deal, dealIndex) => {
+        if (!deal.brands || !Array.isArray(deal.brands)) return;
+
+        const hasBrand = deal.brands.some(b => b.toLowerCase() === brandNameLower);
+        if (hasBrand) {
+          matchedDeals.push({
+            ...deal,
+            username: scan.username,
+            platform: scan.platform,
+            created_at: scan.created_at,
+            scan_id: scan.id,
+            deal_index: dealIndex
+          });
+        }
+      });
+    });
+
+    // Filter by platform if specified
+    let filtered = matchedDeals;
+    if (platform) {
+      filtered = matchedDeals.filter(d => d.platform === platform);
+      console.log(`[Brands] Filtered to platform "${platform}": ${filtered.length} deals`);
+    }
+
+    // Sort by created_at descending
+    filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // Limit results
+    const limited = filtered.slice(0, parseInt(limit) || 100);
+
+    // Calculate stats
+    const uniqueCreators = new Set(limited.map(d => d.username));
+    const uniquePlatforms = new Set(limited.map(d => d.platform));
+    
+    let dateRange = null;
+    if (limited.length > 0) {
+      const dates = limited.map(d => new Date(d.created_at)).sort();
+      dateRange = {
+        oldest: dates[0].toISOString(),
+        newest: dates[dates.length - 1].toISOString()
+      };
+    }
+
+    console.log(`[Brands] Found ${limited.length} deals for brand "${brandName}" across ${uniqueCreators.size} creators`);
+
+    res.status(200).json({
+      brand_name: brandName,
+      total_deals: limited.length,
+      creators_count: uniqueCreators.size,
+      platforms: Array.from(uniquePlatforms),
+      date_range: dateRange,
+      deals: limited
+    });
+
+  } catch (error) {
+    console.error('[Brands] Unexpected error:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/brands
+ * 
+ * Returns aggregated brand statistics across all user scans.
+ * Shows list of all brands detected with deal counts.
+ */
+router.get('/', async (req, res) => {
+  try {
+    // Get user from auth token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    console.log(`[Brands] Fetching all brands for user ${user.id}`);
+
+    // Query all scans for this user
+    const { data: scans, error: scanError } = await supabase
+      .from('scans')
+      .select('deals')
+      .eq('user_id', user.id);
+
+    if (scanError) {
+      console.error('[Brands] Supabase query error:', scanError.message);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
+
+    if (!scans || scans.length === 0) {
+      console.log('[Brands] No scans found for user');
+      return res.status(200).json({
+        total_brands: 0,
+        brands: []
+      });
+    }
+
+    // Aggregate all brands with deal counts
+    const brandMap = {};
+
+    scans.forEach(scan => {
+      if (!scan.deals || !Array.isArray(scan.deals)) return;
+
+      scan.deals.forEach(deal => {
+        if (!deal.brands || !Array.isArray(deal.brands)) return;
+
+        deal.brands.forEach(brandName => {
+          const key = brandName.toLowerCase();
+          if (!brandMap[key]) {
+            brandMap[key] = {
+              brand_name: brandName,
+              deal_count: 0,
+              deal_types: new Set(),
+              confidence_levels: new Set()
+            };
+          }
+          brandMap[key].deal_count++;
+          if (deal.deal_type) brandMap[key].deal_types.add(deal.deal_type);
+          if (deal.confidence) brandMap[key].confidence_levels.add(deal.confidence);
+        });
+      });
+    });
+
+    // Convert to array and sort by deal count
+    const brands = Object.values(brandMap)
+      .map(b => ({
+        brand_name: b.brand_name,
+        deal_count: b.deal_count,
+        deal_types: Array.from(b.deal_types),
+        confidence_levels: Array.from(b.confidence_levels)
+      }))
+      .sort((a, b) => b.deal_count - a.deal_count);
+
+    console.log(`[Brands] Found ${brands.length} unique brands across ${scans.length} scans`);
+
+    res.status(200).json({
+      total_brands: brands.length,
+      brands
+    });
+
+  } catch (error) {
+    console.error('[Brands] Unexpected error:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = router;
