@@ -1,5 +1,6 @@
 const express = require('express');
 const { supabase } = require('../supabase');
+const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -11,31 +12,18 @@ const router = express.Router();
  *   - limit: max deals to return (default 100)
  *   - platform: filter by platform ('twitch', 'tiktok', 'youtube', 'instagram')
  */
-router.get('/:brandName', async (req, res) => {
+router.get('/:brandName', authMiddleware, async (req, res) => {
   try {
     const brandNameParam = decodeURIComponent(req.params.brandName);
     const { limit = 100, platform } = req.query;
 
-    // Get user from auth token
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const token = authHeader.substring(7);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    console.log(`[Brands] Fetching deals for brand "${brandNameParam}" (encoded: "${req.params.brandName}") user ${user.id}`);
+    console.log(`[Brands] Fetching deals for brand "${brandNameParam}" (encoded: "${req.params.brandName}") user ${req.dbUser.id}`);
 
     // Query all scans for this user
     const { data: scans, error: scanError } = await supabase
       .from('scans')
       .select('id, username, platform, created_at, deals')
-      .eq('user_id', user.id)
+      .eq('user_id', req.dbUser.id)
       .order('created_at', { ascending: false });
 
     if (scanError) {
