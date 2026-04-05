@@ -1769,29 +1769,7 @@ textarea:focus-visible {
       <div id="group-scan-warning" style="display:none;margin-top:12px;padding:12px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:4px;font-size:12px;color:var(--amber)"></div>
       <div id="scan-results"></div>
 
-      <!-- Recent Activity Panel (Below Form) -->
-      <div id="recent-activity-panel" style="display:none;margin-top:30px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="font-size:13px;font-weight:700;margin:0">Recent Activity</h3>
-          <a href="#" onclick="navTo('history');return false" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">View All →</a>
-        </div>
 
-        <!-- Recent Scans Section -->
-        <div id="recent-scans-list" style="margin-bottom:20px">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Scans</div>
-          <div id="recent-scans-items" style="display:grid;gap:8px">
-            <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No scans yet</div>
-          </div>
-        </div>
-
-        <!-- Recent Deals Section -->
-        <div id="recent-deals-list" style="border-top:1px solid var(--border);padding-top:16px">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px">Recent Deals</div>
-          <div id="recent-deals-items" style="display:grid;gap:8px">
-            <div class="empty-state" style="border:none;padding:8px;font-size:11px;color:var(--text3)">No deals detected yet</div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- HISTORY -->
@@ -2442,7 +2420,7 @@ function showApp() {
   applyPlanLimits();
   loadHistory();
   updateCreditsUI();
-  loadRecentActivity();
+  // loadRecentActivity(); // Removed: Recent Activity section no longer displayed
   // Trigger onboarding for new users
   setTimeout(() => {
     if (!localStorage.getItem('rs_onboarding_done')) startOnboarding();
@@ -3184,10 +3162,10 @@ async function startGroupBulkScan() {
     setStatus(`Bulk scan complete! Found ${successCount} creators with deals`);
     
     // Refresh recent activity — wait a bit for DB to sync
-    console.log('[Group Scan] Waiting 2s before refreshing activity feed...');
+    console.log('[Group Scan] Waiting 2s before refreshing...');
     setTimeout(() => {
-      console.log('[Group Scan] Refreshing activity feed now');
-      loadRecentActivity();
+      console.log('[Group Scan] Refreshing scan history');
+      // loadRecentActivity(); // Removed: Recent Activity section no longer displayed
       
       // Also refresh scan history if user is viewing it
       if (currentPage === 'history') {
@@ -3359,8 +3337,8 @@ async function startScan() {
     currentUser = me;
     updateCreditsUI();
     
-    // Refresh recent activity
-    loadRecentActivity();
+    // Refresh recent activity (removed - Recent Activity section no longer displayed)
+    // loadRecentActivity();
     
     // Stop progress animation and complete the progress bar
     clearInterval(progressInterval);
