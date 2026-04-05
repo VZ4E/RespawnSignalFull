@@ -444,7 +444,7 @@ function downloadBrandReportPDF(brandName, content) {
   
   // Format date for filename
   const dateStr = new Date().toISOString().split('T')[0];
-  link.download = `${brandName}-report-${dateStr}.pdf`;
+  link.download = `${brandName}-report-${dateStr}.html`;
   link.href = url;
   
   link.click();
