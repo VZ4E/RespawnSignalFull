@@ -399,7 +399,9 @@ function renderTimeline(el, data) {
           </div>
           ${evidence ? `<div class="deal-evidence">"${escapeHtml(evidence)}"</div>` : ''}
           <div class="deal-meta">
-            📅 ${dateStr} · ${platformUpper}
+            📅 ${dateStr} · <span class="platform-badge ${platformClass}" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin:0 4px;vertical-align:middle;font-size:0">
+              ${getPlatformLogoHtml(deal.platform)}
+            </span>
           </div>
         </div>
       `;
@@ -410,7 +412,7 @@ function renderTimeline(el, data) {
         <div class="creator-header">
           <span class="creator-handle">${escapeHtml(username)}</span>
           <div class="platform-badge ${platformClass}" title="${platformUpper}">
-            ${platformUpper.slice(0, 1)}
+            ${getPlatformLogoHtml(deals[0].platform)}
           </div>
         </div>
         ${dealsHtml}
@@ -446,6 +448,21 @@ function escapeHtml(text) {
     "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Helper: Get platform logo URL and icon markup
+function getPlatformLogoHtml(platform) {
+  const logoMap = {
+    twitch: 'https://static.twitchcdn.net/assets/favicon-32-e29e246014dbe109c62deda555444bb2.png',
+    tiktok: 'https://www.tiktok.com/favicon.ico',
+    youtube: 'https://www.youtube.com/s/desktop/d8988b98/img/favicon.ico',
+    instagram: 'https://www.instagram.com/static/images/ico/favicon.ico/36b3ee2d91ed.ico'
+  };
+  
+  const url = logoMap[platform.toLowerCase()];
+  if (!url) return platform.toUpperCase().slice(0, 1);
+  
+  return `<img src="${url}" width="16" height="16" alt="${platform}" style="display:block">`;
 }
 
 // Generate and download brand report
