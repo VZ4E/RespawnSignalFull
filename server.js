@@ -96,19 +96,7 @@ app.get('/automation', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'automation.html'));
 });
 
-// Disable caching for HTML files to prevent stale deployments
-app.use((req, res, next) => {
-  if (req.path.endsWith('.html') || req.path === '/') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-  }
-  next();
-});
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Brand profile page — must come after static but before catch-all
+// Brand profile page — defined early before static middleware to avoid auth/other middleware
 app.get('/brands/:brandName', (req, res) => {
   const brandName = req.params.brandName;
   const filePath = path.join(__dirname, 'public', 'brand-profile.html');
@@ -128,6 +116,18 @@ app.get('/brands/:brandName', (req, res) => {
     }
   });
 });
+
+// Disable caching for HTML files to prevent stale deployments
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
