@@ -13,7 +13,7 @@ const router = express.Router();
  */
 router.get('/:brandName', async (req, res) => {
   try {
-    const { brandName } = req.params;
+    const brandNameParam = decodeURIComponent(req.params.brandName);
     const { limit = 100, platform } = req.query;
 
     // Get user from auth token
@@ -29,7 +29,7 @@ router.get('/:brandName', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    console.log(`[Brands] Fetching deals for brand "${brandName}" user ${user.id}`);
+    console.log(`[Brands] Fetching deals for brand "${brandNameParam}" (encoded: "${req.params.brandName}") user ${user.id}`);
 
     // Query all scans for this user
     const { data: scans, error: scanError } = await supabase
@@ -46,7 +46,7 @@ router.get('/:brandName', async (req, res) => {
     if (!scans || scans.length === 0) {
       console.log('[Brands] No scans found for user');
       return res.status(200).json({
-        brand_name: brandName,
+        brand_name: brandNameParam,
         total_deals: 0,
         creators_count: 0,
         date_range: null,
@@ -54,9 +54,26 @@ router.get('/:brandName', async (req, res) => {
       });
     }
 
+    // Log raw deals for debugging
+    const allDealsCount = scans.reduce((count, scan) => count + (scan.deals?.length || 0), 0);
+    console.log(`[Brands] Retrieved ${scans.length} scans with ${allDealsCount} total deals`);
+    
+    // Sample brands from first few deals for debugging
+    const sampleBrands = new Set();
+    scans.slice(0, 3).forEach(scan => {
+      if (scan.deals?.length > 0) {
+        scan.deals.slice(0, 2).forEach(deal => {
+          if (deal.brands?.length > 0) {
+            deal.brands.forEach(b => sampleBrands.add(b));
+          }
+        });
+      }
+    });
+    console.log(`[Brands] Sample brands from data: ${Array.from(sampleBrands).join(', ')}`);
+
     // Filter deals by brand name (case-insensitive)
     const matchedDeals = [];
-    const brandNameLower = brandName.toLowerCase();
+    const brandNameLower = brandNameParam.toLowerCase();
 
     scans.forEach(scan => {
       if (!scan.deals || !Array.isArray(scan.deals)) return;
@@ -77,6 +94,8 @@ router.get('/:brandName', async (req, res) => {
         }
       });
     });
+
+    console.log(`[Brands] Found ${matchedDeals.length} deals matching brand name "${brandNameLower}"`);
 
     // Filter by platform if specified
     let filtered = matchedDeals;
@@ -104,10 +123,10 @@ router.get('/:brandName', async (req, res) => {
       };
     }
 
-    console.log(`[Brands] Found ${limited.length} deals for brand "${brandName}" across ${uniqueCreators.size} creators`);
+    console.log(`[Brands] Returning ${limited.length} deals for brand "${brandNameParam}" across ${uniqueCreators.size} creators`);
 
     res.status(200).json({
-      brand_name: brandName,
+      brand_name: brandNameParam,
       total_deals: limited.length,
       creators_count: uniqueCreators.size,
       platforms: Array.from(uniquePlatforms),
