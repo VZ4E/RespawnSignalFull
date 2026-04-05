@@ -3933,12 +3933,14 @@ function renderDealsPage() {
     }
     
     return `
-      <div class="bml-item" style="position:relative">
+      <div class="bml-item" style="position:relative;cursor:pointer" onclick="window.location.href='/brands/${encodeURIComponent(mainBrand)}'">
         <div class="bml-rank">${String(i+1).padStart(2,'0')}</div>
         <div style="flex:1">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-            <div class="bml-name">${brandDisplay}</div>
-            ${isMultiBrand ? `<button onclick="toggleCampaignBrands('${campaignId}')" style="background:transparent;border:none;color:var(--accent);font-size:10px;cursor:pointer;padding:0;font-family:var(--mono);font-weight:600">▸</button>` : ''}
+            <a href="/brands/${encodeURIComponent(mainBrand)}" style="text-decoration:none;color:inherit" onclick="event.stopPropagation()">
+              <div class="bml-name">${brandDisplay}</div>
+            </a>
+            ${isMultiBrand ? `<button onclick="event.stopPropagation(); toggleCampaignBrands('${campaignId}')" style="background:transparent;border:none;color:var(--accent);font-size:10px;cursor:pointer;padding:0;font-family:var(--mono);font-weight:600">▸</button>` : ''}
           </div>
           <div id="${campaignId}-brands" style="display:none;padding:6px 0 0 0;border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
             ${otherBrands.map(b => `<div style="font-size:11px;color:var(--text2);padding:3px 0;margin-left:16px">· ${b}</div>`).join('')}
