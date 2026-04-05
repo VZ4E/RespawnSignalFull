@@ -63,6 +63,74 @@ function derivePostType(platform, durationSeconds, title) {
   return 'Unknown';
 }
 
+/**
+ * Phase 1: Detect early activation signals BEFORE Perplexity
+ * (These don't require knowing the brand names)
+ */
+function detectEarlyActivationSignals(title, transcript) {
+  const activationPhrases = [
+    'sponsor stream',
+    'doing the sponsor',
+    'activation',
+    'the brief',
+    'hashtag ad',
+    '#ad',
+    'sponsored content',
+    'ad read',
+    'brand partnership'
+  ];
+
+  const titleLower = title.toLowerCase();
+  const transcriptSnippet = (transcript || '').slice(0, 500).toLowerCase();
+
+  const phraseMatch = activationPhrases.some(p =>
+    titleLower.includes(p) || transcriptSnippet.includes(p)
+  );
+
+  return { hasActivationSignals: phraseMatch };
+}
+
+/**
+ * Phase 2: Finalize activation day flag AFTER Perplexity
+ * (Using confirmed brand names from Perplexity response)
+ */
+function finalizeActivationDay(deal, videoTitle, videoTranscript, dealIndex, preAnalysisSignals) {
+  const titleLower = videoTitle.toLowerCase();
+  const transcriptSnippet = (videoTranscript || '').slice(0, 500).toLowerCase();
+
+  // Check if any confirmed brand appears in title or early transcript
+  let brandInTitle = false;
+  if (deal.brands && Array.isArray(deal.brands)) {
+    brandInTitle = deal.brands.some(b =>
+      b && (titleLower.includes(b.toLowerCase()) || transcriptSnippet.includes(b.toLowerCase()))
+    );
+  }
+
+  // Check for activation phrases (can run again for final confirmation)
+  const activationPhrases = [
+    'sponsor stream',
+    'doing the sponsor',
+    'activation',
+    'the brief',
+    'hashtag ad',
+    '#ad',
+    'sponsored content',
+    'ad read',
+    'brand partnership'
+  ];
+  const phraseMatch = activationPhrases.some(p =>
+    titleLower.includes(p) || transcriptSnippet.includes(p)
+  );
+
+  // Final decision: true if brand appears in title/transcript OR activation phrases match
+  const isActivationDay = brandInTitle || phraseMatch;
+
+  return {
+    ...deal,
+    is_activation_day: isActivationDay
+  };
+}
+
 // POST /api/scan
 router.post('/', authMiddleware, async (req, res) => {
   // Support both old (username) and new (platform, handle) formats
@@ -280,6 +348,7 @@ router.post('/', authMiddleware, async (req, res) => {
     // Build withTranscripts array from enriched videos
     enrichedVideos.forEach((video) => {
       const postType = derivePostType(platform, video.lengthSeconds || 0, video.title);
+      const earlySignals = detectEarlyActivationSignals(video.title, video.transcript || '');
       withTranscripts.push({
         title: video.title,
         videoId: video.videoId,
@@ -287,6 +356,7 @@ router.post('/', authMiddleware, async (req, res) => {
         views: video.play_count || video.statistics?.playCount || 0,
         duration_seconds: video.lengthSeconds || 0,
         post_type: postType,
+        early_activation_signals: earlySignals.hasActivationSignals,
       });
     });
     
@@ -327,6 +397,7 @@ router.post('/', authMiddleware, async (req, res) => {
       }
 
       const postType = derivePostType(platform, v.duration || 0, title);
+      const earlySignals = detectEarlyActivationSignals(title, transcript);
       withTranscripts.push({
         title,
         videoId,
@@ -334,6 +405,7 @@ router.post('/', authMiddleware, async (req, res) => {
         views: v.play_count || v.statistics?.playCount || 0,
         duration_seconds: v.duration || 0,
         post_type: postType,
+        early_activation_signals: earlySignals.hasActivationSignals,
       });
     }
   }
@@ -440,7 +512,7 @@ TRANSCRIPTS:\n${text}`;
       deals = Array.isArray(parsed) ? parsed : (parsed.deals || []);
       console.log('Parsed deals count:', deals.length);
       
-      // Enrich deals with post_type based on video_ref
+      // Enrich deals with post_type and activation day flag
       deals = deals.map(deal => {
         // Extract video index from video_ref (e.g., "Video 1" → index 0)
         let videoIndex = 0;
@@ -448,9 +520,14 @@ TRANSCRIPTS:\n${text}`;
           videoIndex = parseInt(deal.video_ref.match(/Video (\d+)/)[1]) - 1;
         }
         
-        const postType = withTranscripts[videoIndex]?.post_type || 'Unknown';
+        const video = withTranscripts[videoIndex] || {};
+        const postType = video.post_type || 'Unknown';
+        
+        // Phase 2: Finalize activation day using confirmed brands from deal
+        const enriched = finalizeActivationDay(deal, video.title, video.transcript, videoIndex);
+        
         return {
-          ...deal,
+          ...enriched,
           post_type: postType
         };
       });
@@ -476,15 +553,29 @@ TRANSCRIPTS:\n${text}`;
   }
 
   // 5. Save scan record with video list + transcripts for re-analysis
-  const videosList = withTranscripts.map(v => ({
-    title: v.title,
-    videoId: v.videoId,
-    desc: v.title,
-    transcript: v.transcript,
-    views: v.views,
-    duration_seconds: v.duration_seconds,
-    post_type: v.post_type,
-  }));
+  const videosList = withTranscripts.map((v, idx) => {
+    // Check if any deal from this video is flagged as activation day
+    const videoDeals = deals.filter(d => {
+      let videoIndex = 0;
+      if (d.video_ref && d.video_ref.match(/Video (\d+)/)) {
+        videoIndex = parseInt(d.video_ref.match(/Video (\d+)/)[1]) - 1;
+      }
+      return videoIndex === idx;
+    });
+    const hasActivationDeal = videoDeals.some(d => d.is_activation_day === true);
+    
+    return {
+      title: v.title,
+      videoId: v.videoId,
+      desc: v.title,
+      transcript: v.transcript,
+      views: v.views,
+      duration_seconds: v.duration_seconds,
+      post_type: v.post_type,
+      early_activation_signals: v.early_activation_signals,
+      is_activation_day: hasActivationDeal,
+    };
+  });
   
   // Fetch creator profile to get business email and bio links
   // Use platform-specific extraction with TikTok fuzzy match fallback
