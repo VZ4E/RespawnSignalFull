@@ -219,4 +219,156 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/brands/:brandName/report
+ * 
+ * Generates and saves a brand report.
+ * Body:
+ *   - format: 'json' | 'pdf' | 'csv' (default: 'json')
+ *   - include_evidence: boolean (include deal evidence in report)
+ */
+router.post('/:brandName/report', authMiddleware, async (req, res) => {
+  try {
+    const brandNameParam = decodeURIComponent(req.params.brandName);
+    const { format = 'json', include_evidence = true } = req.body;
+
+    console.log(`[Brands] Generating ${format} report for brand "${brandNameParam}" user ${req.dbUser.id}`);
+
+    // First, fetch the brand deals (reuse GET logic)
+    const { data: scans, error: scanError } = await supabase
+      .from('scans')
+      .select('id, username, platform, created_at, deals')
+      .eq('user_id', req.dbUser.id)
+      .order('created_at', { ascending: false });
+
+    if (scanError) {
+      console.error('[Brands] Supabase query error:', scanError.message);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
+
+    if (!scans || scans.length === 0) {
+      return res.status(404).json({
+        error: 'No scans found for this user'
+      });
+    }
+
+    // Filter deals by brand name
+    const matchedDeals = [];
+    const brandNameLower = brandNameParam.toLowerCase();
+
+    scans.forEach(scan => {
+      if (!scan.deals || !Array.isArray(scan.deals)) return;
+
+      scan.deals.forEach((deal, dealIndex) => {
+        if (!deal.brands || !Array.isArray(deal.brands)) return;
+
+        const hasBrand = deal.brands.some(b => b.toLowerCase() === brandNameLower);
+        if (hasBrand) {
+          matchedDeals.push({
+            ...deal,
+            username: scan.username,
+            platform: scan.platform,
+            created_at: scan.created_at,
+            scan_id: scan.id
+          });
+        }
+      });
+    });
+
+    if (matchedDeals.length === 0) {
+      return res.status(404).json({
+        error: `No deals found for brand "${brandNameParam}"`
+      });
+    }
+
+    // Calculate summary statistics
+    const platformBreakdown = {};
+    const creatorSet = new Set();
+    let highConfidenceCount = 0;
+    let activationCount = 0;
+    const dealTypes = new Set();
+    const postTypes = new Set();
+
+    matchedDeals.forEach(deal => {
+      // Platform breakdown
+      if (!platformBreakdown[deal.platform]) {
+        platformBreakdown[deal.platform] = 0;
+      }
+      platformBreakdown[deal.platform]++;
+
+      // Creator count
+      creatorSet.add(deal.username);
+
+      // Confidence
+      if (deal.confidence === 'high') highConfidenceCount++;
+
+      // Activation
+      if (deal.is_activation_day) activationCount++;
+
+      // Deal types
+      if (deal.deal_type) dealTypes.add(deal.deal_type);
+      if (deal.post_type) postTypes.add(deal.post_type);
+    });
+
+    // Build report content
+    const reportContent = {
+      brand_name: brandNameParam,
+      report_date: new Date().toISOString(),
+      total_deals: matchedDeals.length,
+      creators_count: creatorSet.size,
+      high_confidence_deals: highConfidenceCount,
+      activation_streams: activationCount,
+      platform_breakdown: platformBreakdown,
+      deal_types: Array.from(dealTypes),
+      post_types: Array.from(postTypes),
+      date_range: {
+        earliest: new Date(Math.min(...matchedDeals.map(d => new Date(d.created_at)))).toISOString(),
+        latest: new Date(Math.max(...matchedDeals.map(d => new Date(d.created_at)))).toISOString()
+      },
+      deals: include_evidence ? matchedDeals : matchedDeals.map(({ evidence, ...deal }) => deal)
+    };
+
+    // Store report in database
+    const { data: report, error: insertError } = await supabase
+      .from('brand_reports')
+      .insert({
+        user_id: req.dbUser.id,
+        brand_name: brandNameParam,
+        format: format,
+        total_deals: reportContent.total_deals,
+        creators_count: reportContent.creators_count,
+        high_confidence_deals: reportContent.high_confidence_deals,
+        activation_streams: reportContent.activation_streams,
+        content: reportContent,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('[Brands] Report insert error:', insertError.message);
+      return res.status(500).json({ error: 'Failed to save report' });
+    }
+
+    console.log(`[Brands] Report created with ID: ${report.id}`);
+
+    res.status(201).json({
+      success: true,
+      report_id: report.id,
+      brand_name: brandNameParam,
+      format: format,
+      total_deals: reportContent.total_deals,
+      creators_count: reportContent.creators_count,
+      high_confidence_deals: reportContent.high_confidence_deals,
+      activation_streams: reportContent.activation_streams,
+      created_at: report.created_at,
+      content: reportContent
+    });
+
+  } catch (error) {
+    console.error('[Brands] Report generation error:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
