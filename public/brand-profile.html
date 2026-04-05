@@ -202,6 +202,83 @@ function navTo(path) {
 }
 
 // Fetch brand data
+// Helper: Parse JWT token
+function parseJWT(tokenStr) {
+  try {
+    const base64Url = tokenStr.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
+// Helper: Check if token is expired (with 5-min buffer)
+function isTokenExpired(tokenStr) {
+  if (!tokenStr) return true;
+  const decoded = parseJWT(tokenStr);
+  if (!decoded || !decoded.exp) return true;
+  const expiresAt = decoded.exp * 1000;
+  const bufferMs = 5 * 60 * 1000; // 5 minutes before actual expiry
+  return expiresAt - bufferMs < Date.now();
+}
+
+// Helper: Refresh access token
+async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) {
+    throw new Error('No refresh token available. Please log in again.');
+  }
+
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Refresh failed: ' + res.statusText);
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = await res.json();
+    localStorage.setItem('rs_token', accessToken);
+    if (newRefreshToken) {
+      localStorage.setItem('refreshToken', newRefreshToken);
+    }
+
+    console.log('[Brand Profile] Token refreshed successfully');
+    return accessToken;
+  } catch (err) {
+    console.error('[Brand Profile] Token refresh error:', err);
+    localStorage.removeItem('rs_token');
+    localStorage.removeItem('refreshToken');
+    throw err;
+  }
+}
+
+// Helper: Get valid token (refresh if expired)
+async function getValidToken() {
+  let currentToken = localStorage.getItem('rs_token');
+  
+  if (!currentToken) {
+    throw new Error('No access token. Please log in.');
+  }
+
+  if (isTokenExpired(currentToken)) {
+    console.log('[Brand Profile] Token expired, refreshing...');
+    currentToken = await refreshAccessToken();
+  }
+
+  return currentToken;
+}
+
 async function loadBrandProfile() {
   const contentEl = document.getElementById('content');
   const headerEl = document.getElementById('header');
@@ -209,8 +286,8 @@ async function loadBrandProfile() {
   try {
     contentEl.innerHTML = '<div class="loading-spinner"><div class="spinner"></div>Loading brand profile...</div>';
     
-    // Get fresh token at request time from localStorage
-    const token = localStorage.getItem('rs_token');
+    // Refresh token if expired, then get valid token
+    const token = await getValidToken();
     
     if (!token) {
       throw new Error('Not authenticated. Please log in first.');
@@ -374,10 +451,19 @@ function escapeHtml(text) {
 // Generate and download brand report
 async function generateBrandReport() {
   const btn = document.getElementById('generate-report-btn');
-  const token = localStorage.getItem('rs_token');
+  let token;
   
-  if (!token) {
-    alert('Not authenticated. Please log in first.');
+  try {
+    // Refresh token if expired, then get valid token
+    token = await getValidToken();
+    
+    if (!token) {
+      alert('Not authenticated. Please log in first.');
+      return;
+    }
+  } catch (err) {
+    console.error('[Brand Report] Token error:', err);
+    alert('Token refresh failed. Please log in again.');
     return;
   }
   
@@ -414,7 +500,7 @@ async function generateBrandReport() {
       throw new Error('No report content received');
     }
     
-    // Generate PDF from report content
+    // Generate HTML report from content
     downloadBrandReportPDF(brandName, reportData.content);
     
     // Update button
