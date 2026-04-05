@@ -195,9 +195,11 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); }
 const TOKEN = localStorage.getItem('token');
 const USER_ID = localStorage.getItem('user_id');
 
-if (!TOKEN) {
-  window.location.href = '/';
-}
+// TEMP: Comment out auth check to test page rendering
+// TODO: Replace with proper error message when TOKEN is missing
+// if (!TOKEN) {
+//   window.location.href = '/';
+// }
 
 function navTo(path) {
   window.location.href = path;
