@@ -292,8 +292,14 @@ function renderTimeline(el, data) {
     const platformUpper = deals[0].platform.toUpperCase();
     
     const dealsHtml = deals.map((deal, i) => {
-      const confClass = deal.confidence === 'high' ? 'conf-high' : 
-                        deal.confidence === 'medium' ? 'conf-mid' : 'conf-low';
+      // Add fallbacks for fields that might be missing in older records
+      const dealType = deal.deal_type || 'Partnership';
+      const postType = deal.post_type || 'Unknown';
+      const evidence = deal.evidence || '';
+      const confidence = deal.confidence || 'medium';
+      
+      const confClass = confidence === 'high' ? 'conf-high' : 
+                        confidence === 'medium' ? 'conf-mid' : 'conf-low';
       
       const dateStr = new Date(deal.created_at).toLocaleDateString('en-US', {
         month: 'short',
@@ -308,13 +314,13 @@ function renderTimeline(el, data) {
         <div class="deal-card" style="animation-delay:${i*0.05}s">
           <div class="deal-top">
             <div class="deal-left">
-              <span class="deal-type-pill">${escapeHtml(deal.deal_type)}</span>
-              <span class="post-type-label">${escapeHtml(deal.post_type)}</span>
+              <span class="deal-type-pill">${escapeHtml(dealType)}</span>
+              <span class="post-type-label">${escapeHtml(postType)}</span>
               ${activationBadge}
             </div>
-            <div class="conf-pill ${confClass}">${deal.confidence}</div>
+            <div class="conf-pill ${confClass}">${confidence}</div>
           </div>
-          ${deal.evidence ? `<div class="deal-evidence">"${escapeHtml(deal.evidence)}"</div>` : ''}
+          ${evidence ? `<div class="deal-evidence">"${escapeHtml(evidence)}"</div>` : ''}
           <div class="deal-meta">
             📅 ${dateStr} · ${platformUpper}
           </div>
