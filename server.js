@@ -95,10 +95,6 @@ app.get('/automation', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'automation.html'));
 });
 
-app.get('/brands/:brandName', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'brand-profile.html'));
-});
-
 // Disable caching for HTML files to prevent stale deployments
 app.use((req, res, next) => {
   if (req.path.endsWith('.html') || req.path === '/') {
@@ -110,6 +106,14 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Brand profile page — must come after static but before catch-all
+app.get('/brands/:brandName', (req, res) => {
+  const brandName = req.params.brandName;
+  console.log(`[Brands Route] GET /brands/${brandName} — serving brand-profile.html`);
+  res.sendFile(path.join(__dirname, 'public', 'brand-profile.html'));
+});
+
 app.get('*', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
