@@ -192,37 +192,21 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); }
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// TOKEN DIAGNOSTIC LOGGING — for debugging token/user_id mismatch
-// ═══════════════════════════════════════════════════════════════
-const TOKEN = localStorage.getItem('rs_token');
-const USER_ID = localStorage.getItem('user_id');
-
-console.group('[Brand Profile] Token Diagnostic');
-console.log('Token exists:', !!TOKEN);
-if (TOKEN) {
-  console.log('Token length:', TOKEN.length);
-  console.log('Token first 50 chars:', TOKEN.substring(0, 50) + '...');
-  console.log('Token last 20 chars:', '...' + TOKEN.substring(TOKEN.length - 20));
-}
-console.log('USER_ID from localStorage:', USER_ID);
-console.log('All localStorage keys:', Object.keys(localStorage));
-console.groupEnd();
+// Get brand name from URL
+const urlParams = new URLSearchParams(window.location.search);
+const brandNameEncoded = window.location.pathname.split('/').pop();
+const brandName = decodeURIComponent(brandNameEncoded);
 
 // TEMP: Comment out auth check to test page rendering
 // TODO: Replace with proper error message when TOKEN is missing
-// if (!TOKEN) {
+// const token = localStorage.getItem('rs_token');
+// if (!token) {
 //   window.location.href = '/';
 // }
 
 function navTo(path) {
   window.location.href = path;
 }
-
-// Get brand name from URL
-const urlParams = new URLSearchParams(window.location.search);
-const brandNameEncoded = window.location.pathname.split('/').pop();
-const brandName = decodeURIComponent(brandNameEncoded);
 
 // Fetch brand data
 async function loadBrandProfile() {
@@ -232,12 +216,15 @@ async function loadBrandProfile() {
   try {
     contentEl.innerHTML = '<div class="loading-spinner"><div class="spinner"></div>Loading brand profile...</div>';
     
+    // Get fresh token at request time (not from page load)
+    const token = localStorage.getItem('rs_token');
+    
     console.log(`[Brand Profile] Fetching /api/brands/${encodeURIComponent(brandName)}`);
-    console.log('[Brand Profile] Authorization header:', `Bearer ${TOKEN?.substring(0, 50)}...`);
+    console.log('[Brand Profile] Token at request time:', token ? `${token.substring(0, 30)}...` : 'NOT FOUND');
     
     const response = await fetch(`/api/brands/${encodeURIComponent(brandName)}`, {
       headers: {
-        'Authorization': `Bearer ${TOKEN}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
