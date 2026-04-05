@@ -1,7 +1,7 @@
 -- Create brand_reports table for storing generated brand reports
 CREATE TABLE IF NOT EXISTS brand_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   brand_name TEXT NOT NULL,
   format TEXT NOT NULL CHECK (format IN ('json', 'pdf', 'csv')),
   total_deals INTEGER NOT NULL,

@@ -329,10 +329,14 @@ router.post('/:brandName/report', authMiddleware, async (req, res) => {
     };
 
     // Store report in database
+    // NOTE: user_id must be req.user.id (the Supabase auth ID) for RLS to work,
+    // not req.dbUser.id (which is from the users table)
+    console.log(`[Brands] Inserting report with user_id: ${req.user.id} (auth ID) for user ${req.dbUser.id} (app ID)`);
+    
     const { data: report, error: insertError } = await supabase
       .from('brand_reports')
       .insert({
-        user_id: req.dbUser.id,
+        user_id: req.user.id,
         brand_name: brandNameParam,
         format: format,
         total_deals: reportContent.total_deals,
@@ -346,8 +350,8 @@ router.post('/:brandName/report', authMiddleware, async (req, res) => {
       .single();
 
     if (insertError) {
-      console.error('[Brands] Report insert error:', insertError.message);
-      return res.status(500).json({ error: 'Failed to save report' });
+      console.error('[Brands] Report insert error:', insertError.message, 'User ID:', req.user.id);
+      return res.status(500).json({ error: 'Failed to save report', details: insertError.message });
     }
 
     console.log(`[Brands] Report created with ID: ${report.id}`);
