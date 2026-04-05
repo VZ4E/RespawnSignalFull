@@ -101,6 +101,8 @@ router.get('/:brandName', authMiddleware, async (req, res) => {
     // Calculate stats
     const uniqueCreators = new Set(limited.map(d => d.username));
     const uniquePlatforms = new Set(limited.map(d => d.platform));
+    const highConfidenceCount = limited.filter(d => d.confidence === 'high').length;
+    const activationCount = limited.filter(d => d.is_activation_day === true).length;
     
     let dateRange = null;
     if (limited.length > 0) {
@@ -111,12 +113,14 @@ router.get('/:brandName', authMiddleware, async (req, res) => {
       };
     }
 
-    console.log(`[Brands] Returning ${limited.length} deals for brand "${brandNameParam}" across ${uniqueCreators.size} creators`);
+    console.log(`[Brands] Returning ${limited.length} deals for brand "${brandNameParam}" across ${uniqueCreators.size} creators (high_confidence: ${highConfidenceCount}, activations: ${activationCount})`);
 
     res.status(200).json({
       brand_name: brandNameParam,
       total_deals: limited.length,
       creators_count: uniqueCreators.size,
+      high_confidence_deals: highConfidenceCount,
+      activation_streams: activationCount,
       platforms: Array.from(uniquePlatforms),
       date_range: dateRange,
       deals: limited
