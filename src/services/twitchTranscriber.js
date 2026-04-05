@@ -40,24 +40,31 @@ async function downloadSegment(vodUrl, outputPath, startTime, endTime) {
 
 /**
  * Upload audio file to AssemblyAI and transcribe it
+ * Uses streaming to avoid loading entire file into memory (important for large files)
  */
 async function uploadAndTranscribe(filePath, ASSEMBLYAI_KEY) {
-  // Upload to AssemblyAI
-  const fileData = fs.readFileSync(filePath);
+  // Get file size for logging
+  const stats = fs.statSync(filePath);
+  const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+  console.log(`[TwitchTranscriber] Uploading ${fileSizeMB}MB file: ${filePath}`);
+
+  // Stream file to AssemblyAI instead of loading into memory
+  const fileStream = fs.createReadStream(filePath);
   const uploadResp = await fetch('https://api.assemblyai.com/v2/upload', {
     method: 'POST',
     headers: {
       'Authorization': ASSEMBLYAI_KEY,
       'Content-Type': 'application/octet-stream'
     },
-    body: fileData
+    body: fileStream
   });
+  
   const uploadData = await uploadResp.json();
   const uploadUrl = uploadData.upload_url;
   
   // Clean up file immediately after upload
   fs.unlinkSync(filePath);
-  console.log(`[TwitchTranscriber] Uploaded segment: ${filePath}`);
+  console.log(`[TwitchTranscriber] Uploaded segment (${fileSizeMB}MB): ${filePath}`);
 
   if (!uploadUrl) {
     console.error('[TwitchTranscriber] Upload failed:', uploadData);
