@@ -493,20 +493,22 @@ function generateBrandReportHTML(brandName, content) {
   // Deals table HTML
   const dealsTableHtml = Object.entries(dealsByCreator)
     .map(([creator, creatorDeals]) => {
-      const dealsHtml = creatorDeals.map(deal => `
+      const dealsHtml = creatorDeals.map(d => `
         <tr>
-          <td>${deal.deal_type || 'Unknown'}</td>
-          <td>${deal.post_type || 'Unknown'}</td>
-          <td>${deal.is_activation_day ? '✓ Activation' : '—'}</td>
-          <td>${deal.confidence || 'medium'}</td>
-          <td>${deal.evidence ? `"${deal.evidence.substring(0, 100)}..."` : '—'}</td>
-          <td>${new Date(deal.created_at).toLocaleDateString()}</td>
+          <td>${d.deal_type || 'Unknown'}</td>
+          <td>${d.post_type || 'Unknown'}</td>
+          <td>${d.is_activation_day ? '✓ Activation' : '—'}</td>
+          <td>${d.confidence || 'medium'}</td>
+          <td>${d.evidence ? `"${d.evidence.substring(0, 100)}..."` : '—'}</td>
+          <td>${new Date(d.created_at).toLocaleDateString()}</td>
         </tr>
       `).join('');
       
+      const platformBadge = creatorDeals[0] ? creatorDeals[0].platform : 'Unknown';
+      
       return `
         <tr style="background:#f5f5f5">
-          <td colspan="6"><strong>@${creator}</strong> (${deal.platform?.toUpperCase() || 'Unknown'})</td>
+          <td colspan="6"><strong>@${creator}</strong> (${platformBadge?.toUpperCase() || 'Unknown'})</td>
         </tr>
         ${dealsHtml}
       `;
