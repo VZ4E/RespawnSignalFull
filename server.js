@@ -95,6 +95,10 @@ app.get('/automation', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'automation.html'));
 });
 
+app.get('/brands/:brandName', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'brand-profile.html'));
+});
+
 // Disable caching for HTML files to prevent stale deployments
 app.use((req, res, next) => {
   if (req.path.endsWith('.html') || req.path === '/') {

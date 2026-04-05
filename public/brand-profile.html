@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brand Profile — Respawn Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --sidebar: #ffffff; --surface: #ffffff; --surface2: #f1f5f9;
+  --border: #e2e8f0; --border2: #cbd5e1;
+  --accent: #5AA0E8; --accent-dark: #3b82c4; --accent-dim: rgba(90,160,232,0.08);
+  --accent-mid: rgba(90,160,232,0.15); --accent-glow: rgba(90,160,232,0.2);
+  --green: #059669; --green-dim: rgba(5,150,105,0.08);
+  --amber: #d97706; --amber-dim: rgba(217,119,6,0.08);
+  --orange: #f59e0b; --orange-dim: rgba(245,158,11,0.08);
+  --red: #dc2626; --red-dim: rgba(220,38,38,0.08);
+  --text: #0f172a; --text2: #475569; --text3: #94a3b8;
+  --mono: 'DM Mono', monospace; --sans: 'Sora', sans-serif; --serif: 'Instrument Serif', serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); }
+
+/* ── MAIN LAYOUT ── */
+#app { display:flex; height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width:240px; background:var(--sidebar); border-right:1px solid var(--border);
+  padding:16px; overflow-y:auto; flex-shrink:0;
+}
+.sidebar-logo { font-size:14px; font-weight:800; letter-spacing:-0.3px; margin-bottom:24px; cursor:pointer; }
+.sidebar-logo span { color:var(--accent); }
+.nav-item {
+  display:block; width:100%; padding:10px 12px; margin-bottom:6px;
+  background:transparent; border:none; border-radius:8px; text-align:left;
+  font-family:var(--sans); font-size:13px; color:var(--text2); cursor:pointer;
+  transition:all 0.13s;
+}
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.active { background:var(--accent-dim); color:var(--accent); }
+
+/* ── MAIN CONTENT ── */
+.main-content { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.content-inner { flex:1; overflow-y:auto; padding:40px; }
+
+/* ── HEADER ── */
+.brand-header {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:24px 40px; display:flex; align-items:center; justify-content:space-between;
+  gap:24px;
+}
+.brand-header-left { flex:1; }
+.brand-header-title { font-family:var(--serif); font-style:italic; font-size:36px; 
+  letter-spacing:-0.5px; margin-bottom:16px; }
+.stat-pills { display:flex; gap:16px; }
+.stat-pill {
+  background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  padding:10px 16px; font-size:13px; color:var(--text2);
+}
+.stat-pill strong { color:var(--text); font-weight:600; }
+.brand-header-right { display:flex; gap:12px; }
+.btn-primary {
+  background:var(--accent); border:none; border-radius:8px;
+  padding:10px 20px; font-family:var(--sans); font-size:13px; font-weight:700;
+  color:white; cursor:pointer; transition:all 0.13s;
+  box-shadow:0 2px 8px var(--accent-glow);
+}
+.btn-primary:hover:not(:disabled) { background:var(--accent-dark); transform:translateY(-1px); }
+.btn-primary:disabled {
+  opacity:0.6; cursor:not-allowed; background:#9ca3af;
+}
+.btn-ghost {
+  background:transparent; border:1px solid var(--border); border-radius:8px;
+  padding:10px 20px; font-family:var(--sans); font-size:13px; font-weight:600;
+  color:var(--text2); cursor:pointer; transition:all 0.13s;
+}
+.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ── DEAL CARDS ── */
+.creator-section { margin-bottom:32px; }
+.creator-header {
+  display:flex; align-items:center; gap:12px; margin-bottom:16px;
+  padding-bottom:12px; border-bottom:1px solid var(--border);
+}
+.creator-handle { font-size:16px; font-weight:700; color:var(--text); }
+.platform-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:6px; font-size:11px; font-weight:700;
+  color:white; font-family:var(--mono);
+}
+.platform-twitch { background:#9146ff; }
+.platform-tiktok { background:#000000; }
+.platform-youtube { background:#ff0000; }
+.platform-instagram { background:#e4405f; }
+
+.deal-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:16px 18px; margin-bottom:12px; animation:slideUp 0.2s ease both;
+  box-shadow:0 1px 4px rgba(0,0,0,0.04);
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.deal-top {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  gap:12px; margin-bottom:8px; flex-wrap:wrap;
+}
+.deal-left { flex:1; display:flex; gap:8px; align-items:center; }
+.deal-type-pill {
+  display:inline-flex; align-items:center; background:var(--accent-dim);
+  border:1px solid var(--accent-mid); border-radius:6px; padding:4px 10px;
+  font-family:var(--mono); font-size:10px; color:var(--accent); font-weight:600;
+}
+.post-type-label {
+  display:inline-flex; align-items:center; font-size:11px; color:var(--text3);
+  font-family:var(--mono); letter-spacing:0.5px;
+}
+.activation-badge {
+  display:inline-flex; align-items:center; background:var(--orange-dim);
+  border:1px solid rgba(245,158,11,0.2); border-radius:6px; padding:4px 10px;
+  font-family:var(--mono); font-size:10px; color:var(--orange); font-weight:600;
+}
+.conf-pill { font-family:var(--mono); font-size:10px; padding:3px 9px; 
+  border-radius:99px; flex-shrink:0; font-weight:500; }
+.conf-high { background:var(--green-dim); color:var(--green); border:1px solid rgba(5,150,105,0.2); }
+.conf-mid { background:var(--amber-dim); color:var(--amber); border:1px solid rgba(217,119,6,0.2); }
+.conf-low { background:var(--red-dim); color:var(--red); border:1px solid rgba(220,38,38,0.2); }
+
+.deal-evidence {
+  font-size:13px; color:var(--text2); border-left:3px solid var(--accent-mid);
+  padding-left:12px; line-height:1.6; font-style:italic; margin:8px 0;
+  background:rgba(90,160,232,0.04); padding:10px 12px; border-radius:4px;
+}
+
+.deal-meta {
+  display:flex; align-items:center; gap:12px; margin-top:10px;
+  font-size:12px; color:var(--text3); font-family:var(--mono);
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align:center; padding:60px 40px; color:var(--text3);
+}
+.empty-state-icon { font-size:48px; margin-bottom:16px; opacity:0.5; }
+.empty-state-text { font-size:16px; margin-bottom:24px; color:var(--text2); }
+.btn-back {
+  display:inline-flex; align-items:center; gap:6px; padding:10px 16px;
+  background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  color:var(--text2); text-decoration:none; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all 0.13s;
+}
+.btn-back:hover { background:var(--border); color:var(--text); }
+
+/* ── LOADING ── */
+.loading-spinner {
+  display:flex; align-items:center; justify-content:center; padding:40px;
+  font-size:13px; color:var(--text3);
+}
+.spinner {
+  width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--accent);
+  border-radius:50%; animation:spin 0.8s linear infinite; margin-right:10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── ERROR ── */
+.error-state {
+  background:var(--red-dim); border:1px solid rgba(220,38,38,0.2); border-radius:8px;
+  padding:16px; color:var(--red); margin-bottom:16px; font-size:13px;
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo"><span>⚡</span> Respawn Signal</div>
+    <button class="nav-item active" onclick="navTo('/')">Dashboard</button>
+    <button class="nav-item" onclick="navTo('/brands')">Brands</button>
+    <button class="nav-item" onclick="navTo('/settings')">Settings</button>
+  </div>
+
+  <div class="main-content">
+    <div class="brand-header" id="header">
+      <!-- Dynamically populated -->
+    </div>
+    <div class="content-inner" id="content">
+      <!-- Dynamically populated -->
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN = localStorage.getItem('token');
+const USER_ID = localStorage.getItem('user_id');
+
+if (!TOKEN) {
+  window.location.href = '/';
+}
+
+function navTo(path) {
+  window.location.href = path;
+}
+
+// Get brand name from URL
+const urlParams = new URLSearchParams(window.location.search);
+const brandNameEncoded = window.location.pathname.split('/').pop();
+const brandName = decodeURIComponent(brandNameEncoded);
+
+// Fetch brand data
+async function loadBrandProfile() {
+  const contentEl = document.getElementById('content');
+  const headerEl = document.getElementById('header');
+  
+  try {
+    contentEl.innerHTML = '<div class="loading-spinner"><div class="spinner"></div>Loading brand profile...</div>';
+    
+    const response = await fetch(`/api/brands/${encodeURIComponent(brandName)}`, {
+      headers: {
+        'Authorization': `Bearer ${TOKEN}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.total_deals === 0) {
+      renderEmptyState(headerEl, contentEl, data.brand_name);
+      return;
+    }
+
+    renderHeader(headerEl, data);
+    renderTimeline(contentEl, data);
+
+  } catch (err) {
+    console.error('[Brand Profile] Error:', err);
+    contentEl.innerHTML = `<div class="error-state">
+      Failed to load brand profile: ${err.message}
+    </div>`;
+  }
+}
+
+function renderHeader(el, data) {
+  el.innerHTML = `
+    <div class="brand-header-left">
+      <h1 class="brand-header-title">${escapeHtml(data.brand_name)}</h1>
+      <div class="stat-pills">
+        <div class="stat-pill">
+          <strong>${data.total_deals}</strong> Deal${data.total_deals !== 1 ? 's' : ''}
+        </div>
+        <div class="stat-pill">
+          <strong>${data.creators_count}</strong> Creator${data.creators_count !== 1 ? 's' : ''}
+        </div>
+        <div class="stat-pill">
+          <strong>${data.platforms.length}</strong> Platform${data.platforms.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+    </div>
+    <div class="brand-header-right">
+      <button class="btn-primary" disabled title="Available in Step 5">Generate Report</button>
+    </div>
+  `;
+}
+
+function renderTimeline(el, data) {
+  // Group deals by username
+  const grouped = {};
+  data.deals.forEach(deal => {
+    if (!grouped[deal.username]) {
+      grouped[deal.username] = [];
+    }
+    grouped[deal.username].push(deal);
+  });
+
+  // Sort each creator's deals by date (newest first)
+  Object.values(grouped).forEach(deals => {
+    deals.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  });
+
+  // Render each creator section
+  const html = Object.entries(grouped).map(([username, deals]) => {
+    const platformClass = `platform-${deals[0].platform}`;
+    const platformUpper = deals[0].platform.toUpperCase();
+    
+    const dealsHtml = deals.map((deal, i) => {
+      const confClass = deal.confidence === 'high' ? 'conf-high' : 
+                        deal.confidence === 'medium' ? 'conf-mid' : 'conf-low';
+      
+      const dateStr = new Date(deal.created_at).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      
+      const activationBadge = deal.is_activation_day ? 
+        '<div class="activation-badge">Activation Stream</div>' : '';
+      
+      return `
+        <div class="deal-card" style="animation-delay:${i*0.05}s">
+          <div class="deal-top">
+            <div class="deal-left">
+              <span class="deal-type-pill">${escapeHtml(deal.deal_type)}</span>
+              <span class="post-type-label">${escapeHtml(deal.post_type)}</span>
+              ${activationBadge}
+            </div>
+            <div class="conf-pill ${confClass}">${deal.confidence}</div>
+          </div>
+          ${deal.evidence ? `<div class="deal-evidence">"${escapeHtml(deal.evidence)}"</div>` : ''}
+          <div class="deal-meta">
+            📅 ${dateStr} · ${platformUpper}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="creator-section">
+        <div class="creator-header">
+          <span class="creator-handle">${escapeHtml(username)}</span>
+          <div class="platform-badge ${platformClass}" title="${platformUpper}">
+            ${platformUpper.slice(0, 1)}
+          </div>
+        </div>
+        ${dealsHtml}
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = html;
+}
+
+function renderEmptyState(headerEl, contentEl, brandName) {
+  headerEl.innerHTML = `
+    <div class="brand-header-left">
+      <h1 class="brand-header-title">${escapeHtml(brandName)}</h1>
+    </div>
+  `;
+  
+  contentEl.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-icon">📭</div>
+      <div class="empty-state-text">No deals found for <strong>${escapeHtml(brandName)}</strong></div>
+      <a href="/" class="btn-back">← Back to Dashboard</a>
+    </div>
+  `;
+}
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Load on init
+loadBrandProfile();
+</script>
+
+</body>
+</html>

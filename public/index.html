@@ -3474,7 +3474,7 @@ function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) 
               return `<div class="deal-card" style="animation-delay:${i*0.05}s;margin-bottom:9px">
                 <div class="deal-top">
                   <div style="flex:1">
-                    <div class="brand-tags">${d.brands.map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
+                    <div class="brand-tags">${d.brands.map(b => `<a href="/brands/${encodeURIComponent(b)}" class="brand-tag" style="text-decoration:none;display:inline-flex;align-items:center;background:var(--accent-dim);border:1px solid var(--accent-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--accent);margin-right:5px;margin-bottom:4px;transition:all 0.13s;" onmouseover="this.style.background='var(--accent-mid)'" onmouseout="this.style.background='var(--accent-dim)'">${b}</a>`).join('')}</div>
                   </div>
                   <div class="conf-pill ${cc}">${d.confidence||'?'}</div>
                 </div>
@@ -3501,7 +3501,7 @@ function renderDeals(deals, prefix = '', groupByVideo = true, creatorInfo = {}) 
       return `<div class="deal-card" style="animation-delay:${i*0.05}s">
         <div class="deal-top">
           <div style="flex:1">
-            <div class="brand-tags">${d.brands.map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
+            <div class="brand-tags">${d.brands.map(b => `<a href="/brands/${encodeURIComponent(b)}" class="brand-tag" style="text-decoration:none;display:inline-flex;align-items:center;background:var(--accent-dim);border:1px solid var(--accent-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--accent);margin-right:5px;margin-bottom:4px;transition:all 0.13s;" onmouseover="this.style.background='var(--accent-mid)'" onmouseout="this.style.background='var(--accent-dim)'">${b}</a>`).join('')}</div>
           </div>
           <div class="conf-pill ${cc}">${d.confidence||'?'}</div>
         </div>
@@ -3841,7 +3841,7 @@ async function rescanSingleVideo(username, videoIndex, range) {
           const cc = d.confidence==='high'?'conf-high':d.confidence==='medium'?'conf-mid':'conf-low';
           return `<div class="deal-card" style="margin-top:8px;background:var(--accent-dim);border-color:var(--accent-mid)">
             <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-              <div class="brand-tags">${(d.brands||[]).map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
+              <div class="brand-tags">${(d.brands||[]).map(b => `<a href="/brands/${encodeURIComponent(b)}" class="brand-tag" style="text-decoration:none;display:inline-flex;align-items:center;background:var(--accent-dim);border:1px solid var(--accent-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--accent);margin-right:5px;margin-bottom:4px;transition:all 0.13s;" onmouseover="this.style.background='var(--accent-mid)'" onmouseout="this.style.background='var(--accent-dim)'">${b}</a>`).join('')}</div>
               <div class="conf-pill ${cc}">${d.confidence||'?'}</div>
             </div>
             <div class="deal-evidence">"${d.evidence || '(no evidence)'}"</div>
@@ -3973,7 +3973,7 @@ function renderDealsPage() {
         html += `<div class="deal-card" style="animation-delay:${i*0.05}s;margin-bottom:9px">
           <div class="deal-top">
             <div style="flex:1">
-              <div class="brand-tags">${(d.brands||(d.brand?[d.brand]:['Unknown'])).map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
+              <div class="brand-tags">${(d.brands||(d.brand?[d.brand]:['Unknown'])).map(b => `<a href="/brands/${encodeURIComponent(b)}" class="brand-tag" style="text-decoration:none;display:inline-flex;align-items:center;background:var(--accent-dim);border:1px solid var(--accent-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--accent);margin-right:5px;margin-bottom:4px;transition:all 0.13s;" onmouseover="this.style.background='var(--accent-mid)'" onmouseout="this.style.background='var(--accent-dim)'">${b}</a>`).join('')}</div>
             </div>
             <div class="conf-pill ${cc}">${d.confidence||'?'}</div>
           </div>
@@ -4131,7 +4131,7 @@ async function runManualAnalysis() {
         return `<div class="deal-card" style="margin-bottom:11px">
           <div class="deal-top">
             <div style="flex:1">
-              <div class="brand-tags">${(d.brands || []).map(b => `<span class="brand-tag">${b}</span>`).join('')}</div>
+              <div class="brand-tags">${(d.brands || []).map(b => `<a href="/brands/${encodeURIComponent(b)}" class="brand-tag" style="text-decoration:none;display:inline-flex;align-items:center;background:var(--accent-dim);border:1px solid var(--accent-mid);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--accent);margin-right:5px;margin-bottom:4px;transition:all 0.13s;" onmouseover="this.style.background='var(--accent-mid)'" onmouseout="this.style.background='var(--accent-dim)'">${b}</a>`).join('')}</div>
             </div>
             <div class="conf-pill ${cc}">${d.confidence || '?'}</div>
           </div>
